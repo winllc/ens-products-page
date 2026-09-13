@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ReadyRoom — ENS Solutions, LLC</title>
+    <meta name="description"
+          content="ReadyRoom turns workstation logon, lock, unlock and logoff events into daily attendance, group rollups, an org chart and absence notifications for an LDAP-backed organization.">
+    <link rel="stylesheet" href="/assets/css/site.css">
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+    <div class="wrap">
+        <a class="brand" href="/">
+            <span class="brand-mark" aria-hidden="true">ENS</span>
+            <span>ENS Solutions</span>
+        </a>
+        <nav class="site-nav" aria-label="Products">
+            <a href="/products/readyroom.html" aria-current="page">ReadyRoom</a>
+            <a href="/products/certalert.html">CertAlert</a>
+            <a href="/products/mfa-portal.html">MFA Portal</a>
+            <a href="https://ens-solutions.com/">ens-solutions.com</a>
+        </nav>
+    </div>
+</header>
+
+<main id="main">
+    <section class="hero">
+        <div class="wrap">
+            <a class="backlink" href="/">&larr; All products</a>
+            <div class="title-row">
+                <h1>ReadyRoom</h1>
+                <span class="badge badge--live">Available</span>
+            </div>
+            <p class="lede">
+                Attendance and presence tracking for an LDAP-backed organization. Windows workstations
+                report logon, logoff, screen lock and screen unlock; ReadyRoom turns those events into
+                per-user daily attendance, group rollups, an org chart and absence notifications —
+                without anyone filling in a timesheet.
+            </p>
+
+            <div class="btn-row">
+                <!--DEMO:READYROOM-->
+                <a class="btn btn--primary" href="${READYROOM_DEMO_URL}">Open the demo</a>
+                <span class="btn-note">Opens the ReadyRoom demo environment.</span>
+                <!--/DEMO:READYROOM-->
+                <!--NODEMO:READYROOM-->
+                <span class="btn btn--disabled" aria-disabled="true">Demo unavailable</span>
+                <span class="btn-note">No demo URL is configured for this deployment.</span>
+                <!--/NODEMO:READYROOM-->
+            </div>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="how-heading">
+        <div class="wrap">
+            <h2 id="how-heading">How it works</h2>
+            <ol class="flow-steps">
+                <li>
+                    <strong>The workstation reports.</strong> A PowerShell client, driven by Windows
+                    Task Scheduler, fires on logon, screen lock, screen unlock and logoff.
+                </li>
+                <li>
+                    <strong>The server records.</strong> Each event is posted to ReadyRoom over mutual
+                    TLS and stored against the user's directory identity.
+                </li>
+                <li>
+                    <strong>The directory supplies the people.</strong> Users, groups and reporting
+                    structure are read from LDAP, so there is no second roster to maintain.
+                </li>
+                <li>
+                    <strong>Managers see the day.</strong> Attendance, group rollups, reports and the
+                    org chart are available in the web UI, and absences go out by email.
+                </li>
+            </ol>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="features-heading">
+        <div class="wrap">
+            <h2 id="features-heading">What it does</h2>
+            <div class="feature-grid">
+                <div class="feature">
+                    <h3>Presence without self-reporting</h3>
+                    <p>
+                        Attendance is derived from events the workstation already generates. Nobody
+                        clocks in, and the record reflects what actually happened at the machine.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>Lock and unlock, not just logon</h3>
+                    <p>
+                        Screen lock and unlock are tracked alongside logon and logoff, so time away
+                        from the desk is visible rather than counted as a full day present.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>Idle sessions close themselves</h3>
+                    <p>
+                        A scheduled job automatically checks out sessions left open past a configurable
+                        idle threshold, so a forgotten logoff does not become a 14-hour day.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>Group rollups and reports</h3>
+                    <p>
+                        Roll individual attendance up to a group, filter by date range, and save the
+                        reports managers run repeatedly.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>Org chart from the directory</h3>
+                    <p>
+                        Hierarchy is derived from a flat LDAP attribute. The default heuristic splits on
+                        letter and digit boundaries; where that does not fit, a regex rule whose capture
+                        groups define the levels can be added from the settings screen.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>Absence notifications</h3>
+                    <p>
+                        A scheduled job emails absence notifications on an interval you set, so the
+                        first sign of an unexplained absence is not someone noticing an empty desk.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>Role and per-group permissions</h3>
+                    <p>
+                        Users, managers and administrators, plus per-group grants for the cases where a
+                        role is too coarse — a manager sees exactly the groups they are entitled to.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>Classification banners</h3>
+                    <p>
+                        Configurable banner text and colour across the top and bottom of every page,
+                        for deployments that require a visible handling marking.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="auth-heading">
+        <div class="wrap">
+            <h2 id="auth-heading">Authentication</h2>
+            <p class="lede">
+                ReadyRoom prefers an X.509 client certificate and resolves the certificate's full
+                subject DN against the directory. Browsers presenting no certificate fall back to a
+                form login validated by the LDAP authentication provider.
+            </p>
+            <div class="callout">
+                <p>
+                    <strong>One deliberate exception.</strong> Check-out runs at logoff, after the user
+                    profile — and with it their certificate store — is already gone, so it cannot
+                    authenticate. Logon caches the server-issued session identifier and logoff echoes it
+                    back, which lets the server recover the identity without a certificate.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="tech-heading">
+        <div class="wrap">
+            <h2 id="tech-heading">Technical summary</h2>
+            <div class="table-scroll">
+                <table>
+                    <caption class="visually-hidden">ReadyRoom technical summary</caption>
+                    <thead>
+                    <tr>
+                        <th scope="col">Component</th>
+                        <th scope="col">Detail</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <th scope="row">Server</th>
+                        <td>Spring Boot 4 on Java 21, Thymeleaf UI</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Data</th>
+                        <td>PostgreSQL for records, roles, permissions and history</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Directory</th>
+                        <td>LDAP / LDAPS — the source of truth for people and org structure</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Client</th>
+                        <td>PowerShell script registered as four Windows scheduled tasks</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Authentication</th>
+                        <td>Mutual TLS with X.509 client certificates, LDAP form login fallback</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Roles</th>
+                        <td>User, manager, administrator, plus per-group permission grants</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Deployment</th>
+                        <td>Containerized, self-hosted, configured by environment or external config</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="site-footer">
+    <div class="wrap">
+        <span>&copy; ENS Solutions, LLC</span>
+        <span><a href="https://ens-solutions.com/">ens-solutions.com</a></span>
+    </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,146 @@
+# ens-products-page
+
+Product site for **ENS Solutions, LLC** — a homepage overview linking to a page
+for each product, served as static HTML from an nginx container.
+
+| Product | Page | Status |
+|---|---|---|
+| ReadyRoom | `/products/readyroom.html` | Available |
+| CertAlert | `/products/certalert.html` | Coming soon |
+| MFA Portal | `/products/mfa-portal.html` | Coming soon |
+
+No build step, no JavaScript, no CDN. The pages are plain HTML and one
+stylesheet; the only per-deployment values are the demo URLs, and those are
+resolved when the container starts.
+
+---
+
+## Running it
+
+```bash
+cp .env.example .env      # then fill in whichever demo URLs exist
+docker compose up --build
+```
+
+Then open <http://localhost:8080>.
+
+Without Compose:
+
+```bash
+docker build -t ens-products-page .
+docker run --rm -p 8080:8080 \
+  -e READYROOM_DEMO_URL="https://demo.example.com/readyroom" \
+  ens-products-page
+```
+
+`GET /healthz` returns `200 ok` for orchestrator health checks, and the image
+carries a `HEALTHCHECK` that uses it.
+
+---
+
+## Demo links
+
+Each product page has a demo button driven by one environment variable:
+
+| Variable | Product |
+|---|---|
+| `READYROOM_DEMO_URL` | ReadyRoom |
+| `CERTALERT_DEMO_URL` | CertAlert |
+| `MFA_PORTAL_DEMO_URL` | MFA Portal |
+
+Set one and that product's button becomes a live link to it. **Leave it empty
+and the page renders a "coming soon" state instead** — there is no way to get a
+button pointing at an empty `href`, which is the whole reason this is done at
+render time rather than in the markup.
+
+The variables are read **at container start**, not at build time, so pointing a
+deployment at a different demo environment is a restart, not a rebuild:
+
+```bash
+docker compose up -d --force-recreate
+```
+
+### How that works
+
+`site/` holds templates, not the served files. The image copies it to
+`/usr/share/nginx/template`, and `docker/docker-entrypoint.d/30-render-site.sh`
+renders it into `/usr/share/nginx/html` on every start — the official nginx
+entrypoint runs every executable in `/docker-entrypoint.d` before starting
+nginx.
+
+Each product page carries two mutually exclusive blocks, and exactly one
+survives the render:
+
+```html
+<!--DEMO:READYROOM-->
+  <a class="btn btn--primary" href="${READYROOM_DEMO_URL}">Open the demo</a>
+<!--/DEMO:READYROOM-->
+<!--NODEMO:READYROOM-->
+  <span class="btn btn--disabled" aria-disabled="true">Demo unavailable</span>
+<!--/NODEMO:READYROOM-->
+```
+
+Substitution is restricted to the three `*_DEMO_URL` names, so no other `$NAME`
+in the markup or CSS is touched. Non-HTML files are copied through byte for
+byte.
+
+To add a fourth product, add its `NAME_DEMO_URL` to the `export` list, the
+`enabled` list and the `vars` list in the render script, then use
+`<!--DEMO:NAME-->` markers in its page.
+
+### Rendering outside the container
+
+The script takes `SITE_TEMPLATE_DIR` and `SITE_OUTPUT_DIR` overrides, which is
+how it is exercised without Docker:
+
+```bash
+SITE_TEMPLATE_DIR=site SITE_OUTPUT_DIR=/tmp/out \
+READYROOM_DEMO_URL=https://demo.example.com/readyroom \
+  sh docker/docker-entrypoint.d/30-render-site.sh
+```
+
+Needs `envsubst` (GNU gettext) on `PATH`; the nginx image already ships it.
+
+---
+
+## Layout
+
+```
+site/                       Templates — the site itself
+  index.html                Homepage: overview + the three product cards
+  404.html
+  products/                 One page per product
+  assets/css/site.css       The whole stylesheet
+  assets/favicon.svg
+nginx/default.conf          Server config: port 8080, gzip, /healthz, 404
+docker/docker-entrypoint.d/
+  30-render-site.sh         Resolves demo URLs at container start
+Dockerfile
+docker-compose.yml
+.env.example
+```
+
+---
+
+## Editing content
+
+Everything is hand-written HTML — edit the file for the page you want to
+change. The header, footer and nav are duplicated across the four pages rather
+than templated; with four pages that is cheaper than introducing a build step,
+but it does mean a nav change is a four-file change.
+
+Colours, spacing and type are CSS custom properties declared once at the top of
+`site/assets/css/site.css`, with a dark-mode block right below. Re-skinning to
+match brand colours means editing those tokens and nothing else.
+
+### Where the ReadyRoom copy came from
+
+The ReadyRoom page is written from the `README.md` of the
+[`in-n-out-work`](https://github.com/winllc/in-n-out-work) repository, which is
+the product's implementation — attendance and presence tracking driven by
+workstation logon, lock, unlock and logoff events. Its technical summary
+reflects that codebase: Spring Boot 4 on Java 21, PostgreSQL, LDAP, a PowerShell
+client, and mutual TLS with an LDAP form-login fallback.
+
+The CertAlert and MFA Portal pages describe products that do not exist yet, and
+their feature copy is provisional — worth a read before this goes public.

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Products — ENS Solutions, LLC</title>
+    <meta name="description"
+          content="Security and workforce accountability software from ENS Solutions, LLC: ReadyRoom, CertAlert and MFA Portal.">
+    <link rel="stylesheet" href="/assets/css/site.css">
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+    <div class="wrap">
+        <a class="brand" href="/">
+            <span class="brand-mark" aria-hidden="true">ENS</span>
+            <span>ENS Solutions</span>
+        </a>
+        <nav class="site-nav" aria-label="Products">
+            <a href="/products/readyroom.html">ReadyRoom</a>
+            <a href="/products/certalert.html">CertAlert</a>
+            <a href="/products/mfa-portal.html">MFA Portal</a>
+            <a href="https://ens-solutions.com/">ens-solutions.com</a>
+        </nav>
+    </div>
+</header>
+
+<main id="main">
+    <section class="hero">
+        <div class="wrap">
+            <p class="eyebrow">ENS Solutions, LLC</p>
+            <h1>Accountability and identity tooling for controlled environments.</h1>
+            <p class="lede">
+                We build software for organizations that already run a directory and a certificate
+                authority, and need the day-to-day operational layer on top of them — who is present,
+                which credentials are about to lapse, and how people prove who they are.
+            </p>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="products-heading">
+        <div class="wrap">
+            <h2 id="products-heading">Products</h2>
+
+            <div class="card-grid">
+                <article class="card card--link">
+                    <h3>
+                        <a href="/products/readyroom.html">ReadyRoom</a>
+                        <span class="badge badge--live">Available</span>
+                    </h3>
+                    <p>
+                        Attendance and presence tracking for an LDAP-backed organization. Workstations
+                        report logon, lock, unlock and logoff; ReadyRoom turns those events into daily
+                        attendance, group rollups, an org chart and absence notifications.
+                    </p>
+                    <span class="card-cta">View product &rarr;</span>
+                </article>
+
+                <article class="card card--link">
+                    <h3>
+                        <a href="/products/certalert.html">CertAlert</a>
+                        <span class="badge badge--pending">Coming soon</span>
+                    </h3>
+                    <p>
+                        Certificate lifecycle monitoring. Track the X.509 certificates your services and
+                        users depend on, and get warned well before one expires instead of at the outage.
+                    </p>
+                    <span class="card-cta">View product &rarr;</span>
+                </article>
+
+                <article class="card card--link">
+                    <h3>
+                        <a href="/products/mfa-portal.html">MFA Portal</a>
+                        <span class="badge badge--pending">Coming soon</span>
+                    </h3>
+                    <p>
+                        Self-service multi-factor enrollment and management, so users can register and
+                        recover their own second factors without a help-desk ticket for every reset.
+                    </p>
+                    <span class="card-cta">View product &rarr;</span>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="approach-heading">
+        <div class="wrap">
+            <h2 id="approach-heading">How we build</h2>
+            <div class="feature-grid">
+                <div class="feature">
+                    <h3>The directory stays the source of truth</h3>
+                    <p>
+                        People, groups and org structure come from LDAP. Our databases store only what
+                        the directory cannot — records, roles, permissions and history.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>Certificate-first authentication</h3>
+                    <p>
+                        Mutual TLS with X.509 client certificates where the environment supports it,
+                        with directory username and password as the fallback.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>Deploys where you already are</h3>
+                    <p>
+                        Containerized, self-hosted, and configured through environment variables and
+                        external config rather than edits to a shipped file.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="site-footer">
+    <div class="wrap">
+        <span>&copy; ENS Solutions, LLC</span>
+        <span><a href="https://ens-solutions.com/">ens-solutions.com</a></span>
+    </div>
+</footer>
+</body>
+</html>

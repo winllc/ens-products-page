@@ -1,0 +1,13 @@
+services:
+  site:
+    build: .
+    image: ens-products-page
+    ports:
+      - "8080:8080"
+    environment:
+      # Set a URL to turn that product's demo button into a live link.
+      # Leave empty (or unset) to render the coming-soon state instead.
+      READYROOM_DEMO_URL: "${READYROOM_DEMO_URL:-}"
+      CERTALERT_DEMO_URL: "${CERTALERT_DEMO_URL:-}"
+      MFA_PORTAL_DEMO_URL: "${MFA_PORTAL_DEMO_URL:-}"
+    restart: unless-stopped
