@@ -133,6 +133,14 @@ Colours, spacing and type are CSS custom properties declared once at the top of
 `site/assets/css/site.css`, with a dark-mode block right below. Re-skinning to
 match brand colours means editing those tokens and nothing else.
 
+### External references
+
+The footer of every page links to [ens-solutions.com](https://ens-solutions.com/)
+and to the company
+[LinkedIn page](https://www.linkedin.com/company/ens-solutions-llc/). Both are
+plain links; nothing is embedded and no third-party script is loaded, so the
+site still makes no outbound requests of its own.
+
 ### Where the ReadyRoom copy came from
 
 The ReadyRoom page is written from the `README.md` of the

@@ -217,6 +217,25 @@ code {
     flex-wrap: wrap;
 }
 
+.footer-links {
+    display: flex;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+}
+
+.footer-links a {
+    display: inline-flex;
+    align-items: center;
+    gap: .35rem;
+}
+
+/* Sized in ems so it tracks the label it sits beside. */
+.icon {
+    width: 1em;
+    height: 1em;
+    flex: none;
+}
+
 /* ---------------------------------------------------------------- *
  * Hero
  * ---------------------------------------------------------------- */
