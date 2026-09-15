@@ -280,16 +280,28 @@ code {
     margin-bottom: .75rem;
 }
 
-/* Company identifiers buyers look for: set-aside status, clearance, CAGE, UEI. */
+/*
+ * Company identifiers buyers look for: set-aside status, clearance, CAGE, UEI.
+ * Explicit column counts (4, 2, 1) rather than auto-fit: the 1px gaps show the
+ * border colour, so a 3 + 1 wrap would paint the two empty cells grey.
+ */
 .facts {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1px;
     margin: 2.5rem 0 0;
     background: var(--border);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
+}
+
+@media (max-width: 760px) {
+    .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 420px) {
+    .facts { grid-template-columns: minmax(0, 1fr); }
 }
 
 .facts > div {
@@ -500,7 +512,8 @@ thead th {
     color: var(--text-muted);
 }
 
-tbody tr:last-child td { border-bottom: none; }
+/* Both cells: the row header is a th, and the container already draws the bottom edge. */
+tbody tr:last-child > * { border-bottom: none; }
 
 th[scope="row"] {
     font-weight: 600;
