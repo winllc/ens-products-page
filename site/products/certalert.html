@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CertAlert — ENS Solutions, LLC</title>
     <meta name="description"
-          content="CertAlert is certificate lifecycle monitoring from ENS Solutions: know which X.509 certificates are about to expire before they take a service down. Coming soon.">
+          content="CertAlert ingests every user and server object from your directory to give clear visibility into certificate expirations, manage points of contact, and report through a dashboard and metrics. Coming soon from ENS Solutions.">
     <link rel="stylesheet" href="/assets/css/site.css">
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 </head>
@@ -18,10 +18,11 @@
             <span class="brand-mark" aria-hidden="true">ENS</span>
             <span>ENS Solutions</span>
         </a>
-        <nav class="site-nav" aria-label="Products">
+        <nav class="site-nav" aria-label="Site">
             <a href="/products/readyroom.html">ReadyRoom</a>
             <a href="/products/certalert.html" aria-current="page">CertAlert</a>
             <a href="/products/mfa-portal.html">MFA Portal</a>
+            <a href="/contact.html">Contact</a>
             <a href="https://ens-solutions.com/">ens-solutions.com</a>
         </nav>
     </div>
@@ -32,19 +33,21 @@
         <div class="wrap">
             <a class="backlink" href="/">&larr; All products</a>
             <div class="title-row">
-                <h1>CertAlert</h1>
+                <p class="eyebrow eyebrow--inline">CertAlert &middot; Certificate expiration visibility</p>
                 <span class="badge badge--pending">Coming soon</span>
             </div>
+            <h1>Every certificate in your directory, and who answers for it.</h1>
             <p class="lede">
-                Certificate lifecycle monitoring. Keep an inventory of the X.509 certificates your
-                services and users depend on, and hear about an expiry with weeks of warning instead
-                of at the outage.
+                CertAlert ingests all of the user and server object records from your directory and puts
+                their certificate expirations in one place. Each record carries the points of contact
+                responsible for it, and a dashboard and metrics show where the organization stands &mdash;
+                so an expiring certificate is a planned renewal, not a surprise.
             </p>
 
             <div class="btn-row">
                 <!--DEMO:CERTALERT-->
-                <a class="btn btn--primary" href="${CERTALERT_DEMO_URL}">Open the demo</a>
-                <span class="btn-note">Opens the CertAlert demo environment.</span>
+                <a class="btn btn--primary" href="${CERTALERT_DEMO_URL}" target="_blank" rel="noopener">Open the demo<span class="visually-hidden"> (opens in a new tab)</span></a>
+                <span class="btn-note">Opens the CertAlert demo environment in a new tab.</span>
                 <!--/DEMO:CERTALERT-->
                 <!--NODEMO:CERTALERT-->
                 <span class="btn btn--disabled" aria-disabled="true">Demo coming soon</span>
@@ -54,38 +57,106 @@
         </div>
     </section>
 
-    <section class="section" aria-labelledby="planned-heading">
+    <section class="section" aria-labelledby="capabilities-heading">
         <div class="wrap">
-            <h2 id="planned-heading">What it will do</h2>
+            <h2 id="capabilities-heading">What it does</h2>
+            <div class="card-grid card-grid--pairs">
+                <article class="card">
+                    <p class="card-kicker">Directory ingest</p>
+                    <h3>All user and server objects</h3>
+                    <p>
+                        CertAlert brings in every user and server object record from the directory, so the
+                        view is complete from the start &mdash; not limited to the certificates someone
+                        remembered to add to a spreadsheet.
+                    </p>
+                </article>
+                <article class="card">
+                    <p class="card-kicker">Expirations</p>
+                    <h3>Better visibility into what&rsquo;s expiring</h3>
+                    <p>
+                        Certificate expirations across people and servers are visible in one place, so the
+                        ones coming due can be seen and worked well before they lapse.
+                    </p>
+                </article>
+                <article class="card">
+                    <p class="card-kicker">Points of contact</p>
+                    <h3>A named owner for every record</h3>
+                    <p>
+                        Manage the points of contact responsible for each record, so when a certificate
+                        needs attention it is clear who to go to &mdash; especially for servers, where the
+                        directory alone rarely says.
+                    </p>
+                </article>
+                <article class="card">
+                    <p class="card-kicker">Dashboard &amp; metrics</p>
+                    <h3>Where the organization stands</h3>
+                    <p>
+                        A dashboard and metrics summarize certificate health across the directory, for the
+                        people who need the overall picture rather than a single record.
+                    </p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="fit-heading">
+        <div class="wrap">
+            <h2 id="fit-heading">How it fits</h2>
+            <ol class="flow-steps">
+                <li>
+                    <strong>The directory stays the source of truth.</strong> User and server objects are
+                    ingested from the directory you already run, rather than entered by hand into a
+                    separate inventory.
+                </li>
+                <li>
+                    <strong>Expirations come into view.</strong> Certificates across every ingested record
+                    are shown together, so what is coming due is visible at a glance.
+                </li>
+                <li>
+                    <strong>Owners are attached.</strong> Points of contact are managed alongside each
+                    record, closing the gap between knowing a certificate is expiring and knowing who will
+                    renew it.
+                </li>
+                <li>
+                    <strong>Leadership sees the trend.</strong> The dashboard and metrics roll it all up
+                    into an organization-wide view.
+                </li>
+            </ol>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="why-heading">
+        <div class="wrap">
+            <h2 id="why-heading">Why it helps</h2>
             <div class="feature-grid">
                 <div class="feature">
-                    <h3>Inventory</h3>
+                    <h3>Fewer surprise expirations</h3>
                     <p>
-                        One list of the certificates in play across your services, endpoints and users,
-                        with issuer, subject and expiry.
+                        An expired server certificate can take a service down, and an expired user
+                        certificate can lock someone out. Seeing them coming turns both into routine work.
                     </p>
                 </div>
                 <div class="feature">
-                    <h3>Advance warning</h3>
+                    <h3>No more hunting for an owner</h3>
                     <p>
-                        Escalating notifications as an expiry approaches, at thresholds you choose,
-                        addressed to whoever owns the certificate.
+                        With points of contact kept on each record, the time between &ldquo;this is
+                        expiring&rdquo; and &ldquo;someone is renewing it&rdquo; gets shorter.
                     </p>
                 </div>
                 <div class="feature">
-                    <h3>Ownership</h3>
+                    <h3>Complete by construction</h3>
                     <p>
-                        Every certificate maps to a person or group in the directory, so the warning
-                        reaches someone who can act on it.
+                        Because the inventory is built from the directory itself, coverage does not depend on
+                        anyone keeping a list up to date.
                     </p>
                 </div>
             </div>
 
             <div class="callout">
                 <p>
-                    <strong>CertAlert is still in development.</strong> If you would like to hear when
-                    it is available, or you have requirements you would like reflected in it, get in
-                    touch through <a href="https://ens-solutions.com/">ens-solutions.com</a>
+                    <strong>CertAlert is still in development.</strong> If you would like to hear when it is
+                    available, or have requirements you would like reflected in it,
+                    <a href="/contact.html?product=certalert">get in touch</a>
                     or follow along on <a href="https://www.linkedin.com/company/ens-solutions-llc/">LinkedIn</a>.
                 </p>
             </div>
@@ -97,6 +168,7 @@
     <div class="wrap">
         <span>&copy; ENS Solutions, LLC</span>
         <nav class="footer-links" aria-label="Elsewhere">
+            <a href="/contact.html">Contact</a>
             <a href="https://ens-solutions.com/">ens-solutions.com</a>
             <a href="https://www.linkedin.com/company/ens-solutions-llc/">
                 <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9h4v12H3V9Zm7 0h3.8v1.65h.05A4.17 4.17 0 0 1 17.6 8.7c4 0 4.4 2.5 4.4 5.9V21h-4v-5.6c0-1.34-.03-3.06-1.9-3.06-1.9 0-2.2 1.46-2.2 2.96V21h-4V9Z"/></svg>

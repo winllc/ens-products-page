@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ReadyRoom — ENS Solutions, LLC</title>
     <meta name="description"
-          content="ReadyRoom turns workstation logon, lock, unlock and logoff events into daily attendance, group rollups, an org chart and absence notifications for an LDAP-backed organization.">
+          content="ReadyRoom turns the Windows sign-ins your people already make into daily attendance, accountability and absence alerts, organized by the LDAP or Active Directory you already run.">
     <link rel="stylesheet" href="/assets/css/site.css">
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 </head>
@@ -18,10 +18,11 @@
             <span class="brand-mark" aria-hidden="true">ENS</span>
             <span>ENS Solutions</span>
         </a>
-        <nav class="site-nav" aria-label="Products">
+        <nav class="site-nav" aria-label="Site">
             <a href="/products/readyroom.html" aria-current="page">ReadyRoom</a>
             <a href="/products/certalert.html">CertAlert</a>
             <a href="/products/mfa-portal.html">MFA Portal</a>
+            <a href="/contact.html">Contact</a>
             <a href="https://ens-solutions.com/">ens-solutions.com</a>
         </nav>
     </div>
@@ -29,135 +30,279 @@
 
 <main id="main">
     <section class="hero">
-        <div class="wrap">
-            <a class="backlink" href="/">&larr; All products</a>
-            <div class="title-row">
-                <h1>ReadyRoom</h1>
-                <span class="badge badge--live">Available</span>
-            </div>
-            <p class="lede">
-                Attendance and presence tracking for an LDAP-backed organization. Windows workstations
-                report logon, logoff, screen lock and screen unlock; ReadyRoom turns those events into
-                per-user daily attendance, group rollups, an org chart and absence notifications —
-                without anyone filling in a timesheet.
-            </p>
+        <div class="wrap hero-split">
+            <div>
+                <a class="backlink" href="/">&larr; All products</a>
+                <div class="title-row">
+                    <p class="eyebrow eyebrow--inline">ReadyRoom &middot; Attendance and accountability</p>
+                    <span class="badge badge--live">Available</span>
+                </div>
+                <h1>Know who&rsquo;s in, without a sign-in sheet.</h1>
+                <p class="lede">
+                    ReadyRoom turns the Windows sign-ins your people already make into a daily picture of
+                    who is in, who is away, and who hasn&rsquo;t been accounted for &mdash; organized by the
+                    directory you already run, and escalated to the right manager when someone doesn&rsquo;t
+                    show.
+                </p>
 
-            <div class="btn-row">
-                <!--DEMO:READYROOM-->
-                <a class="btn btn--primary" href="${READYROOM_DEMO_URL}">Open the demo</a>
-                <span class="btn-note">Opens the ReadyRoom demo environment.</span>
-                <!--/DEMO:READYROOM-->
-                <!--NODEMO:READYROOM-->
-                <span class="btn btn--disabled" aria-disabled="true">Demo unavailable</span>
-                <span class="btn-note">No demo URL is configured for this deployment.</span>
-                <!--/NODEMO:READYROOM-->
+                <div class="btn-row">
+                    <!--DEMO:READYROOM-->
+                    <a class="btn btn--primary" href="${READYROOM_DEMO_URL}" target="_blank" rel="noopener">Open the demo<span class="visually-hidden"> (opens in a new tab)</span></a>
+                    <a class="btn btn--ghost" href="#how-heading">See how it works</a>
+                    <span class="btn-note">Opens the ReadyRoom demo environment in a new tab.</span>
+                    <!--/DEMO:READYROOM-->
+                    <!--NODEMO:READYROOM-->
+                    <span class="btn btn--disabled" aria-disabled="true">Demo unavailable</span>
+                    <a class="btn btn--ghost" href="#how-heading">See how it works</a>
+                    <span class="btn-note">No demo URL is configured for this deployment.</span>
+                    <!--/NODEMO:READYROOM-->
+                </div>
             </div>
+
+            <!-- Illustration of the manager's team view. Not live data. -->
+            <figure class="mock" aria-hidden="true">
+                <div class="mock-head">
+                    <span class="mock-title">My team</span>
+                    <span class="mock-sub">12 direct reports</span>
+                </div>
+                <div class="mock-label">Accounted for today</div>
+                <div class="mock-figure">92%</div>
+                <div class="mock-bar">
+                    <span class="seg seg--in"></span><span class="seg seg--wfh"></span><span class="seg seg--tdy"></span><span class="seg seg--none"></span>
+                </div>
+                <ul class="mock-legend">
+                    <li><span class="dot dot--in"></span>Checked in<b>8</b></li>
+                    <li><span class="dot dot--wfh"></span>Work from home<b>2</b></li>
+                    <li><span class="dot dot--tdy"></span>TDY<b>1</b></li>
+                    <li><span class="dot dot--none"></span>Unaccounted for<b>1</b></li>
+                </ul>
+                <div class="mock-row">
+                    <span>Not in yet &middot; expected 08:00</span>
+                    <span class="status status--late">Late</span>
+                </div>
+            </figure>
         </div>
     </section>
 
     <section class="section" aria-labelledby="how-heading">
         <div class="wrap">
             <h2 id="how-heading">How it works</h2>
+            <p class="lede">Nobody has to remember to check in.</p>
             <ol class="flow-steps">
                 <li>
-                    <strong>The workstation reports.</strong> A PowerShell client, driven by Windows
-                    Task Scheduler, fires on logon, screen lock, screen unlock and logoff.
+                    <strong>People sign in to Windows as usual.</strong> A lightweight PowerShell agent, run
+                    by four Windows scheduled tasks, reports sign-in, screen lock, screen unlock and sign-out.
+                    Once IT has installed it there is nothing for anyone to open or click.
                 </li>
                 <li>
-                    <strong>The server records.</strong> Each event is posted to ReadyRoom over mutual
-                    TLS and stored against the user's directory identity.
+                    <strong>Events become a working day.</strong> The first sign-in or unlock of the day
+                    counts as arrival. Locks, returns and departures fill in the rest, alongside any status
+                    someone has put on their calendar, such as work from home or leave.
                 </li>
                 <li>
-                    <strong>The directory supplies the people.</strong> Users, groups and reporting
-                    structure are read from LDAP, so there is no second roster to maintain.
+                    <strong>The directory supplies the people.</strong> Users, groups, managers and org
+                    structure are read from LDAP or Active Directory, so there is no second roster to keep
+                    in step.
                 </li>
                 <li>
-                    <strong>Managers see the day.</strong> Attendance, group rollups, reports and the
-                    org chart are available in the web UI, and absences go out by email.
+                    <strong>Everyone sees what they need.</strong> Individuals see their own day, managers
+                    see the people who report to them, and leadership sees organization-wide figures.
                 </li>
             </ol>
         </div>
     </section>
 
-    <section class="section" aria-labelledby="features-heading">
+    <section class="section" aria-labelledby="status-heading">
         <div class="wrap">
-            <h2 id="features-heading">What it does</h2>
-            <div class="feature-grid">
-                <div class="feature">
-                    <h3>Presence without self-reporting</h3>
-                    <p>
-                        Attendance is derived from events the workstation already generates. Nobody
-                        clocks in, and the record reflects what actually happened at the machine.
-                    </p>
+            <h2 id="status-heading">A status for everyone, every day</h2>
+            <div class="split">
+                <div>
+                    <h3>From the workstation</h3>
+                    <ul class="status-list">
+                        <li><span class="status status--in">In</span>Signed in and at the workstation.</li>
+                        <li><span class="status status--away">Away</span>Screen locked.</li>
+                        <li><span class="status status--out">Out</span>Signed out for the day.</li>
+                        <li><span class="status status--none">None</span>No activity recorded yet today.</li>
+                    </ul>
                 </div>
-                <div class="feature">
-                    <h3>Lock and unlock, not just logon</h3>
-                    <p>
-                        Screen lock and unlock are tracked alongside logon and logoff, so time away
-                        from the desk is visible rather than counted as a full day present.
+                <div>
+                    <h3>From the calendar</h3>
+                    <p class="muted">
+                        People drag across days on their calendar to set a status ahead of time, and it is
+                        shown in place of workstation activity &mdash; so someone who is TDY is accounted for,
+                        not missing.
                     </p>
-                </div>
-                <div class="feature">
-                    <h3>Idle sessions close themselves</h3>
-                    <p>
-                        A scheduled job automatically checks out sessions left open past a configurable
-                        idle threshold, so a forgotten logoff does not become a 14-hour day.
-                    </p>
-                </div>
-                <div class="feature">
-                    <h3>Group rollups and reports</h3>
-                    <p>
-                        Roll individual attendance up to a group, filter by date range, and save the
-                        reports managers run repeatedly.
-                    </p>
-                </div>
-                <div class="feature">
-                    <h3>Org chart from the directory</h3>
-                    <p>
-                        Hierarchy is derived from a flat LDAP attribute. The default heuristic splits on
-                        letter and digit boundaries; where that does not fit, a regex rule whose capture
-                        groups define the levels can be added from the settings screen.
-                    </p>
-                </div>
-                <div class="feature">
-                    <h3>Absence notifications</h3>
-                    <p>
-                        A scheduled job emails absence notifications on an interval you set, so the
-                        first sign of an unexplained absence is not someone noticing an empty desk.
-                    </p>
-                </div>
-                <div class="feature">
-                    <h3>Role and per-group permissions</h3>
-                    <p>
-                        Users, managers and administrators, plus per-group grants for the cases where a
-                        role is too coarse — a manager sees exactly the groups they are entitled to.
-                    </p>
-                </div>
-                <div class="feature">
-                    <h3>Classification banners</h3>
-                    <p>
-                        Configurable banner text and colour across the top and bottom of every page,
-                        for deployments that require a visible handling marking.
+                    <ul class="tag-list">
+                        <li>Work from home</li>
+                        <li>TDY</li>
+                        <li>Out of office</li>
+                        <li>Scheduled leave</li>
+                        <li>Late arrival</li>
+                        <li>Early leave</li>
+                    </ul>
+                    <p class="muted small">
+                        Managers can also record unscheduled leave and excused or unexcused absences when
+                        they follow up on an alert.
                     </p>
                 </div>
             </div>
         </div>
     </section>
 
-    <section class="section" aria-labelledby="auth-heading">
+    <section class="section" aria-labelledby="roles-heading">
         <div class="wrap">
-            <h2 id="auth-heading">Authentication</h2>
+            <h2 id="roles-heading">Built for the whole chain of accountability</h2>
+            <div class="card-grid">
+                <article class="card">
+                    <p class="card-kicker">Individuals</p>
+                    <h3>Their own day, at a glance</h3>
+                    <ul class="ticks">
+                        <li>Today&rsquo;s status, the last 30 days and what&rsquo;s coming up</li>
+                        <li>Set a usual login time, or let their average arrival stand in</li>
+                        <li>Name additional managers who should hear if they&rsquo;re not in</li>
+                        <li>Leave notes for the people who look them up</li>
+                    </ul>
+                </article>
+                <article class="card">
+                    <p class="card-kicker">Managers</p>
+                    <h3>Who&rsquo;s accounted for on the team</h3>
+                    <ul class="ticks">
+                        <li>Accounted-for rate and who isn&rsquo;t in yet, on the home page</li>
+                        <li>Absence alerts waiting for a response, by email and in-app</li>
+                        <li>Direct reports from the directory in one table</li>
+                        <li>Group rollups and day-by-day, person-by-person reports over a date range</li>
+                    </ul>
+                </article>
+                <article class="card">
+                    <p class="card-kicker">Leadership &amp; administrators</p>
+                    <h3>The organization in numbers</h3>
+                    <ul class="ticks">
+                        <li>Accounted-for rate, status mix and activity through the day</li>
+                        <li>Breakdowns by organization, employee type, location and branch</li>
+                        <li>Workstation agent coverage, so a silent agent isn&rsquo;t mistaken for an absence</li>
+                        <li>Organization calendar and holidays, and a date picker to see how any past day stood</li>
+                    </ul>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="alerts-heading">
+        <div class="wrap">
+            <h2 id="alerts-heading">Absence alerts that hold people to the right time</h2>
             <p class="lede">
-                ReadyRoom prefers an X.509 client certificate and resolves the certificate's full
-                subject DN against the directory. Browsers presenting no certificate fall back to a
-                form login validated by the LDAP authentication provider.
+                If someone hasn&rsquo;t checked in by their expected time plus a configurable grace period,
+                their managers are notified by email and under the bell in the app, and can record what
+                happened. The expected time is worked out the same way everywhere it appears, so what a
+                person is told matches what they are held to.
             </p>
+            <ol class="rule-steps">
+                <li>
+                    <span class="rule-rank">1st</span>
+                    <div><strong>A late arrival</strong> they entered for today</div>
+                </li>
+                <li>
+                    <span class="rule-rank">2nd</span>
+                    <div><strong>Their preferred login time</strong> from their profile</div>
+                </li>
+                <li>
+                    <span class="rule-rank">3rd</span>
+                    <div><strong>Their average arrival</strong> from past check-ins</div>
+                </li>
+            </ol>
             <div class="callout">
                 <p>
-                    <strong>One deliberate exception.</strong> Check-out runs at logoff, after the user
-                    profile — and with it their certificate store — is already gone, so it cannot
-                    authenticate. Logon caches the server-issued session identifier and logoff echoes it
-                    back, which lets the server recover the identity without a certificate.
+                    <strong>No alerts for days nobody is expected.</strong> Weekends and organization
+                    holidays are skipped, as are days covered by an excused status, and nobody is alerted
+                    about twice in one day.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="features-heading">
+        <div class="wrap">
+            <h2 id="features-heading">Also in the box</h2>
+            <div class="feature-grid feature-grid--pairs">
+                <div class="feature">
+                    <h3>Idle sessions close themselves</h3>
+                    <p>
+                        A scheduled job checks out sessions left open past a configurable idle threshold, so a
+                        forgotten sign-out does not become a 14-hour day.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>Org chart from the directory</h3>
+                    <p>
+                        Hierarchy is derived from a flat LDAP attribute &mdash; <code>RYS34B</code> becomes
+                        RYS &rarr; 34 &rarr; B by default &mdash; with regex rules in Settings for codes that
+                        don&rsquo;t fit.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>Groups and search</h3>
+                    <p>
+                        Browse the groups you&rsquo;re allowed to see, star favorites to filter down to them, and
+                        find anyone by name.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>Classification banners</h3>
+                    <p>
+                        Configurable banner text and colour across the top and bottom of every page, for
+                        deployments that require a visible handling marking.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="security-heading">
+        <div class="wrap">
+            <h2 id="security-heading">Security and privacy</h2>
+            <p class="lede">Designed for environments that take identity seriously.</p>
+            <div class="feature-grid">
+                <div class="feature">
+                    <h3>Certificate-first sign-in</h3>
+                    <p>
+                        Mutual TLS with X.509 client certificates, resolving the full subject DN against the
+                        directory. Browsers without a certificate fall back to an LDAP-validated form login.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>Optional Windows sign-in</h3>
+                    <p>
+                        On domain-joined PCs the agent can check in with the user&rsquo;s Kerberos ticket instead
+                        of, or ahead of, a certificate. Off by default; certificates keep working unchanged.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>Who can see whom</h3>
+                    <p>
+                        User, manager and administrator roles, plus per-group grants where a role is too coarse,
+                        so a manager sees exactly the groups they are entitled to.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>Counts, not names, in metrics</h3>
+                    <p>
+                        Organization-wide figures are aggregates and never list individuals.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>Your data stays yours</h3>
+                    <p>
+                        Self-hosted. The directory stays the source of truth, and attendance records live in
+                        your own PostgreSQL database.
+                    </p>
+                </div>
+            </div>
+            <div class="callout">
+                <p>
+                    <strong>One deliberate exception.</strong> Sign-out runs after the user profile &mdash; and
+                    with it their certificate store &mdash; is already gone, so it cannot authenticate. Sign-in
+                    caches the server-issued session identifier and sign-out echoes it back, which lets the
+                    server recover the identity without a certificate.
                 </p>
             </div>
         </div>
@@ -165,7 +310,7 @@
 
     <section class="section" aria-labelledby="tech-heading">
         <div class="wrap">
-            <h2 id="tech-heading">Technical summary</h2>
+            <h2 id="tech-heading">What you need to run it</h2>
             <div class="table-scroll">
                 <table>
                     <caption class="visually-hidden">ReadyRoom technical summary</caption>
@@ -178,34 +323,46 @@
                     <tbody>
                     <tr>
                         <th scope="row">Server</th>
-                        <td>Spring Boot 4 on Java 21, Thymeleaf UI</td>
-                    </tr>
-                    <tr>
-                        <th scope="row">Data</th>
-                        <td>PostgreSQL for records, roles, permissions and history</td>
+                        <td>Spring Boot 4 on Java 21 with a Thymeleaf web UI, shipped as a container on Red Hat UBI 9</td>
                     </tr>
                     <tr>
                         <th scope="row">Directory</th>
-                        <td>LDAP / LDAPS — the source of truth for people and org structure</td>
+                        <td>LDAP / LDAPS or Active Directory, with pooled connections and paged searches for large directories</td>
                     </tr>
                     <tr>
-                        <th scope="row">Client</th>
-                        <td>PowerShell script registered as four Windows scheduled tasks</td>
+                        <th scope="row">Database</th>
+                        <td>PostgreSQL for check-ins, statuses, roles, permissions, notes and calendar events</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Workstations</th>
+                        <td>Windows with PowerShell; one install script registers the agent&rsquo;s four scheduled tasks</td>
                     </tr>
                     <tr>
                         <th scope="row">Authentication</th>
-                        <td>Mutual TLS with X.509 client certificates, LDAP form login fallback</td>
+                        <td>A certificate authority for client certificates, and optionally an AD service account and keytab for Windows sign-in</td>
                     </tr>
                     <tr>
-                        <th scope="row">Roles</th>
-                        <td>User, manager, administrator, plus per-group permission grants</td>
+                        <th scope="row">Email</th>
+                        <td>An SMTP relay for absence notifications</td>
                     </tr>
                     <tr>
-                        <th scope="row">Deployment</th>
-                        <td>Containerized, self-hosted, configured by environment or external config</td>
+                        <th scope="row">Scale</th>
+                        <td>Query performance measured against a seeded 5,000-user, 90-day dataset of about 1.2 million check-in records</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Configuration</th>
+                        <td>Environment variables or external config &mdash; no edits to a shipped file</td>
                     </tr>
                     </tbody>
                 </table>
+            </div>
+
+            <div class="callout">
+                <p>
+                    Want to see ReadyRoom against your directory?
+                    <a href="/contact.html?product=readyroom">Get in touch</a> or email
+                    <a href="mailto:info@ens-solutions.com">info@ens-solutions.com</a>.
+                </p>
             </div>
         </div>
     </section>
@@ -215,6 +372,7 @@
     <div class="wrap">
         <span>&copy; ENS Solutions, LLC</span>
         <nav class="footer-links" aria-label="Elsewhere">
+            <a href="/contact.html">Contact</a>
             <a href="https://ens-solutions.com/">ens-solutions.com</a>
             <a href="https://www.linkedin.com/company/ens-solutions-llc/">
                 <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9h4v12H3V9Zm7 0h3.8v1.65h.05A4.17 4.17 0 0 1 17.6 8.7c4 0 4.4 2.5 4.4 5.9V21h-4v-5.6c0-1.34-.03-3.06-1.9-3.06-1.9 0-2.2 1.46-2.2 2.96V21h-4V9Z"/></svg>

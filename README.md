@@ -9,9 +9,9 @@ for each product, served as static HTML from an nginx container.
 | CertAlert | `/products/certalert.html` | Coming soon |
 | MFA Portal | `/products/mfa-portal.html` | Coming soon |
 
-No build step, no JavaScript, no CDN. The pages are plain HTML and one
-stylesheet; the only per-deployment values are the demo URLs, and those are
-resolved when the container starts.
+No build step, no CDN, no backend. The pages are plain HTML and one
+stylesheet, plus one small script on the contact page; the only per-deployment
+values are the demo URLs, and those are resolved when the container starts.
 
 ---
 
@@ -73,7 +73,7 @@ survives the render:
 
 ```html
 <!--DEMO:READYROOM-->
-  <a class="btn btn--primary" href="${READYROOM_DEMO_URL}">Open the demo</a>
+  <a class="btn btn--primary" href="${READYROOM_DEMO_URL}" target="_blank" rel="noopener">Open the demo</a>
 <!--/DEMO:READYROOM-->
 <!--NODEMO:READYROOM-->
   <span class="btn btn--disabled" aria-disabled="true">Demo unavailable</span>
@@ -107,10 +107,12 @@ Needs `envsubst` (GNU gettext) on `PATH`; the nginx image already ships it.
 
 ```
 site/                       Templates — the site itself
-  index.html                Homepage: overview + the three product cards
+  index.html                Homepage: company intro + the three product cards
+  contact.html              Contact form (opens the visitor's email app)
   404.html
   products/                 One page per product
   assets/css/site.css       The whole stylesheet
+  assets/js/contact.js      Composes the contact form's email; the site's only script
   assets/favicon.svg
 nginx/default.conf          Server config: port 8080, gzip, /healthz, 404
 docker/docker-entrypoint.d/
@@ -125,13 +127,30 @@ docker-compose.yml
 ## Editing content
 
 Everything is hand-written HTML — edit the file for the page you want to
-change. The header, footer and nav are duplicated across the four pages rather
-than templated; with four pages that is cheaper than introducing a build step,
-but it does mean a nav change is a four-file change.
+change. The header, footer and nav are duplicated across the six pages rather
+than templated; with six pages that is cheaper than introducing a build step,
+but it does mean a nav change is a six-file change.
 
 Colours, spacing and type are CSS custom properties declared once at the top of
 `site/assets/css/site.css`, with a dark-mode block right below. Re-skinning to
 match brand colours means editing those tokens and nothing else.
+
+### Contact form
+
+`/contact.html` has no server side. On submit, `assets/js/contact.js` checks the
+required fields and builds a `mailto:` link to `info@ens-solutions.com` with a
+subject and a body laid out from the fields, which opens a draft in the
+visitor's own email app — the message is sent from there, and nothing is stored
+or sent by this site. Without JavaScript the form falls back to the browser's
+native `mailto:` form submission.
+
+- The recipient is the form's `action` and `data-recipient` attributes.
+- Product pages link to `/contact.html?product=readyroom` (or `certalert`,
+  `mfa-portal`) to pre-select the topic; the mapping is at the top of the script.
+- The message is capped at 1,500 characters because some mail clients truncate
+  long `mailto:` links.
+- Visitors with no email app configured get nothing to happen, so the page
+  also lists the address and phone number directly.
 
 ### External references
 
