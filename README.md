@@ -8,6 +8,7 @@ for each product, served as static HTML from an nginx container.
 | ReadyRoom | `/products/readyroom.html` | Available |
 | CertAlert | `/products/certalert.html` | Coming soon |
 | MFA Portal | `/products/mfa-portal.html` | Coming soon |
+| Directory Services Portal | `/products/directory-portal.html` | Coming soon |
 
 No build step, no CDN, no backend. The pages are plain HTML and one
 stylesheet, plus one small script on the contact page; the only per-deployment
@@ -47,6 +48,7 @@ Each product page has a demo button driven by one environment variable:
 | `READYROOM_DEMO_URL` | ReadyRoom |
 | `CERTALERT_DEMO_URL` | CertAlert |
 | `MFA_PORTAL_DEMO_URL` | MFA Portal |
+| `DIRECTORY_PORTAL_DEMO_URL` | Directory Services Portal |
 
 Set one and that product's button becomes a live link to it. **Leave it empty
 and the page renders a "coming soon" state instead** — there is no way to get a
@@ -80,11 +82,11 @@ survives the render:
 <!--/NODEMO:READYROOM-->
 ```
 
-Substitution is restricted to the three `*_DEMO_URL` names, so no other `$NAME`
+Substitution is restricted to the four `*_DEMO_URL` names, so no other `$NAME`
 in the markup or CSS is touched. Non-HTML files are copied through byte for
 byte.
 
-To add a fourth product, add its `NAME_DEMO_URL` to the `export` list, the
+To add another product, add its `NAME_DEMO_URL` to the `export` list, the
 `enabled` list and the `vars` list in the render script, then use
 `<!--DEMO:NAME-->` markers in its page.
 
@@ -107,7 +109,7 @@ Needs `envsubst` (GNU gettext) on `PATH`; the nginx image already ships it.
 
 ```
 site/                       Templates — the site itself
-  index.html                Homepage: company intro + the three product cards
+  index.html                Homepage: company intro + the four product cards
   contact.html              Contact form (opens the visitor's email app)
   404.html
   products/                 One page per product
@@ -127,9 +129,9 @@ docker-compose.yml
 ## Editing content
 
 Everything is hand-written HTML — edit the file for the page you want to
-change. The header, footer and nav are duplicated across the six pages rather
-than templated; with six pages that is cheaper than introducing a build step,
-but it does mean a nav change is a six-file change.
+change. The header, footer and nav are duplicated across the seven pages rather
+than templated; with seven pages that is cheaper than introducing a build step,
+but it does mean a nav change is a seven-file change.
 
 Colours, spacing and type are CSS custom properties declared once at the top of
 `site/assets/css/site.css`, with a dark-mode block right below. Re-skinning to
@@ -146,7 +148,7 @@ native `mailto:` form submission.
 
 - The recipient is the form's `action` and `data-recipient` attributes.
 - Product pages link to `/contact.html?product=readyroom` (or `certalert`,
-  `mfa-portal`) to pre-select the topic; the mapping is at the top of the script.
+  `mfa-portal`, `directory-portal`) to pre-select the topic; the mapping is at the top of the script.
 - The message is capped at 1,500 characters because some mail clients truncate
   long `mailto:` links.
 - Visitors with no email app configured get nothing to happen, so the page
@@ -160,7 +162,7 @@ and to the company
 plain links; nothing is embedded and no third-party script is loaded, so the
 site still makes no outbound requests of its own.
 
-### Where the ReadyRoom copy came from
+### Where the product copy came from
 
 The ReadyRoom page is written from the `README.md` of the
 [`in-n-out-work`](https://github.com/winllc/in-n-out-work) repository, which is
@@ -169,5 +171,22 @@ workstation logon, lock, unlock and logoff events. Its technical summary
 reflects that codebase: Spring Boot 4 on Java 21, PostgreSQL, LDAP, a PowerShell
 client, and mutual TLS with an LDAP form-login fallback.
 
-The CertAlert and MFA Portal pages describe products that do not exist yet, and
-their feature copy is provisional — worth a read before this goes public.
+The CertAlert page is written from the `README.md` of
+[`cert-alert`](https://github.com/winllc/cert-alert): an index over the
+certificates an LDAP directory publishes, built against the IC IdAM Full Service
+Directory schema — Spring Boot 4 on Java 21, PostgreSQL with Flyway, a Tabler UI,
+certificate sign-in by fingerprint, changelog following, revocation and endpoint
+checks, and email round-ups to server points of contact.
+
+The Directory Services Portal page is written from the `README.md` of
+[`directory-services-portal`](https://github.com/winllc/directory-services-portal):
+a web front end for LDAP directories with custom schemas, with a Spring Boot 4 /
+Java 21 API on the UnboundID LDAP SDK, a React client served by nginx, and
+password or X.509 sign-in.
+
+The MFA Portal is expected to come from
+[`rsa-operations-portal`](https://github.com/winllc/rsa-operations-portal),
+which has no commits yet, so its page still describes a product that does not
+exist and its feature copy is provisional — worth a read before this goes
+public. CertAlert and Directory Services Portal are still in development, which
+is why both remain marked "Coming soon".

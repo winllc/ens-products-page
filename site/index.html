@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Products — ENS Solutions, LLC</title>
     <meta name="description"
-          content="Identity and accountability software from ENS Solutions, LLC — a service-disabled veteran-owned IT firm serving the DoD, the Intelligence Community and commercial customers. ReadyRoom, CertAlert and MFA Portal.">
+          content="Identity and accountability software from ENS Solutions, LLC — a service-disabled veteran-owned IT firm serving the DoD, the Intelligence Community and commercial customers. ReadyRoom, CertAlert, MFA Portal and Directory Services Portal.">
     <link rel="stylesheet" href="/assets/css/site.css">
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 </head>
@@ -22,6 +22,7 @@
             <a href="/products/readyroom.html">ReadyRoom</a>
             <a href="/products/certalert.html">CertAlert</a>
             <a href="/products/mfa-portal.html">MFA Portal</a>
+            <a href="/products/directory-portal.html">Directory Portal</a>
             <a href="/contact.html">Contact</a>
             <a href="https://ens-solutions.com/">ens-solutions.com</a>
         </nav>
@@ -38,8 +39,8 @@
                 supporting the Department of Defense, the Intelligence Community and commercial
                 customers. Identity, credential and access management is at the core of that work,
                 and our products package it for organizations that already run a directory and a
-                certificate authority — who is present, which credentials are about to lapse, and
-                how people prove who they are.
+                certificate authority — who is present, which credentials are about to lapse, how people
+                prove who they are, and how the directory itself is kept up to date.
             </p>
             <div class="btn-row">
                 <a class="btn btn--primary" href="#products-heading">Explore the products</a>
@@ -71,7 +72,7 @@
         <div class="wrap">
             <h2 id="products-heading">Products</h2>
 
-            <div class="card-grid">
+            <div class="card-grid card-grid--pairs">
                 <article class="card card--link">
                     <h3>
                         <a href="/products/readyroom.html">ReadyRoom</a>
@@ -91,9 +92,9 @@
                         <span class="badge badge--pending">Coming soon</span>
                     </h3>
                     <p>
-                        Certificate expiration visibility for your whole directory. Ingests every user and
-                        server object, tracks the points of contact for each, and reports through a
-                        dashboard and metrics.
+                        Certificate expiration visibility for your whole directory. Indexes every certificate
+                        people and servers publish, alerts each server&rsquo;s points of contact before
+                        one lapses, and checks revocation and what servers are actually serving.
                     </p>
                     <span class="card-cta">View product &rarr;</span>
                 </article>
@@ -107,6 +108,19 @@
                         A self-service front end for RSA Authentication Manager. Users find their Trusted
                         Agent and set or update their SecurID PIN, and program staff manage token shipments
                         to multiple sites.
+                    </p>
+                    <span class="card-cta">View product &rarr;</span>
+                </article>
+
+                <article class="card card--link">
+                    <h3>
+                        <a href="/products/directory-portal.html">Directory Services Portal</a>
+                        <span class="badge badge--pending">Coming soon</span>
+                    </h3>
+                    <p>
+                        A web front end for LDAP directories with custom schemas. Build forms for any object
+                        class, publish scoped read/write or white-pages directories, grant access by user or
+                        group, and let people update their own details.
                     </p>
                     <span class="card-cta">View product &rarr;</span>
                 </article>

@@ -23,7 +23,8 @@
     var topics = {
         readyroom: "ReadyRoom",
         certalert: "CertAlert",
-        "mfa-portal": "MFA Portal"
+        "mfa-portal": "MFA Portal",
+        "directory-portal": "Directory Services Portal"
     };
     var product = new URLSearchParams(window.location.search).get("product");
     if (product && Object.prototype.hasOwnProperty.call(topics, product)) {

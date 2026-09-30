@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>CertAlert — ENS Solutions, LLC</title>
     <meta name="description"
-          content="CertAlert ingests every user and server object from your directory to give clear visibility into certificate expirations, manage points of contact, and report through a dashboard and metrics. Coming soon from ENS Solutions.">
+          content="CertAlert indexes every certificate your LDAP directory publishes, alerts the points of contact before one expires, checks revocation and what servers actually serve, and reports on the whole directory. Coming soon from ENS Solutions.">
     <link rel="stylesheet" href="/assets/css/site.css">
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 </head>
@@ -22,6 +22,7 @@
             <a href="/products/readyroom.html">ReadyRoom</a>
             <a href="/products/certalert.html" aria-current="page">CertAlert</a>
             <a href="/products/mfa-portal.html">MFA Portal</a>
+            <a href="/products/directory-portal.html">Directory Portal</a>
             <a href="/contact.html">Contact</a>
             <a href="https://ens-solutions.com/">ens-solutions.com</a>
         </nav>
@@ -38,22 +39,55 @@
             </div>
             <h1>Every certificate in your directory, and who answers for it.</h1>
             <p class="lede">
-                CertAlert ingests all of the user and server object records from your directory and puts
-                their certificate expirations in one place. Each record carries the points of contact
-                responsible for it, and a dashboard and metrics show where the organization stands &mdash;
-                so an expiring certificate is a planned renewal, not a surprise.
+                CertAlert reads the people and servers out of your LDAP directory, parses every certificate
+                they publish, and puts the results in searchable tables. It knows the points of contact for
+                each server, alerts them before a certificate expires, and reports on the whole
+                directory &mdash; so an expiring certificate is a planned renewal, not a surprise.
             </p>
 
             <div class="btn-row">
                 <!--DEMO:CERTALERT-->
                 <a class="btn btn--primary" href="${CERTALERT_DEMO_URL}" target="_blank" rel="noopener">Open the demo<span class="visually-hidden"> (opens in a new tab)</span></a>
+                <a class="btn btn--ghost" href="#how-heading">See how it works</a>
                 <span class="btn-note">Opens the CertAlert demo environment in a new tab.</span>
                 <!--/DEMO:CERTALERT-->
                 <!--NODEMO:CERTALERT-->
                 <span class="btn btn--disabled" aria-disabled="true">Demo coming soon</span>
-                <a class="btn btn--ghost" href="/products/readyroom.html">See ReadyRoom instead</a>
+                <a class="btn btn--ghost" href="#how-heading">See how it works</a>
                 <!--/NODEMO:CERTALERT-->
             </div>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="how-heading">
+        <div class="wrap">
+            <h2 id="how-heading">How it works</h2>
+            <p class="lede">The directory is the source of truth. CertAlert is the index over it.</p>
+            <ol class="flow-steps">
+                <li>
+                    <strong>Scheduled sweeps read the directory.</strong> Nightly jobs read every person and
+                    every server with paged searches, so large directories are read completely rather than
+                    stopping at the server&rsquo;s size limit. Where the directory publishes a changelog,
+                    CertAlert follows it too and picks up a replaced certificate within seconds instead of
+                    overnight.
+                </li>
+                <li>
+                    <strong>Every certificate is parsed once and cached.</strong> Subject, issuer, serial,
+                    validity, key and signature algorithms, subject alternative names and a SHA-256
+                    fingerprint are stored, so no question needs the directory again. A re-sync of an
+                    unchanged directory writes nothing.
+                </li>
+                <li>
+                    <strong>Status is kept current.</strong> Every hour, each certificate is checked again as
+                    valid, expiring soon, critical or expired, and each person and server is rolled up to
+                    the certificates it still depends on.
+                </li>
+                <li>
+                    <strong>The right people hear about it.</strong> Points of contact get an in-app
+                    notification when a certificate changes state, and a daily email round-up of what is
+                    coming due.
+                </li>
+            </ol>
         </div>
     </section>
 
@@ -62,94 +96,182 @@
             <h2 id="capabilities-heading">What it does</h2>
             <div class="card-grid card-grid--pairs">
                 <article class="card">
-                    <p class="card-kicker">Directory ingest</p>
-                    <h3>All user and server objects</h3>
+                    <p class="card-kicker">Search tables</p>
+                    <h3>People and servers, filtered any way</h3>
                     <p>
-                        CertAlert brings in every user and server object record from the directory, so the
-                        view is complete from the start &mdash; not limited to the certificates someone
-                        remembered to add to a spreadsheet.
-                    </p>
-                </article>
-                <article class="card">
-                    <p class="card-kicker">Expirations</p>
-                    <h3>Better visibility into what&rsquo;s expiring</h3>
-                    <p>
-                        Certificate expirations across people and servers are visible in one place, so the
-                        ones coming due can be seen and worked well before they lapse.
+                        Separate tables for users and servers, sorted and filtered by certificate status,
+                        expiry window, point of contact or project, or narrowed to &ldquo;only mine.&rdquo; Expand a row for its
+                        certificates, contacts and recent history.
                     </p>
                 </article>
                 <article class="card">
                     <p class="card-kicker">Points of contact</p>
-                    <h3>A named owner for every record</h3>
+                    <h3>A named owner for every server</h3>
                     <p>
-                        Manage the points of contact responsible for each record, so when a certificate
-                        needs attention it is clear who to go to &mdash; especially for servers, where the
-                        directory alone rarely says.
+                        The directory&rsquo;s own <span class="mono">serverPOC</span> is read and matched to
+                        people. Contacts can also be added in CertAlert, and a nightly sync never overwrites
+                        them. From any person you can list every server they are responsible for.
                     </p>
                 </article>
                 <article class="card">
-                    <p class="card-kicker">Dashboard &amp; metrics</p>
+                    <p class="card-kicker">Notifications</p>
+                    <h3>One alert, to everyone who needs it</h3>
+                    <p>
+                        Status-change notices appear under the bell in the app, and a daily expiry round-up
+                        is emailed to each contact, one message per person rather than one per certificate.
+                        A dry run shows what would be sent, and administrators can use their own email
+                        templates.
+                    </p>
+                </article>
+                <article class="card">
+                    <p class="card-kicker">Metrics</p>
                     <h3>Where the organization stands</h3>
                     <p>
-                        A dashboard and metrics summarize certificate health across the directory, for the
-                        people who need the overall picture rather than a single record.
+                        What is due in 7, 30 and 90 days, key sizes and signature algorithms in use, issuance
+                        trends and issuing authorities, revocation counts, and how many people have been told.
+                    </p>
+                </article>
+                <article class="card">
+                    <p class="card-kicker">Projects</p>
+                    <h3>Group what gets renewed together</h3>
+                    <p>
+                        Group servers and people into a project, so &ldquo;forty certificates expire this
+                        month&rdquo; becomes &ldquo;the payroll migration expires this month.&rdquo; Both tables
+                        filter by project.
+                    </p>
+                </article>
+                <article class="card">
+                    <p class="card-kicker">Audit trail</p>
+                    <h3>What happened, and who did it</h3>
+                    <p>
+                        Each entry has a history: when it was discovered, which certificates were published
+                        or withdrawn, status changes, alerts sent or failed, and edits to its contacts.
                     </p>
                 </article>
             </div>
         </div>
     </section>
 
-    <section class="section" aria-labelledby="fit-heading">
+    <section class="section" aria-labelledby="beyond-heading">
         <div class="wrap">
-            <h2 id="fit-heading">How it fits</h2>
-            <ol class="flow-steps">
-                <li>
-                    <strong>The directory stays the source of truth.</strong> User and server objects are
-                    ingested from the directory you already run, rather than entered by hand into a
-                    separate inventory.
-                </li>
-                <li>
-                    <strong>Expirations come into view.</strong> Certificates across every ingested record
-                    are shown together, so what is coming due is visible at a glance.
-                </li>
-                <li>
-                    <strong>Owners are attached.</strong> Points of contact are managed alongside each
-                    record, closing the gap between knowing a certificate is expiring and knowing who will
-                    renew it.
-                </li>
-                <li>
-                    <strong>Leadership sees the trend.</strong> The dashboard and metrics roll it all up
-                    into an organization-wide view.
-                </li>
-            </ol>
+            <h2 id="beyond-heading">Beyond the expiry date</h2>
+            <div class="feature-grid">
+                <div class="feature">
+                    <h3>Revocation checks</h3>
+                    <p>
+                        A scheduled job asks the issuing authorities which certificates they have revoked.
+                        A certificate reported stolen in March is flagged, even though its expiry date
+                        is still years away.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>What the server is actually serving</h3>
+                    <p>
+                        A server&rsquo;s endpoint check connects over TLS and compares the certificate it
+                        presents with the newest one in the directory. This catches a renewal that was issued
+                        but never installed.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>Risky names</h3>
+                    <p>
+                        Wildcards, broad wildcards such as <span class="mono">*.gov</span>, certificates with
+                        many names or domains, and bare hostnames are flagged so they can be reviewed.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>Directory clean-up</h3>
+                    <p>
+                        An optional job removes certificates from the directory once they have been expired
+                        or revoked for a set time, so other systems that read the directory stop finding them.
+                    </p>
+                </div>
+            </div>
         </div>
     </section>
 
-    <section class="section" aria-labelledby="why-heading">
+    <section class="section" aria-labelledby="security-heading">
         <div class="wrap">
-            <h2 id="why-heading">Why it helps</h2>
+            <h2 id="security-heading">Security</h2>
             <div class="feature-grid">
                 <div class="feature">
-                    <h3>Fewer surprise expirations</h3>
+                    <h3>Certificate sign-in, matched exactly</h3>
                     <p>
-                        An expired server certificate can take a service down, and an expired user
-                        certificate can lock someone out. Seeing them coming turns both into routine work.
+                        A client certificate is matched by its SHA-256 fingerprint against the certificates
+                        the directory publishes for that person, not by pattern-matching a subject name.
+                        Removing the certificate from the directory removes the access. Directory password
+                        sign-in is the fallback.
                     </p>
                 </div>
                 <div class="feature">
-                    <h3>No more hunting for an owner</h3>
+                    <h3>Built for the IC directory schema</h3>
                     <p>
-                        With points of contact kept on each record, the time between &ldquo;this is
-                        expiring&rdquo; and &ldquo;someone is renewing it&rdquo; gets shorter.
+                        Built for the IC IdAM Full Service Directory object classes
+                        (<span class="mono">icOrgPerson</span>, <span class="mono">icOrgServer</span>), and
+                        every attribute name can be configured for other schemas.
                     </p>
                 </div>
                 <div class="feature">
-                    <h3>Complete by construction</h3>
+                    <h3>Classification banners</h3>
                     <p>
-                        Because the inventory is built from the directory itself, coverage does not depend on
-                        anyone keeping a list up to date.
+                        Optional fixed banners at the top and bottom of every page, for deployments that
+                        must show the classification of what is on screen.
                     </p>
                 </div>
+                <div class="feature">
+                    <h3>No outside dependencies</h3>
+                    <p>
+                        The whole interface is served from the application itself, with no CDN, so it
+                        works on networks that have no internet route.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="tech-heading">
+        <div class="wrap">
+            <h2 id="tech-heading">What you need to run it</h2>
+            <div class="table-scroll">
+                <table>
+                    <caption class="visually-hidden">CertAlert technical summary</caption>
+                    <thead>
+                    <tr>
+                        <th scope="col">Component</th>
+                        <th scope="col">Detail</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <th scope="row">Server</th>
+                        <td>Spring Boot 4 on Java 21 with a Thymeleaf and Tabler web UI, shipped as a container on Red Hat UBI 9 that runs as non-root and under OpenShift&rsquo;s default policy</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Directory</th>
+                        <td>LDAP / LDAPS with a read-only service account; optionally a changelog (<span class="mono">cn=changelog</span>) for near-real-time updates</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Database</th>
+                        <td>PostgreSQL, with the schema managed by Flyway migrations at startup</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Authentication</th>
+                        <td>X.509 client certificates already published in the directory, with directory username and password as the fallback</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Email</th>
+                        <td>An SMTP relay for the daily expiry round-up</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Scale</th>
+                        <td>Designed for directories of 100,000+ entries: paged reads, batched writes and memory use that stays flat as the directory grows</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Configuration</th>
+                        <td>Environment variables or external config; liveness and readiness probes for orchestrators</td>
+                    </tr>
+                    </tbody>
+                </table>
             </div>
 
             <div class="callout">

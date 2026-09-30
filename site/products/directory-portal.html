@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Directory Services Portal — ENS Solutions, LLC</title>
+    <meta name="description"
+          content="Directory Services Portal is a web front end for LDAP directories with custom schemas: administrators build forms for any object class, publish them as scoped directories, and grant read and write access to users and groups. Coming soon from ENS Solutions.">
+    <link rel="stylesheet" href="/assets/css/site.css">
+    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+    <div class="wrap">
+        <a class="brand" href="/">
+            <span class="brand-mark" aria-hidden="true">ENS</span>
+            <span>ENS Solutions</span>
+        </a>
+        <nav class="site-nav" aria-label="Site">
+            <a href="/products/readyroom.html">ReadyRoom</a>
+            <a href="/products/certalert.html">CertAlert</a>
+            <a href="/products/mfa-portal.html">MFA Portal</a>
+            <a href="/products/directory-portal.html" aria-current="page">Directory Portal</a>
+            <a href="/contact.html">Contact</a>
+            <a href="https://ens-solutions.com/">ens-solutions.com</a>
+        </nav>
+    </div>
+</header>
+
+<main id="main">
+    <section class="hero">
+        <div class="wrap">
+            <a class="backlink" href="/">&larr; All products</a>
+            <div class="title-row">
+                <p class="eyebrow eyebrow--inline">Directory Services Portal &middot; Web front end for LDAP</p>
+                <span class="badge badge--pending">Coming soon</span>
+            </div>
+            <h1>Your directory&rsquo;s own schema, as forms people can use.</h1>
+            <p class="lede">
+                Directory Services Portal puts a web front end on LDAP directories, including those with
+                custom, non-standard schemas. Administrators build forms for any object class, publish them
+                as directories scoped to one part of the tree, and decide who can read or edit each one.
+                Every user gets a profile page showing where they appear and what they can update
+                themselves &mdash; without anyone needing an LDAP browser.
+            </p>
+
+            <div class="btn-row">
+                <!--DEMO:DIRECTORY_PORTAL-->
+                <a class="btn btn--primary" href="${DIRECTORY_PORTAL_DEMO_URL}" target="_blank" rel="noopener">Open the demo<span class="visually-hidden"> (opens in a new tab)</span></a>
+                <a class="btn btn--ghost" href="#how-heading">See how it works</a>
+                <span class="btn-note">Opens the Directory Services Portal demo environment in a new tab.</span>
+                <!--/DEMO:DIRECTORY_PORTAL-->
+                <!--NODEMO:DIRECTORY_PORTAL-->
+                <span class="btn btn--disabled" aria-disabled="true">Demo coming soon</span>
+                <a class="btn btn--ghost" href="#how-heading">See how it works</a>
+                <!--/NODEMO:DIRECTORY_PORTAL-->
+            </div>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="how-heading">
+        <div class="wrap">
+            <h2 id="how-heading">How it works</h2>
+            <p class="lede">Administrators set it up once, and people use it from any browser.</p>
+            <ol class="flow-steps">
+                <li>
+                    <strong>Load the schema.</strong> Read it straight from the directory, including
+                    non-standard object classes and attributes, or import OpenLDAP schema files and
+                    <span class="mono">cn=config</span> LDIF. Add display names and descriptions, or define
+                    elements the server does not publish.
+                </li>
+                <li>
+                    <strong>Build a form.</strong> Pick the object classes and the editor suggests their
+                    attributes, then warns about schema problems before they reach the directory. Fields can
+                    be text, text areas or drop-downs, including drop-downs filled from a directory search.
+                    For example, choose a manager by name and store their DN.
+                </li>
+                <li>
+                    <strong>Publish it as a directory.</strong> Link the form to a base DN, a scope and an
+                    optional filter. The portal only reads or writes entries inside that part of the tree.
+                    Choose read/write, or a read-only &ldquo;white pages&rdquo; that nobody can write through,
+                    administrators included.
+                </li>
+                <li>
+                    <strong>Grant access.</strong> Give users or directory groups view, or view-and-edit, access to
+                    each directory. A matrix shows every grant at a glance.
+                </li>
+            </ol>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="users-heading">
+        <div class="wrap">
+            <h2 id="users-heading">For the people in the directory</h2>
+            <div class="card-grid card-grid--pairs">
+                <article class="card">
+                    <p class="card-kicker">Directories</p>
+                    <h3>Search, browse and edit</h3>
+                    <p>
+                        Each directory is a searchable, sortable list. Entries can be viewed, created, edited
+                        and deleted according to the user&rsquo;s access. Only changed values are written,
+                        and changing the naming attribute renames the entry.
+                    </p>
+                </article>
+                <article class="card">
+                    <p class="card-kicker">My profile</p>
+                    <h3>Everywhere you appear, in one place</h3>
+                    <p>
+                        Each user sees every directory that lists them and can update the fields marked
+                        self-service, such as a phone number, without raising a ticket.
+                    </p>
+                </article>
+                <article class="card">
+                    <p class="card-kicker">Validation</p>
+                    <h3>Checked twice before it reaches the directory</h3>
+                    <p>
+                        Required fields, single-value rules, allowed options, formats (email, phone, URL,
+                        number, DN), patterns and length limits are checked in the browser and again on the
+                        server.
+                    </p>
+                </article>
+                <article class="card">
+                    <p class="card-kicker">Sign-in</p>
+                    <h3>Directory password or smart card</h3>
+                    <p>
+                        Users sign in with their own directory password, or with a client certificate such
+                        as a CAC or PIV card. Each certificate is mapped to exactly one directory user. The
+                        portal can also be set to accept certificates only.
+                    </p>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="security-heading">
+        <div class="wrap">
+            <h2 id="security-heading">Security</h2>
+            <div class="feature-grid">
+                <div class="feature">
+                    <h3>Certificates checked before mapping</h3>
+                    <p>
+                        Validity dates, client-authentication key usage and, optionally, the chain to your
+                        CAs and revocation (OCSP or CRL). Optionally, the certificate must also be the one
+                        published on the user&rsquo;s entry.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>Namespaces enforced on the server</h3>
+                    <p>
+                        Every DN is parsed and checked against the directory&rsquo;s base, scope and filter,
+                        and writes are limited to the form&rsquo;s writable fields. User input in filters is
+                        always escaped.
+                    </p>
+                </div>
+                <div class="feature">
+                    <h3>Hardened sessions</h3>
+                    <p>
+                        HttpOnly, SameSite=Strict session cookies, a new session ID at sign-in, CSRF
+                        protection on every change, login throttling, and password attributes that
+                        are never sent to the browser.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="tech-heading">
+        <div class="wrap">
+            <h2 id="tech-heading">What you need to run it</h2>
+            <div class="table-scroll">
+                <table>
+                    <caption class="visually-hidden">Directory Services Portal technical summary</caption>
+                    <thead>
+                    <tr>
+                        <th scope="col">Component</th>
+                        <th scope="col">Detail</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr>
+                        <th scope="row">API</th>
+                        <td>Spring Boot 4 on Java 21, using the UnboundID LDAP SDK over a pooled service-account connection</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Web client</th>
+                        <td>A static React build served by nginx, which forwards <span class="mono">/api</span> to the API so the browser sees a single origin</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Directory</th>
+                        <td>Any LDAP / LDAPS server, with StartTLS supported. The service account needs read access to the schema and the exposed parts of the tree, and write access wherever users edit</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Storage</th>
+                        <td>No database. Forms, directories, grants and custom schema are kept in a single JSON configuration file</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Authentication</th>
+                        <td>Password sign-in verified by an LDAP bind; optional mutual TLS, ended at the web proxy or at the API</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Deployment</th>
+                        <td>Separate containers for the web client and the API, plus a Docker Compose stack with a demo OpenLDAP server</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="callout">
+                <p>
+                    <strong>Directory Services Portal is still in development.</strong> To see it against your
+                    own schema, or to share requirements,
+                    <a href="/contact.html?product=directory-portal">get in touch</a>
+                    or follow along on <a href="https://www.linkedin.com/company/ens-solutions-llc/">LinkedIn</a>.
+                </p>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="site-footer">
+    <div class="wrap">
+        <span>&copy; ENS Solutions, LLC</span>
+        <nav class="footer-links" aria-label="Elsewhere">
+            <a href="/contact.html">Contact</a>
+            <a href="https://ens-solutions.com/">ens-solutions.com</a>
+            <a href="https://www.linkedin.com/company/ens-solutions-llc/">
+                <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9h4v12H3V9Zm7 0h3.8v1.65h.05A4.17 4.17 0 0 1 17.6 8.7c4 0 4.4 2.5 4.4 5.9V21h-4v-5.6c0-1.34-.03-3.06-1.9-3.06-1.9 0-2.2 1.46-2.2 2.96V21h-4V9Z"/></svg>
+                LinkedIn
+            </a>
+        </nav>
+    </div>
+</footer>
+</body>
+</html>

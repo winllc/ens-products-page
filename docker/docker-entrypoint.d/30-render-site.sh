@@ -28,7 +28,8 @@ DST="${SITE_OUTPUT_DIR:-/usr/share/nginx/html}"
 READYROOM_DEMO_URL="${READYROOM_DEMO_URL:-}"
 CERTALERT_DEMO_URL="${CERTALERT_DEMO_URL:-}"
 MFA_PORTAL_DEMO_URL="${MFA_PORTAL_DEMO_URL:-}"
-export READYROOM_DEMO_URL CERTALERT_DEMO_URL MFA_PORTAL_DEMO_URL
+DIRECTORY_PORTAL_DEMO_URL="${DIRECTORY_PORTAL_DEMO_URL:-}"
+export READYROOM_DEMO_URL CERTALERT_DEMO_URL MFA_PORTAL_DEMO_URL DIRECTORY_PORTAL_DEMO_URL
 
 # Space-delimited list of the products that have a demo to link to, padded at
 # both ends so a match can be tested as " NAME " and READYROOM cannot match
@@ -39,6 +40,7 @@ enabled=" "
 if [ -n "$READYROOM_DEMO_URL" ];  then enabled="${enabled}READYROOM ";  fi
 if [ -n "$CERTALERT_DEMO_URL" ];  then enabled="${enabled}CERTALERT ";  fi
 if [ -n "$MFA_PORTAL_DEMO_URL" ]; then enabled="${enabled}MFA_PORTAL "; fi
+if [ -n "$DIRECTORY_PORTAL_DEMO_URL" ]; then enabled="${enabled}DIRECTORY_PORTAL "; fi
 
 if [ "$enabled" = " " ]; then
     echo "30-render-site.sh: no demo URLs configured; all demo links render as coming soon"
@@ -48,7 +50,7 @@ fi
 
 # Restrict substitution to the demo URLs. Without an explicit list envsubst
 # would also eat any other $NAME in the CSS or markup.
-vars='${READYROOM_DEMO_URL} ${CERTALERT_DEMO_URL} ${MFA_PORTAL_DEMO_URL}'
+vars='${READYROOM_DEMO_URL} ${CERTALERT_DEMO_URL} ${MFA_PORTAL_DEMO_URL} ${DIRECTORY_PORTAL_DEMO_URL}'
 
 rm -rf "$DST"
 mkdir -p "$DST"
