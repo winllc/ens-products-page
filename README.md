@@ -6,9 +6,9 @@ for each product, served as static HTML from an nginx container.
 | Product | Page | Status |
 |---|---|---|
 | ReadyRoom | `/products/readyroom.html` | Available |
-| CertAlert | `/products/certalert.html` | Coming soon |
+| CertAlert | `/products/certalert.html` | Available |
 | MFA Portal | `/products/mfa-portal.html` | Coming soon |
-| Directory Services Portal | `/products/directory-portal.html` | Coming soon |
+| Directory Services Portal | `/products/directory-portal.html` | Available |
 
 No build step, no CDN, no backend. The pages are plain HTML and one
 stylesheet, plus one small script on the contact page; the only per-deployment
@@ -188,5 +188,4 @@ The MFA Portal is expected to come from
 [`rsa-operations-portal`](https://github.com/winllc/rsa-operations-portal),
 which has no commits yet, so its page still describes a product that does not
 exist and its feature copy is provisional — worth a read before this goes
-public. CertAlert and Directory Services Portal are still in development, which
-is why both remain marked "Coming soon".
+public. It is the only product still marked "Coming soon".
