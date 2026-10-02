@@ -116,6 +116,7 @@ site/                       Templates — the site itself
   assets/css/site.css       The whole stylesheet
   assets/js/contact.js      Composes the contact form's email; the site's only script
   assets/favicon.svg
+  assets/img/screens/       Product screenshots (JPEG, 1440 px wide)
 nginx/default.conf          Server config: port 8080, gzip, /healthz, 404
 docker/docker-entrypoint.d/
   30-render-site.sh         Resolves demo URLs at container start
@@ -161,6 +162,25 @@ and to the company
 [LinkedIn page](https://www.linkedin.com/company/ens-solutions-llc/). Both are
 plain links; nothing is embedded and no third-party script is loaded, so the
 site still makes no outbound requests of its own.
+
+### Screenshots
+
+`site/assets/img/screens/` holds screenshots of ReadyRoom, CertAlert and
+Directory Services Portal. They're shown on each product page under "See it in
+use", and three of them on the homepage under "A look inside". Each was taken
+at 1440 px wide from the product running locally against its own demo data:
+
+- **ReadyRoom:** the `test/` Docker Compose stack, with the mock data from
+  `seed-mock-data.sh`, signed in as `alice`. `alice` is the mock manager, made
+  an administrator for the shots.
+- **CertAlert:** the `dev` profile's embedded sample directory, signed in as
+  `alice`.
+- **Directory Services Portal:** the built-in demo directory, signed in as
+  `admin`, after a few edits so the audit log had something to show.
+
+MFA Portal has no screenshots because it has no implementation yet. To replace
+a screenshot, keep the file name, or update the `src`, `width` and `height` in
+the pages that use it.
 
 ### Where the product copy came from
 
