@@ -115,7 +115,7 @@ site/                       Templates — the site itself
   products/                 One page per product
   assets/css/site.css       The whole stylesheet
   assets/js/contact.js      Composes the contact form's email; the site's only script
-  assets/favicon.svg
+  assets/img/brand/         ENS logo, icons, and the ReadyRoom and CertAlert logos
   assets/img/screens/       Product screenshots (JPEG, 1440 px wide) and phone crops
 nginx/default.conf          Server config: port 8080, gzip, /healthz, 404
 docker/docker-entrypoint.d/
@@ -162,6 +162,29 @@ and to the company
 [LinkedIn page](https://www.linkedin.com/company/ens-solutions-llc/). Both are
 plain links; nothing is embedded and no third-party script is loaded, so the
 site still makes no outbound requests of its own.
+
+### Branding
+
+`site/assets/img/brand/` holds:
+
+- `ens-solutions-logo.jpg`: the official ENS Solutions logo, with tagline and
+  SDVOSB seal, exactly as ens-solutions.com serves it
+  (`/wp-content/uploads/2023/06/ENS-Web-Logo-1_with-SDVOSB.jpg`, 548 x 100). It
+  is in every page's header and footer. It's a JPEG on white, so in dark mode
+  it sits on a white plate rather than being recoloured.
+- `favicon-32.png`, `icon-192.png`, `apple-touch-icon.png`: the logo's dot mark,
+  cut from that file. The source is about 90 px tall, so the larger icons are
+  slightly soft. Replace them if a vector or larger master exists.
+- `readyroom-logo.png`: from `readyroom_logo_1.png` in `in-n-out-work`, trimmed,
+  with the white background made transparent. The artwork is one ink colour,
+  so dark mode inverts it.
+- `certalert-logo.png` and `certalert-logo-white.png`: `cert-alert`'s own logo
+  files, unchanged. Dark mode uses the white one.
+
+The site's accent colour is the logo's blue-teal (`--brand`, `#1d5a72`), and the
+stripe above the header is its bright teal (`--brand-teal`, `#1aa3b8`). The
+bright teal is too light for text on white (2.8:1), so it's used only as
+decoration. Dark mode uses a lighter teal (`#4cc3d6`) for links and buttons.
 
 ### Screenshots
 

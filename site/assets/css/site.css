@@ -23,9 +23,14 @@
     --text-muted:    #56607a;
     --border:        #e0e4ed;
 
-    --accent:        #14509c;
-    --accent-hover:  #0f3f7d;
-    --accent-soft:   #e8f0fb;
+    /* ENS Solutions brand: the logo's blue-teal wordmark and bright teal mark.
+       The bright teal is too light for text on white, so it is decoration only. */
+    --brand:         #1d5a72;
+    --brand-teal:    #1aa3b8;
+
+    --accent:        #1d5a72;
+    --accent-hover:  #13475b;
+    --accent-soft:   #e4f1f5;
     --accent-text:   #ffffff;
 
     --pending:       #8a5a00;
@@ -61,9 +66,9 @@
         --text-muted:   #9aa6b8;
         --border:       #262e3b;
 
-        --accent:       #5b9bff;
-        --accent-hover: #7cb0ff;
-        --accent-soft:  #16263f;
+        --accent:       #4cc3d6;
+        --accent-hover: #7dd6e4;
+        --accent-soft:  #12313b;
         --accent-text:  #0d1117;
 
         --pending:      #e0b055;
@@ -170,6 +175,7 @@ code {
  * ---------------------------------------------------------------- */
 .site-header {
     border-bottom: 1px solid var(--border);
+    border-top: 4px solid var(--brand-teal);
     background: var(--surface);
     position: sticky;
     top: 0;
@@ -197,18 +203,22 @@ code {
 
 .brand:hover { color: var(--text); }
 
-.brand-mark {
-    width: 26px;
-    height: 26px;
+/* The official logo is a JPEG on white, so in dark mode it sits on a white
+   plate rather than being recoloured. */
+.brand-logo {
+    display: block;
+    height: 46px;
+    width: auto;
     border-radius: 6px;
-    background: var(--accent);
-    color: var(--accent-text);
-    display: grid;
-    place-items: center;
-    font-size: .72rem;
-    font-weight: 700;
-    letter-spacing: .02em;
-    flex: none;
+}
+
+@media (prefers-color-scheme: dark) {
+    .brand-logo,
+    .footer-logo {
+        background: #fff;
+        padding: 4px 8px;
+        box-sizing: content-box;
+    }
 }
 
 .site-nav {
@@ -239,8 +249,38 @@ code {
 .site-footer .wrap {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
+}
+
+.footer-brand {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: .6rem;
+}
+
+.footer-logo {
+    display: block;
+    height: 36px;
+    width: auto;
+    border-radius: 4px;
+}
+
+/* Product logos at the top of a product page. */
+.product-logo {
+    display: block;
+    width: auto;
+    height: 96px;
+    margin: .25rem 0 1.25rem;
+}
+
+.product-logo--wide { height: 64px; }
+
+@media (prefers-color-scheme: dark) {
+    /* ReadyRoom's artwork is plain ink, so it inverts cleanly. */
+    .product-logo--ink { filter: invert(1); }
 }
 
 .footer-links {
@@ -982,6 +1022,9 @@ button.btn { font: inherit; font-weight: 600; font-size: .95rem; }
 /* The nav wraps onto a second line here, so a sticky header would cover
    about a third of a phone screen. Let it scroll away instead. */
 @media (max-width: 640px) {
+    .brand-logo { height: 38px; }
+    .product-logo { height: 72px; }
+    .product-logo--wide { height: 48px; }
     .site-header { position: static; }
     .site-header .wrap { gap: .5rem 1.5rem; padding-block: .75rem; }
     .site-nav { margin-left: 0; gap: .5rem 1.1rem; }
