@@ -83,3 +83,25 @@ find "$SRC" -type f | while IFS= read -r src; do
             ;;
     esac
 done
+
+# Cache busting. nginx lets browsers keep /assets/ for a week, but the pages
+# themselves are never cached. So every asset reference in a page gets the
+# file's content hash as a query string: when a stylesheet, script or image
+# changes, its URL changes, and a browser holding last week's copy fetches the
+# new one. Without this, a returning visitor gets new pages styled by an old
+# stylesheet.
+busting="$(mktemp)"
+find "$DST/assets" -type f | while IFS= read -r f; do
+    url="/${f#"$DST"/}"
+    hash="$(md5sum "$f" | cut -c1-10)"
+    # Escape the URL for use as a sed pattern ('#' is the delimiter).
+    re="$(printf '%s' "$url" | sed 's/[].[*^$\\#]/\\&/g')"
+    # Only a complete reference: the URL directly followed by its closing quote.
+    printf 's#"%s"#"%s?v=%s"#g\n' "$re" "$url" "$hash"
+done > "$busting"
+
+find "$DST" -type f -name '*.html' | while IFS= read -r page; do
+    sed -i -f "$busting" "$page"
+done
+rm -f "$busting"
+echo "30-render-site.sh: asset URLs versioned by content hash"

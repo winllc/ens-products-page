@@ -949,6 +949,9 @@ button.btn { font: inherit; font-weight: 600; font-size: .95rem; }
     * { transition: none !important; }
 }
 
+/* An image never pushes the page wider than the screen. */
+img { max-width: 100%; height: auto; }
+
 /* ---- Screenshots ------------------------------------------------------- */
 
 .shot-grid {

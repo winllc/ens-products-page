@@ -90,6 +90,21 @@ To add another product, add its `NAME_DEMO_URL` to the `export` list, the
 `enabled` list and the `vars` list in the render script, then use
 `<!--DEMO:NAME-->` markers in its page.
 
+### Cache busting
+
+nginx lets browsers keep everything under `/assets/` for a week, while the pages
+themselves are never cached. So the last step of the render script adds each
+asset's content hash to every reference to it in the pages
+(`/assets/css/site.css?v=e332f43848`). When an asset changes, its URL changes,
+so a returning visitor's browser fetches the new copy instead of styling new
+pages with last week's stylesheet. Without this, a phone that visited before a
+deploy showed the new pages with the old stylesheet: oversized logos, a layout
+wider than the screen, and the old colours.
+
+Write asset references in the HTML as plain absolute paths in double quotes
+(`src="/assets/..."`). The render script only versions references in that
+form.
+
 ### Rendering outside the container
 
 The script takes `SITE_TEMPLATE_DIR` and `SITE_OUTPUT_DIR` overrides, which is
