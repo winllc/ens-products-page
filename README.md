@@ -7,7 +7,7 @@ for each product, served as static HTML from an nginx container.
 |---|---|---|
 | ReadyRoom | `/products/readyroom.html` | Available |
 | CertAlert | `/products/certalert.html` | Coming soon |
-| MFA Portal | `/products/mfa-portal.html` | Coming soon |
+| RSA Operations Portal | `/products/mfa-portal.html` | Available |
 
 No build step, no CDN, no backend. The pages are plain HTML and one
 stylesheet, plus one small script on the contact page; the only per-deployment
@@ -46,7 +46,7 @@ Each product page has a demo button driven by one environment variable:
 |---|---|
 | `READYROOM_DEMO_URL` | ReadyRoom |
 | `CERTALERT_DEMO_URL` | CertAlert |
-| `MFA_PORTAL_DEMO_URL` | MFA Portal |
+| `MFA_PORTAL_DEMO_URL` | RSA Operations Portal |
 
 Set one and that product's button becomes a live link to it. **Leave it empty
 and the page renders a "coming soon" state instead** — there is no way to get a
@@ -112,6 +112,7 @@ site/                       Templates — the site itself
   404.html
   products/                 One page per product
   assets/css/site.css       The whole stylesheet
+  assets/img/               Product screenshots
   assets/js/contact.js      Composes the contact form's email; the site's only script
   assets/favicon.svg
 nginx/default.conf          Server config: port 8080, gzip, /healthz, 404
@@ -169,5 +170,20 @@ workstation logon, lock, unlock and logoff events. Its technical summary
 reflects that codebase: Spring Boot 4 on Java 21, PostgreSQL, LDAP, a PowerShell
 client, and mutual TLS with an LDAP form-login fallback.
 
-The CertAlert and MFA Portal pages describe products that do not exist yet, and
-their feature copy is provisional — worth a read before this goes public.
+### Where the RSA Operations Portal copy came from
+
+The RSA Operations Portal page (formerly listed as "MFA Portal") is written from
+the [`rsa-operations-portal`](https://github.com/winllc/rsa-operations-portal)
+repository. Its page keeps the old `mfa-portal.html` path, the
+`MFA_PORTAL_DEMO_URL` variable and the `?product=mfa-portal` contact key, so
+existing links and deployments keep working.
+
+The screenshots in `site/assets/img/rsa-operations-portal/` are the product's
+own Thymeleaf templates and stylesheets rendered with sample data (fictional
+names, sites and serials) and captured in Chromium at 1440px wide, 1.5x scale.
+No customer data appears in them, and the portal's classification banners are
+hidden for the captures. Keep it that way if you re-shoot them: no
+classification or handling markings anywhere on this site.
+
+The CertAlert page describes a product that does not exist yet, and its feature
+copy is provisional — worth a read before this goes public.

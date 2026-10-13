@@ -3,9 +3,9 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>MFA Portal — ENS Solutions, LLC</title>
+    <title>RSA Operations Portal — ENS Solutions, LLC</title>
     <meta name="description"
-          content="MFA Portal is a self-service front end for RSA Authentication Manager: find a Trusted Agent, set or update a SecurID token PIN, and manage token shipments to multiple sites. Coming soon from ENS Solutions.">
+          content="RSA Operations Portal runs the day-to-day of an RSA SecurID program on top of RSA Authentication Manager: token assignment and self-service PIN resets, a Trusted Agent directory with appointments, multi-site token shipments, and help desk tools. Available now from ENS Solutions.">
     <link rel="stylesheet" href="/assets/css/site.css">
     <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
 </head>
@@ -21,7 +21,7 @@
         <nav class="site-nav" aria-label="Site">
             <a href="/products/readyroom.html">ReadyRoom</a>
             <a href="/products/certalert.html">CertAlert</a>
-            <a href="/products/mfa-portal.html" aria-current="page">MFA Portal</a>
+            <a href="/products/mfa-portal.html" aria-current="page">RSA Operations Portal</a>
             <a href="/contact.html">Contact</a>
             <a href="https://ens-solutions.com/">ens-solutions.com</a>
         </nav>
@@ -30,65 +30,122 @@
 
 <main id="main">
     <section class="hero">
-        <div class="wrap">
-            <a class="backlink" href="/">&larr; All products</a>
-            <div class="title-row">
-                <p class="eyebrow eyebrow--inline">MFA Portal &middot; For RSA Authentication Manager</p>
-                <span class="badge badge--pending">Coming soon</span>
-            </div>
-            <h1>A self-service front door for RSA SecurID.</h1>
-            <p class="lede">
-                MFA Portal puts a user-facing web portal in front of RSA Authentication Manager. Token
-                holders can find the Trusted Agent who supports them and set or update their own SecurID
-                PIN, and program staff can manage token shipments across multiple sites &mdash; without
-                routing every one of those requests through the help desk or the Authentication Manager
-                console.
-            </p>
+        <div class="wrap hero-split">
+            <div>
+                <a class="backlink" href="/">&larr; All products</a>
+                <div class="title-row">
+                    <p class="eyebrow eyebrow--inline">RSA Operations Portal &middot; For RSA SecurID</p>
+                    <span class="badge badge--live">Available now</span>
+                </div>
+                <h1>Run your SecurID program from one portal.</h1>
+                <p class="lede">
+                    RSA Operations Portal sits in front of RSA Authentication Manager and handles the work
+                    around the tokens: users activate their token and reset their own PIN, Trusted Agents
+                    assign tokens and book appointments, the help desk handles lost tokens and lockouts, and
+                    the program office ships tokens to every site &mdash; all without handing out access to
+                    the Authentication Manager console.
+                </p>
 
-            <div class="btn-row">
-                <!--DEMO:MFA_PORTAL-->
-                <a class="btn btn--primary" href="${MFA_PORTAL_DEMO_URL}" target="_blank" rel="noopener">Open the demo<span class="visually-hidden"> (opens in a new tab)</span></a>
-                <span class="btn-note">Opens the MFA Portal demo environment in a new tab.</span>
-                <!--/DEMO:MFA_PORTAL-->
-                <!--NODEMO:MFA_PORTAL-->
-                <span class="btn btn--disabled" aria-disabled="true">Demo coming soon</span>
-                <a class="btn btn--ghost" href="/products/readyroom.html">See ReadyRoom instead</a>
-                <!--/NODEMO:MFA_PORTAL-->
+                <div class="btn-row">
+                    <!--DEMO:MFA_PORTAL-->
+                    <a class="btn btn--primary" href="${MFA_PORTAL_DEMO_URL}" target="_blank" rel="noopener">Open the demo<span class="visually-hidden"> (opens in a new tab)</span></a>
+                    <a class="btn btn--ghost" href="#screens-heading">See the screens</a>
+                    <span class="btn-note">Opens the RSA Operations Portal demo environment in a new tab.</span>
+                    <!--/DEMO:MFA_PORTAL-->
+                    <!--NODEMO:MFA_PORTAL-->
+                    <a class="btn btn--primary" href="/contact.html?product=mfa-portal">Request a demo</a>
+                    <a class="btn btn--ghost" href="#screens-heading">See the screens</a>
+                    <!--/NODEMO:MFA_PORTAL-->
+                </div>
             </div>
+
+            <figure class="shot">
+                <a href="/assets/img/rsa-operations-portal/user-details.jpg">
+                    <img src="/assets/img/rsa-operations-portal/user-details.jpg" width="2160" height="1620"
+                         alt="RSA Operations Portal user details page, showing a user's account, their assigned SecurID token with Reset Pin, Mark Lost and Generate Emergency Token Code buttons, and their enrollment history.">
+                </a>
+                <figcaption>Help desk view of a user: account status, token, and one-click PIN reset, lost-token and emergency-code actions.</figcaption>
+            </figure>
         </div>
     </section>
 
     <section class="section" aria-labelledby="capabilities-heading">
         <div class="wrap">
             <h2 id="capabilities-heading">What it does</h2>
-            <div class="card-grid">
+            <div class="card-grid card-grid--pairs">
+                <article class="card">
+                    <p class="card-kicker">Token holders</p>
+                    <h3>Self-service activation and PIN resets</h3>
+                    <p>
+                        Users activate a newly assigned token, set their PIN and test their token from the
+                        portal. A forgotten PIN can be reset with the user&rsquo;s PKI certificate, their
+                        Windows password, or an emailed reset link &mdash; no help desk ticket required.
+                    </p>
+                </article>
                 <article class="card">
                     <p class="card-kicker">Trusted Agents</p>
-                    <h3>Find the right Trusted Agent</h3>
+                    <h3>A directory people can actually use</h3>
                     <p>
-                        Token holders look up the Trusted Agent who can help them, instead of asking around
-                        or working from an out-of-date contact list when they need a token issued, replaced
-                        or verified.
+                        Users find the Trusted Agent for their site and book a new-token, replacement or
+                        return appointment. Agents assign tokens by serial number, confirm appointments, and
+                        get a weekly digest of who is coming in.
                     </p>
                 </article>
                 <article class="card">
-                    <p class="card-kicker">SecurID PINs</p>
-                    <h3>Set or update a token PIN</h3>
+                    <p class="card-kicker">Help desk</p>
+                    <h3>Lost tokens, lockouts and emergency access</h3>
                     <p>
-                        Users set the PIN on a newly issued SecurID token, or change an existing one, from
-                        the portal. Authentication Manager still applies the PIN; the portal gives users a
-                        straightforward place to do it.
+                        Look up any user to reset a PIN, mark a token lost, unlock an account, issue a
+                        one-day emergency tokencode, or deprovision a token back into the assignable pool
+                        &mdash; with each action recorded against the user.
                     </p>
                 </article>
                 <article class="card">
-                    <p class="card-kicker">Token logistics</p>
-                    <h3>Ship tokens to multiple sites</h3>
+                    <p class="card-kicker">Program office</p>
+                    <h3>Token shipments to every site</h3>
                     <p>
-                        Programs that support more than one location manage where tokens are being shipped
-                        and which site each shipment is for, in one place rather than across spreadsheets
-                        and email threads.
+                        Sites request tokens, the program office ships a serial range, and the receiving
+                        Trusted Agent confirms delivery. Every shipment is tracked from request to receipt,
+                        with a printable packing sheet.
                     </p>
                 </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="screens-heading">
+        <div class="wrap">
+            <h2 id="screens-heading">A look inside</h2>
+            <p class="muted">Screens from the product, shown with sample data. Select a screenshot to view it full size.</p>
+            <div class="shot-grid">
+                <figure class="shot">
+                    <a href="/assets/img/rsa-operations-portal/trusted-agent-directory.jpg">
+                        <img src="/assets/img/rsa-operations-portal/trusted-agent-directory.jpg" width="2160" height="1320" loading="lazy"
+                             alt="Trusted Agent Directory: a searchable table of Trusted Agents with their site, city, state and country, and Details and Schedule Appointment buttons on each row.">
+                    </a>
+                    <figcaption><strong>Trusted Agent Directory</strong>Searchable by name, site or location, with appointment booking on every row.</figcaption>
+                </figure>
+                <figure class="shot">
+                    <a href="/assets/img/rsa-operations-portal/shipments.jpg">
+                        <img src="/assets/img/rsa-operations-portal/shipments.jpg" width="2160" height="1320" loading="lazy"
+                             alt="Shipments list: token shipments to several sites with the number of tokens requested, a status of New, Being Worked, Shipped or Received, and submitted, sent and received dates.">
+                    </a>
+                    <figcaption><strong>Shipments</strong>Every token shipment from request to receipt, across all of your sites.</figcaption>
+                </figure>
+                <figure class="shot">
+                    <a href="/assets/img/rsa-operations-portal/trusted-agent-report.jpg">
+                        <img src="/assets/img/rsa-operations-portal/trusted-agent-report.jpg" width="2160" height="1410" loading="lazy"
+                             alt="Trusted Agent Report: the number of tokens a Trusted Agent has issued and an activity log of token assignments, emergency codes, shipments received and deprovisioned tokens.">
+                    </a>
+                    <figcaption><strong>Trusted Agent Report</strong>Tokens issued and a full activity log for each agent, with the same report per site.</figcaption>
+                </figure>
+                <figure class="shot">
+                    <a href="/assets/img/rsa-operations-portal/home.jpg">
+                        <img src="/assets/img/rsa-operations-portal/home.jpg" width="2160" height="1620" loading="lazy"
+                             alt="Portal home page: a welcome banner, a system notification announcing new tokens at two sites, and the role-based navigation menu for Trusted Agent, token management and program office tasks.">
+                    </a>
+                    <figcaption><strong>Home and navigation</strong>Announcements for every user, and menus that show each person only the tasks for their role.</figcaption>
+                </figure>
             </div>
         </div>
     </section>
@@ -99,18 +156,25 @@
             <ol class="flow-steps">
                 <li>
                     <strong>RSA Authentication Manager stays in charge.</strong> Tokens, PINs and
-                    authentication policy remain in the Authentication Manager deployment you already
-                    run. MFA Portal is a front end to it, not a replacement.
+                    authentication policy remain in the Authentication Manager deployment you already run.
+                    The portal works through Authentication Manager&rsquo;s own administration API, using a
+                    service account scoped to one security domain.
                 </li>
                 <li>
-                    <strong>Users get a portal, not a console.</strong> The everyday tasks token holders
-                    need &mdash; finding their Trusted Agent and managing their PIN &mdash; are available
-                    without access to administrative tooling.
+                    <strong>Roles come from Authentication Manager.</strong> Trusted Agent, help desk and
+                    program office access map to administrative roles you already assign in Authentication
+                    Manager, and users sign in to the portal with their SecurID passcode.
                 </li>
                 <li>
-                    <strong>Program staff see every site.</strong> Token shipments for multiple locations
-                    are managed side by side, so distribution to a new or remote site is not a separate
-                    manual process.
+                    <strong>The routine follow-up runs itself.</strong> Scheduled jobs warn users before
+                    their token expires, remind them to set a PIN, send appointment reminders, keep the
+                    Trusted Agent list in step with Authentication Manager, and alert the program office
+                    when someone keeps losing tokens.
+                </li>
+                <li>
+                    <strong>Deploys on your own servers.</strong> The portal, its Authentication Manager
+                    connector and a MySQL database run as containers, with install, backup and restore
+                    scripts included. Logos, banners and wording can be changed to match your program.
                 </li>
             </ol>
         </div>
@@ -123,32 +187,36 @@
                 <div class="feature">
                     <h3>Fewer PIN tickets</h3>
                     <p>
-                        Routine PIN setup and changes are handled by the token holder, leaving the help desk
-                        free for the problems that need a person.
+                        Users reset their own PINs with credentials they already have, which leaves the help
+                        desk free for the problems that need a person.
                     </p>
                 </div>
                 <div class="feature">
-                    <h3>Less time lost finding help</h3>
+                    <h3>Tokens you can account for</h3>
                     <p>
-                        A user who needs a Trusted Agent can find one directly, which matters most for new
-                        arrivals and people at smaller sites.
+                        Every assignment, shipment, lost token and emergency code is logged, so you can see
+                        where each token went and who handled it.
                     </p>
                 </div>
                 <div class="feature">
-                    <h3>Distribution you can follow</h3>
+                    <h3>Less time in the console</h3>
                     <p>
-                        Multi-site token shipping is managed in one place, so it is clear what is going
-                        where.
+                        Trusted Agents and help desk staff get a focused tool for their daily tasks instead of
+                        broad access to Authentication Manager.
                     </p>
                 </div>
             </div>
 
             <div class="callout">
                 <p>
-                    <strong>MFA Portal is still in development.</strong> If you run RSA Authentication
-                    Manager and would like to hear when it is available, or have requirements you would like
-                    reflected in it, <a href="/contact.html?product=mfa-portal">get in touch</a>
-                    or follow along on <a href="https://www.linkedin.com/company/ens-solutions-llc/">LinkedIn</a>.
+                    <strong>RSA Operations Portal is available now.</strong> If you run RSA SecurID with
+                    Authentication Manager and want to see it with your own workflows,
+                    <a href="/contact.html?product=mfa-portal">get in touch</a> to arrange a demo, or follow
+                    us on <a href="https://www.linkedin.com/company/ens-solutions-llc/">LinkedIn</a>.
+                </p>
+                <p class="small muted">
+                    RSA and SecurID are trademarks of RSA Security LLC. RSA Operations Portal is a product of
+                    ENS Solutions, LLC and is not affiliated with or endorsed by RSA Security.
                 </p>
             </div>
         </div>

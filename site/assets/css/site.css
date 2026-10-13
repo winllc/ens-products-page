@@ -908,3 +908,49 @@ button.btn { font: inherit; font-weight: 600; font-size: .95rem; }
 @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; }
 }
+
+/* ---------------------------------------------------------------- *
+ * Product screenshots
+ * ---------------------------------------------------------------- */
+.shot {
+    margin: 0;
+    display: grid;
+    gap: .65rem;
+}
+
+.shot a {
+    display: block;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    background: var(--surface);
+    transition: border-color .15s;
+}
+
+.shot a:hover,
+.shot a:focus-visible { border-color: var(--accent); }
+
+.shot img {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+
+.shot figcaption {
+    font-size: .9rem;
+    color: var(--text-muted);
+}
+
+.shot figcaption strong {
+    display: block;
+    color: var(--text);
+    font-weight: 650;
+}
+
+.shot-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+    gap: 2rem 1.5rem;
+    margin-top: 1.5rem;
+}
