@@ -1,0 +1,25 @@
+---
+export const prerender = false;
+
+import AccountLayout from '../../layouts/AccountLayout.astro';
+import { requestPasswordReset } from '../../server/accounts';
+import { form, limited, withNotice } from '../../server/http';
+
+if (Astro.request.method === 'POST') {
+    const email = (await form(Astro))('email');
+    if (!limited(Astro, 'forgot', email.toLowerCase(), 3, 60)) {
+        await requestPasswordReset(email);
+    }
+    return Astro.redirect(withNotice('/account/login', 'reset-sent'), 303);
+}
+---
+<AccountLayout title="Reset your password" narrow>
+    <p slot="lede" class="lede">We’ll email you a link to choose a new one.</p>
+    <form class="auth-form" method="post">
+        <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" autocomplete="username" required>
+        </div>
+        <button class="btn btn--primary" type="submit">Email me a link</button>
+    </form>
+</AccountLayout>

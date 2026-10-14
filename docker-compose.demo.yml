@@ -16,7 +16,9 @@ name: ens-products-page-demo
 
 services:
   site:
-    build: .
+    build:
+      context: .
+      target: web
     image: ens-products-page
     container_name: ens-products-demo
     # No `ports:` on purpose: nothing listens on the host. nginx serves on
@@ -26,9 +28,36 @@ services:
       CERTALERT_DEMO_URL: "${CERTALERT_DEMO_URL:-}"
       MFA_PORTAL_DEMO_URL: "${MFA_PORTAL_DEMO_URL:-}"
       DIRECTORY_PORTAL_DEMO_URL: "${DIRECTORY_PORTAL_DEMO_URL:-}"
+      LICENSING_UPSTREAM: "ens-products-demo-licensing:4321"
+    networks:
+      - proxy
+    depends_on:
+      - licensing
+    restart: unless-stopped
+
+  # Accounts and license management. Reachable only from the site container,
+  # which proxies /account, /admin and /api/licensing to it.
+  licensing:
+    build:
+      context: .
+      target: licensing
+    image: ens-products-licensing
+    container_name: ens-products-demo-licensing
+    environment:
+      PUBLIC_URL: "${PUBLIC_URL:-}"
+      ADMIN_EMAILS: "${ADMIN_EMAILS:-}"
+      LICENSE_SIGNING_KEY: "${LICENSE_SIGNING_KEY:-}"
+      LICENSE_TRUSTED_KEYS: "${LICENSE_TRUSTED_KEYS:-}"
+      SMTP_URL: "${SMTP_URL:-}"
+      MAIL_FROM: "${MAIL_FROM:-ENS Solutions <licensing@ens-solutions.com>}"
+    volumes:
+      - licensing-data:/data
     networks:
       - proxy
     restart: unless-stopped
+
+volumes:
+  licensing-data:
 
 networks:
   proxy:

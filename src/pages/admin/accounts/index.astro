@@ -1,0 +1,53 @@
+---
+export const prerender = false;
+
+import AccountLayout from '../../../layouts/AccountLayout.astro';
+import { isAdmin, listAccounts } from '../../../server/accounts';
+import { dateOnly, requireAdmin } from '../../../server/http';
+
+const admin = requireAdmin(Astro);
+if (admin instanceof Response) return admin;
+
+const search = Astro.url.searchParams.get('q') ?? '';
+const accounts = listAccounts(search);
+---
+<AccountLayout title="Accounts" eyebrow="Administration" section="admin-accounts">
+    <p slot="lede" class="lede">Open an account to issue it a license. Customers sign up themselves.</p>
+    <form class="filter-bar" method="get">
+        <div class="field">
+            <label for="q">Search</label>
+            <input id="q" name="q" type="search" value={search} placeholder="Name, email or organization">
+        </div>
+        <button class="btn btn--ghost" type="submit">Search</button>
+    </form>
+    <div class="table-scroll">
+        <table>
+            <caption class="visually-hidden">Accounts</caption>
+            <thead>
+            <tr>
+                <th scope="col">Account</th>
+                <th scope="col">Organization</th>
+                <th scope="col">Licenses</th>
+                <th scope="col">Joined</th>
+                <th scope="col">Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            {accounts.map((a) => (
+                <tr>
+                    <th scope="row"><a href={`/admin/accounts/${a.id}`}>{a.name}</a><span class="th-note">{a.email}</span></th>
+                    <td>{a.organization || <span class="muted">—</span>}</td>
+                    <td>{a.license_count}</td>
+                    <td>{dateOnly(a.created_at)}</td>
+                    <td>
+                        {a.disabled_at ? <span class="pill pill--revoked">Disabled</span>
+                            : !a.email_verified_at ? <span class="pill pill--not-yet-valid">Unconfirmed</span>
+                            : isAdmin(a) ? <span class="pill pill--valid">Administrator</span>
+                            : <span class="pill pill--valid">Active</span>}
+                    </td>
+                </tr>
+            ))}
+            </tbody>
+        </table>
+    </div>
+</AccountLayout>

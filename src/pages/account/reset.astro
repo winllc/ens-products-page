@@ -1,0 +1,38 @@
+---
+export const prerender = false;
+
+import AccountLayout from '../../layouts/AccountLayout.astro';
+import { AccountError, resetPassword } from '../../server/accounts';
+import { form, withNotice } from '../../server/http';
+import { PASSWORD_MIN } from '../../server/secrets';
+
+const token = Astro.url.searchParams.get('token') ?? '';
+let error: string | null = null;
+
+if (Astro.request.method === 'POST') {
+    const get = await form(Astro);
+    try {
+        const account = await resetPassword(get('token'), get('password'));
+        if (account) return Astro.redirect(withNotice('/account/login', 'password-reset'), 303);
+        error = 'That reset link has expired or has already been used. Ask for a new one.';
+    } catch (err) {
+        if (!(err instanceof AccountError)) throw err;
+        error = `${err.message}. Ask for a new link and try again.`;
+    }
+}
+---
+<AccountLayout title="Choose a new password" narrow error={error}>
+    {error ? (
+        <p><a href="/account/forgot">Ask for a new link</a>.</p>
+    ) : (
+        <form class="auth-form" method="post">
+            <input type="hidden" name="token" value={token}>
+            <div class="field">
+                <label for="password">New password</label>
+                <input id="password" name="password" type="password" autocomplete="new-password" required minlength={PASSWORD_MIN} maxlength="256">
+                <p class="field-hint">At least {PASSWORD_MIN} characters. Every other session will be signed out.</p>
+            </div>
+            <button class="btn btn--primary" type="submit">Save password</button>
+        </form>
+    )}
+</AccountLayout>

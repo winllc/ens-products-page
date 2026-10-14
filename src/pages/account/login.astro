@@ -1,0 +1,47 @@
+---
+export const prerender = false;
+
+import AccountLayout from '../../layouts/AccountLayout.astro';
+import { authenticate } from '../../server/accounts';
+import { form, limited, safeNext, startSession } from '../../server/http';
+
+const next = safeNext(Astro.url.searchParams.get('next'));
+if (Astro.locals.account) {
+    return Astro.redirect(next, 303);
+}
+
+let error: string | null = null;
+let email = '';
+
+if (Astro.request.method === 'POST') {
+    const get = await form(Astro);
+    email = get('email');
+    if (limited(Astro, 'login', email.toLowerCase(), 10, 15)) {
+        error = 'Too many attempts. Wait fifteen minutes and try again.';
+    } else {
+        const account = await authenticate(email, get('password'));
+        if (account) {
+            startSession(Astro, account.id);
+            return Astro.redirect(next, 303);
+        }
+        error = 'That email and password don’t match an account.';
+    }
+}
+---
+<AccountLayout title="Sign in" narrow error={error}>
+    <p slot="lede" class="lede">Manage your ENS Solutions licenses, or download a free evaluation.</p>
+    <form class="auth-form" method="post">
+        <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" autocomplete="username" required value={email}>
+        </div>
+        <div class="field">
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" autocomplete="current-password" required>
+        </div>
+        <button class="btn btn--primary" type="submit">Sign in</button>
+        <p class="small muted">
+            <a href="/account/forgot">Forgot your password?</a> &middot; New here? <a href="/account/signup">Create an account</a>.
+        </p>
+    </form>
+</AccountLayout>

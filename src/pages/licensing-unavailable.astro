@@ -1,0 +1,21 @@
+---
+/* Shown by nginx when the licensing service doesn't answer. */
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Licensing unavailable">
+<section class="hero">
+    <div class="wrap">
+        <p class="eyebrow">Licensing</p>
+        <h1>Account and license management is unavailable right now.</h1>
+        <p class="lede">
+            Licenses you have already installed keep working: the applications check them offline. Try again
+            shortly, or email <a href="mailto:info@ens-solutions.com">info@ens-solutions.com</a> if you need a
+            license file urgently.
+        </p>
+        <div class="btn-row">
+            <a class="btn btn--primary" href="/">Back to products</a>
+            <a class="btn btn--ghost" href="/licensing.html">About licensing</a>
+        </div>
+    </div>
+</section>
+</BaseLayout>

@@ -1,0 +1,34 @@
+---
+export const prerender = false;
+
+import AccountLayout from '../../layouts/AccountLayout.astro';
+import { resendVerification, verifyEmail } from '../../server/accounts';
+import { limited, withNotice } from '../../server/http';
+
+// POST: a signed-in, unconfirmed account asks for another link.
+if (Astro.request.method === 'POST') {
+    const account = Astro.locals.account;
+    if (!account) return Astro.redirect('/account/login', 303);
+    if (!limited(Astro, 'resend', account.id, 3, 60)) {
+        await resendVerification(account);
+    }
+    return Astro.redirect(withNotice('/account', 'verification-sent'), 303);
+}
+
+const token = Astro.url.searchParams.get('token') ?? '';
+const account = token ? verifyEmail(token) : null;
+if (account) {
+    // Confirming an address doesn't sign anyone in: the link may have been
+    // forwarded, and a session should take the password.
+    const signedIn = Astro.locals.account?.id === account.id;
+    return Astro.redirect(signedIn ? withNotice('/account', 'verified') : withNotice('/account/login', 'verified-sign-in'), 303);
+}
+---
+<AccountLayout title="Confirm your email" narrow>
+    <p class="notice notice--error" role="alert">
+        That confirmation link has expired or has already been used.
+    </p>
+    <p>
+        <a href="/account/login">Sign in</a> and ask for a new link from your account page.
+    </p>
+</AccountLayout>

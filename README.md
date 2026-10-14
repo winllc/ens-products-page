@@ -1,7 +1,9 @@
 # ens-products-page
 
 Product site for **ENS Solutions, LLC** — a homepage overview linking to a page
-for each product, served as static HTML from an nginx container.
+for each product, served as static HTML from an nginx container — and the
+licensing service behind it, where customers sign up, download free
+evaluation licenses and manage the licenses they buy.
 
 | Product | Page | Status |
 |---|---|---|
@@ -11,21 +13,22 @@ for each product, served as static HTML from an nginx container.
 | Directory Services Portal | `/products/directory-portal.html` | Available |
 
 Plus `/pricing.html` (the price list, support tiers, services, buying terms
-and a quote estimator) and `/contact.html`.
+and a quote estimator), `/licensing.html` (how licensing works),
+`/contact.html`, and the licensing pages: `/account` for customers and
+`/admin` for ENS staff.
 
-The site is built with [Astro](https://astro.build) and TypeScript into plain
-static files, and served by nginx. There is still no CDN, no backend and no
-third-party script; the browser gets HTML, one stylesheet, and small scripts on
-the pages that have something interactive (the contact form, the RSA help-desk
-savings calculator and the quote estimator). The only per-deployment values
-are the demo URLs, and those are resolved when the container starts.
+The site is built with [Astro](https://astro.build) and TypeScript. The
+marketing pages are prerendered to plain static files and served by nginx,
+with no CDN and no third-party script. The licensing pages are rendered on
+demand by a small Node service (Astro's Node adapter, with SQLite through
+Node's built-in `node:sqlite`), which nginx proxies `/account`, `/admin` and
+`/api/licensing` to. One codebase, two containers: see
+[Licensing service](#licensing-service).
 
-The move from hand-written HTML to Astro is what lets the site grow: the
-header, footer and page shell are shared components, the product line and
-the price list are typed data that every page reads, interactive features are
-TypeScript modules bundled per page, and the pricing arithmetic is unit tested.
-React, Preact or another UI framework can be added as an Astro integration
-when a feature needs one, and an SSR adapter if one ever needs a server.
+The header, footer and page shell are shared components; the product line,
+the price list and the license feature catalog are typed data every page
+reads; interactive features are TypeScript modules bundled per page; and the
+pricing and licensing logic is unit tested.
 
 ---
 
@@ -36,19 +39,29 @@ Needs Node.js 22.12 or newer.
 ```bash
 npm install
 npm run dev        # http://localhost:4321, reloads on save
-npm test           # pricing arithmetic (Vitest)
+npm test           # pricing, licensing, accounts (Vitest)
 npm run check      # TypeScript and Astro type check
-npm run build      # static site into dist/
+npm run build      # static pages into dist/client/, the licensing server into dist/server/
 npm run verify     # all three
+npm start          # run the built licensing server (it serves the static pages too)
 ```
+
+`npm run dev` runs the licensing pages as well, with a database and a
+generated signing key in `./data/` and confirmation emails printed to the
+terminal instead of sent. Set `COOKIE_SECURE=false` only if you test through
+an `http://` address other than localhost, and `ADMIN_EMAILS=you@example.com`
+to make your account an administrator.
 
 `npm run dev` shows both states of every demo button, because the demo
 markers are only resolved by the container (see [Demo links](#demo-links)).
-`npm run render` runs that step locally against `dist/`, into `dist-rendered/`;
-it needs `envsubst` (GNU gettext) on `PATH`.
+`npm run render` runs that step locally against `dist/client/`, into
+`dist-rendered/`; it needs `envsubst` (GNU gettext) on `PATH`.
+
+The Java license verifier has its own build: `cd licensing/java && mvn test`.
 
 CI (`.github/workflows/ci.yml`) runs the type check, the tests, the build, the
-container's render step and the Docker build on every pull request.
+container's render step, a start-up check of the licensing service, both
+Docker images and the Java verifier's tests on every pull request.
 
 ---
 
@@ -61,14 +74,21 @@ docker compose up --build
 
 Then open <http://localhost:8080>.
 
-The Dockerfile has two stages: `node:22-alpine` installs dependencies, runs the
-tests and builds the site; `nginx:1.27-alpine` serves the result. Nothing from
-Node ends up in the served image.
+Compose runs two containers from one Dockerfile:
 
-Without Compose:
+| Service | Target | Image | |
+|---|---|---|---|
+| `site` | `web` | `nginx:1.27-alpine` | Static pages; proxies the licensing paths to `licensing` |
+| `licensing` | `licensing` | `node:22-alpine` | Accounts and licenses; data in the `licensing-data` volume; no published port |
+
+A shared `node:22-alpine` stage installs dependencies, runs the tests and
+builds both.
+
+Without Compose, the static site on its own (the account pages then show a
+"licensing unavailable" page; everything else works):
 
 ```bash
-docker build -t ens-products-page .
+docker build --target web -t ens-products-page .
 docker run --rm -p 8080:8080 \
   -e READYROOM_DEMO_URL="https://demo.example.com/readyroom" \
   ens-products-page
@@ -91,8 +111,73 @@ collides with the default one. The first `up` creates the network if it doesn't
 exist. A proxy started from another Compose project joins it by declaring it
 under `networks:` with `external: true` and `name: ens-demo`.
 
+Its licensing service, `ens-products-demo-licensing`, sits on the same network
+for the site container to proxy to; point the reverse proxy only at
+`ens-products-demo`. Set `PUBLIC_URL` in `.env.demo` to the demo's public
+address so confirmation links work.
+
 `GET /healthz` returns `200 ok` for orchestrator health checks, and the image
-carries a `HEALTHCHECK` that uses it.
+carries a `HEALTHCHECK` that uses it. The licensing image's equivalent is
+`GET /api/licensing/health`, which also checks the database and signing key.
+
+---
+
+## Licensing service
+
+Customers create an account, confirm their email, and download a free 30-day
+evaluation license for any product, one per product per account. Licenses
+they buy (subscriptions, perpetual licenses, pilots) are issued into the same
+account by ENS staff at `/admin` against the order, and renewals re-issue them
+there. Everything that creates or changes a license goes through this
+service, and every change is in an audit log customers and staff can read.
+
+| Customers (`/account`) | ENS staff (`/admin`) |
+|---|---|
+| Sign up, confirm email, reset password | Find accounts and licenses; renewals due in 60 days |
+| Download evaluation licenses | Issue subscription, perpetual, pilot or evaluation licenses with order reference |
+| Download any license they hold | Renew (new expiry, or new end of maintenance) |
+| Bind a license to an installation id | Revoke and reinstate |
+| Name licenses; check a license file | Make administrators; disable accounts |
+| Their own activity history | Full audit history |
+
+How a license file unlocks features in the applications, the file format,
+and the Java library the applications use are in
+[`licensing/README.md`](licensing/README.md).
+
+### Configuration
+
+All in the `licensing` service's environment (see `.env.example`):
+
+| Variable | |
+|---|---|
+| `PUBLIC_URL` | The address customers use, e.g. `https://products.ens-solutions.com`. Links in emails start with it; `https:` also makes session cookies Secure. **Set it.** |
+| `ADMIN_EMAILS` | Comma-separated. These accounts become administrators once they confirm their email. This is how the first administrator is made; others can then be promoted at `/admin/accounts`. |
+| `LICENSE_SIGNING_KEY` | The Ed25519 private key, from `npm run license -- keygen` (PEM, or the one-line form it prints). **A secret.** Unset, a key is generated in the data volume on first start, with a warning in the log. |
+| `LICENSE_SIGNING_KEY_FILE` | Or a path to it, e.g. a Docker secret. |
+| `LICENSE_TRUSTED_KEYS` | Retired public keys still accepted by *Check a file*, after a key rotation. |
+| `SMTP_URL`, `MAIL_FROM` | Outgoing mail for confirmations and password resets. Unset, messages are written to the service's log. |
+| `DATA_DIR` | `/data` in the image: `licensing.sqlite` and, if generated, the signing key. |
+
+Back up the `licensing-data` volume, and above all the signing key: if it is
+lost, existing files still verify but no new license can be signed for
+applications that only trust it.
+
+### Security notes
+
+- Passwords: scrypt; at least 12 characters. Session, confirmation and reset
+  tokens are random and stored only as SHA-256 hashes.
+- Sign-up, sign-in and reset answer the same way whether or not an address
+  has an account, and are rate limited per client address and address tried.
+- Form posts are checked for same origin (Astro's `security.checkOrigin`);
+  cookies are HttpOnly, SameSite=Lax, and Secure on `https:`.
+- Account pages are `no-store`, framed by nobody, and carry a strict CSP.
+- nginx overwrites `X-Forwarded-For` with the real client address; the
+  service trusts forwarded headers because only nginx can reach it. Don't
+  publish its port.
+- The signing key never leaves the service. `GET /api/licensing/keys` serves
+  the public keys; `GET /api/licensing/licenses/<id>/status` tells an
+  application with a network route whether a license is revoked, and nothing
+  about the customer.
 
 ---
 
@@ -171,7 +256,8 @@ make sure a returning visitor never gets new pages with old assets:
 
 - **The stylesheet and scripts** are bundled by Astro into `/_astro/` with a
   content hash in the file name (`/_astro/BaseLayout.CkhJsfDJ.css`). A changed
-  file is a new URL, so nginx lets browsers keep `/_astro/` for a year.
+  file is a new URL, so nginx lets browsers keep `/_astro/` for a year. Pages the licensing service
+  renders use the same bundles.
 - **Images** under `public/assets/` keep their names, and nginx lets browsers
   keep them for a week. The last step of the render script adds each one's
   content hash to every reference to it in the pages
@@ -207,38 +293,52 @@ Needs `envsubst` (GNU gettext) on `PATH`; the nginx image already ships it.
 
 ```
 src/
-  pages/                    One file per URL; built to the same paths as before
+  pages/                    One file per URL
     index.astro             Homepage: company intro, product cards, pricing teaser
     pricing.astro           Price list, support, services, buying terms, estimator
+    licensing.astro         How licensing works, for buyers and installers
     contact.astro           Contact form (opens the visitor's email app)
-    404.astro
+    404.astro, licensing-unavailable.astro
     products/               One page per product, each ending in its pricing
-  layouts/BaseLayout.astro  The page shell: <head>, header, footer
+    account/                Customer licensing pages (rendered on demand)
+    admin/                  ENS staff licensing pages (rendered on demand)
+    api/licensing/          Public keys, license status, health
+  layouts/
+    BaseLayout.astro        The page shell: <head>, header, footer
+    AccountLayout.astro     Licensing page shell: heading, account nav, notices
   components/
-    SiteHeader.astro        Nav, built from the product list
-    SiteFooter.astro
+    SiteHeader.astro, SiteFooter.astro
     DemoSwitch.astro        Demo / no-demo blocks for the render script
     DemoLink.astro          The "Open the demo" button
     PriceTable.astro        A product's size bands and prices
     ProductPricing.astro    The "Pricing" section of a product page
     SavingsCalculator.astro RSA Operations Portal help-desk savings
     Estimator.astro         The quote estimator's form
+    licensing/              License table, details, status pill, audit list
   data/
     products.ts             The product line: names, paths, demo keys, contact topics
     pricing.ts              Every price and pricing rule
+    licensing.ts            Features per product, editions, evaluation size
     examples.ts             Worked examples quoted on the site
   lib/
     pricing.ts              Pricing arithmetic (pure functions)
-    pricing.test.ts         Its tests
+    licensing/license.ts    The license file: format, signing, verification, state
+    licensing/issue.ts      Building a license from what was sold
+  server/                   The licensing service: config, database and migrations,
+                            accounts, sessions, licenses, audit log, mail, keys
+  middleware.ts             Loads the signed-in account on licensing pages
   scripts/                  Browser code: contact form, estimator, savings calculator
   styles/site.css           The whole stylesheet
 public/assets/img/          Brand images and product screenshots, served as-is
-nginx/default.conf          Server config: port 8080, gzip, caching, /healthz, 404
+licensing/                  The applications' side: Java verifier, Spring example,
+                            cross-language fixtures (see licensing/README.md)
+scripts/license.mjs         keygen, public-key, inspect, verify
+nginx/default.conf.template Server config: port 8080, gzip, caching, licensing proxy
 docker/docker-entrypoint.d/
   30-render-site.sh         Resolves demo URLs at container start
-astro.config.mjs            Build settings: .html file URLs, uncompressed HTML
-Dockerfile                  Build with Node, serve with nginx
-docker-compose.yml
+astro.config.mjs            Build settings: Node adapter, .html file URLs, origin checks
+Dockerfile                  Build, then the `web` and `licensing` images
+docker-compose.yml          Both services and the licensing data volume
 docker-compose.demo.yml     Demo deployment: no host port, reverse-proxy network
 .env.example
 .github/workflows/ci.yml

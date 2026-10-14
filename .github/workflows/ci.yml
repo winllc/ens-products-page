@@ -6,7 +6,7 @@ on:
   pull_request:
 
 jobs:
-  build:
+  site:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,14 +21,16 @@ jobs:
       - name: Type check
         run: npm run check
 
-      - name: Pricing tests
+      # Pricing arithmetic, license signing and verification, accounts and
+      # license management, and the cross-language fixtures.
+      - name: Tests
         run: npm test
 
       - name: Build
         run: npm run build
 
-      # The same render the container runs at start, against the build output:
-      # one product with a demo URL, the rest without.
+      # The same render the web container runs at start, against the build
+      # output: one product with a demo URL, the rest without.
       - name: Render as the container would
         env:
           CERTALERT_DEMO_URL: https://demo.example.com/certalert
@@ -39,5 +41,31 @@ jobs:
           ! grep -rq '<!--\(NO\)\?DEMO:' dist-rendered
           ! grep -rq '_DEMO_URL}' dist-rendered
 
-      - name: Docker image
-        run: docker build -t ens-products-page .
+      - name: Licensing service starts and answers
+        run: |
+          DATA_DIR=$RUNNER_TEMP/licensing PORT=4321 node dist/server/entry.mjs &
+          for i in $(seq 1 20); do curl -fsS http://127.0.0.1:4321/api/licensing/health && break; sleep 1; done
+          curl -fsS http://127.0.0.1:4321/api/licensing/keys | grep -q Ed25519
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4321/account)" = 303
+
+      - name: Docker images
+        run: |
+          docker build --target web -t ens-products-page .
+          docker build --target licensing -t ens-products-licensing .
+
+  java-verifier:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+
+      # Verifies the license files the site's TypeScript code signed
+      # (licensing/fixtures), so the two implementations can't drift apart.
+      - name: Test
+        working-directory: licensing/java
+        run: mvn -B test

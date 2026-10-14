@@ -6,3 +6,5 @@ dist-rendered
 .idea
 .env
 .env.demo
+licensing/java/target
+data

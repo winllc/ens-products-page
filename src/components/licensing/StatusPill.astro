@@ -1,0 +1,21 @@
+---
+import type { License } from '../../server/licenses';
+
+interface Props {
+    status: License['status'];
+    daysLeft?: number | null;
+}
+
+const { status, daysLeft = null } = Astro.props;
+const labels: Record<License['status'], string> = {
+    valid: 'Active',
+    grace: 'Grace period',
+    expired: 'Expired',
+    'not-yet-valid': 'Not yet valid',
+    revoked: 'Revoked',
+};
+const soon = status === 'valid' && daysLeft !== null && daysLeft <= 30;
+---
+<span class:list={['pill', `pill--${status}`, { 'pill--soon': soon }]}>
+    {labels[status]}{(status === 'valid' || status === 'grace') && daysLeft !== null && <>, {daysLeft} {daysLeft === 1 ? 'day' : 'days'} left</>}
+</span>

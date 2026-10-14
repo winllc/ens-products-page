@@ -1,0 +1,42 @@
+---
+export const prerender = false;
+
+import AuditList from '../../components/licensing/AuditList.astro';
+import LicenseTable from '../../components/licensing/LicenseTable.astro';
+import AccountLayout from '../../layouts/AccountLayout.astro';
+import { listAccounts } from '../../server/accounts';
+import { auditFor } from '../../server/audit';
+import { requireAdmin } from '../../server/http';
+import { allLicenses } from '../../server/licenses';
+
+const admin = requireAdmin(Astro);
+if (admin instanceof Response) return admin;
+
+const licenses = allLicenses();
+const accounts = listAccounts();
+const active = licenses.filter((l) => l.status === 'valid' && l.edition !== 'evaluation');
+const evaluations = licenses.filter((l) => l.status === 'valid' && l.edition === 'evaluation');
+const attention = licenses
+    .filter((l) => l.edition !== 'evaluation' && (l.status === 'grace' || (l.status === 'valid' && l.daysLeft !== null && l.daysLeft <= 60)))
+    .sort((a, b) => (a.daysLeft ?? 0) - (b.daysLeft ?? 0));
+const unverified = accounts.filter((a) => !a.email_verified_at).length;
+---
+<AccountLayout title="Licensing administration" eyebrow="Administration" section="admin">
+    <dl class="facts facts--flush">
+        <div><dt>Paid licenses in effect</dt><dd>{active.length}</dd></div>
+        <div><dt>Evaluations running</dt><dd>{evaluations.length}</dd></div>
+        <div><dt>Due for renewal (60 days)</dt><dd>{attention.length}</dd></div>
+        <div><dt>Accounts</dt><dd>{accounts.length}{unverified > 0 && <span class="muted small"> ({unverified} unconfirmed)</span>}</dd></div>
+    </dl>
+
+    <div class="btn-row">
+        <a class="btn btn--primary" href="/admin/accounts">Issue a license</a>
+        <a class="btn btn--ghost" href="/admin/licenses">All licenses</a>
+    </div>
+
+    <h2 class="section-gap">Due for renewal</h2>
+    {attention.length ? <LicenseTable licenses={attention} detailBase="/admin/licenses/" showOwner /> : <p class="muted">Nothing due in the next 60 days.</p>}
+
+    <h2 class="section-gap">Recent activity</h2>
+    <AuditList entries={auditFor({}, 30)} />
+</AccountLayout>

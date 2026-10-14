@@ -1,0 +1,164 @@
+---
+/*
+ * How licensing works, for buyers and for the people who install the
+ * products. Prerendered like the other marketing pages; the account pages it
+ * links to are served by the licensing service.
+ */
+import { editions, OVERAGE_TOLERANCE, productFeatures, type Edition } from '../data/licensing';
+import { products } from '../data/products';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { formatPercent } from '../lib/pricing';
+
+const order: Edition[] = ['evaluation', 'pilot', 'subscription', 'perpetual'];
+const how: Record<Edition, string> = {
+    evaluation: 'Free, from your account, one per product. Smallest size tier, every feature, evaluation banner.',
+    pilot: 'Paid and supported, credited toward the first year. Your chosen size, every feature.',
+    subscription: 'Issued against your order, for its term. Renewals re-issue it with a new expiry.',
+    perpetual: 'Issued once and never expires. Maintenance decides which releases it covers.',
+};
+---
+<BaseLayout
+    title="Licensing"
+    description="How ENS Solutions licenses work: one account for evaluation and purchased licenses, signed license files that work offline and on air-gapped networks, and what happens when a license runs out."
+>
+<section class="hero">
+    <div class="wrap">
+        <p class="eyebrow">Licensing</p>
+        <h1>One account for every license, and files that work offline.</h1>
+        <p class="lede">
+            Create an account to download a free {editions.evaluation.days}-day evaluation license for any product.
+            Licenses you buy are issued into the same account, where you download them, bind them to an
+            installation and see when they come due.
+        </p>
+        <div class="btn-row">
+            <a class="btn btn--primary" href="/account/signup">Create an account</a>
+            <a class="btn btn--ghost" href="/account/login">Sign in</a>
+        </div>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="steps-heading">
+    <div class="wrap">
+        <h2 id="steps-heading">How it works</h2>
+        <ol class="flow-steps">
+            <li><strong>Create an account and confirm your email.</strong> Use your work address; your name and organization go on your license files.</li>
+            <li><strong>Download an evaluation license.</strong> One click per product, valid for {editions.evaluation.days} days, with every feature.</li>
+            <li><strong>Install the file.</strong> Copy it to the server and point the application at it. It checks the file offline, so it works on networks with no internet route.</li>
+            <li><strong>Buy when you&rsquo;re ready.</strong> Once your order is in, we issue the subscription, pilot or perpetual license into your account. Renewals and upgrades arrive the same way.</li>
+        </ol>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="editions-heading">
+    <div class="wrap">
+        <h2 id="editions-heading">Kinds of license</h2>
+        <div class="table-scroll">
+            <table>
+                <caption class="visually-hidden">License editions</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Edition</th>
+                    <th scope="col">Term</th>
+                    <th scope="col">After it ends</th>
+                    <th scope="col">How you get it</th>
+                </tr>
+                </thead>
+                <tbody>
+                {order.map((e) => (
+                    <tr>
+                        <th scope="row">{editions[e].name}</th>
+                        <td>{editions[e].days === null ? 'No expiry' : e === 'subscription' ? 'Your order’s term' : `${editions[e].days} days`}</td>
+                        <td>{e === 'perpetual' ? 'Keeps working; updates need maintenance' : editions[e].graceDays ? `${editions[e].graceDays}-day grace period, then read-only` : 'Read-only'}</td>
+                        <td>{how[e]}</td>
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="file-heading">
+    <div class="wrap">
+        <h2 id="file-heading">The license file</h2>
+        <div class="feature-grid feature-grid--pairs">
+            <div class="feature">
+                <h3>Signed, not secret</h3>
+                <p>
+                    A license file is plain text with an Ed25519 signature from ENS Solutions. The application
+                    checks it against the public key built into it. Any change to the file makes it invalid,
+                    and there is nothing in it worth protecting, so it can travel by email or removable media.
+                </p>
+            </div>
+            <div class="feature">
+                <h3>No phone home</h3>
+                <p>
+                    Checking a license needs no network. Applications that do have a route can also ask the
+                    licensing service whether a license has been revoked, but none has to.
+                </p>
+            </div>
+            <div class="feature">
+                <h3>Bound to an installation, if you like</h3>
+                <p>
+                    Each installation shows an id on its license screen. Enter it in your account and the
+                    re-issued file works only there &mdash; useful where one license must not drift between enclaves.
+                </p>
+            </div>
+            <div class="feature">
+                <h3>Newer files win</h3>
+                <p>
+                    Every change re-issues the license as a new revision. Once an application has seen a revision
+                    it won&rsquo;t go back to an older one, so a renewal can&rsquo;t be undone by restoring an old file.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="limits-heading">
+    <div class="wrap">
+        <h2 id="limits-heading">What happens at the limits</h2>
+        <ul class="price-notes">
+            <li>
+                <strong>Over your size.</strong> The application warns, and once you are more than
+                {formatPercent(OVERAGE_TOLERANCE)} over it stops taking on more people, servers or tokens until the
+                license is updated. Nothing already there is removed.
+            </li>
+            <li>
+                <strong>Subscription ends.</strong> Everything keeps working for a {editions.subscription.graceDays}-day
+                grace period with a renewal warning. After that the application is read-only: your data stays
+                visible and exportable, scheduled jobs and notifications pause.
+            </li>
+            <li>
+                <strong>Perpetual maintenance ends.</strong> The license never stops working with the releases it
+                covers. Releases made after maintenance ends need maintenance renewed.
+            </li>
+        </ul>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="features-heading">
+    <div class="wrap">
+        <h2 id="features-heading">What a license unlocks</h2>
+        <p class="lede">Every license includes all of a product&rsquo;s standard features. Enterprise features come with the top size band, evaluations and pilots.</p>
+        <div class="card-grid card-grid--pairs">
+            {products.map((p) => (
+                <article class="card">
+                    <h3><a href={p.href}>{p.name}</a></h3>
+                    <ul class="ticks">
+                        {productFeatures[p.id].map((f) => (
+                            <li>{f.name}{f.enterprise && <span class="muted small"> (Enterprise)</span>}</li>
+                        ))}
+                    </ul>
+                </article>
+            ))}
+        </div>
+        <div class="callout">
+            <p>
+                Ready to try one? <a href="/account/signup">Create an account</a> and download an evaluation license,
+                or see <a href="/pricing.html">pricing</a>.
+            </p>
+        </div>
+    </div>
+</section>
+</BaseLayout>

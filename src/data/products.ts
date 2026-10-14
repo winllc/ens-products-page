@@ -47,7 +47,7 @@ export const products: readonly Product[] = [
     {
         id: 'mfa-portal',
         name: 'RSA Operations Portal',
-        navLabel: 'RSA Operations Portal',
+        navLabel: 'RSA Portal',
         tagline: 'For RSA SecurID',
         href: '/products/mfa-portal.html',
         demoKey: 'MFA_PORTAL',

@@ -1,0 +1,75 @@
+---
+export const prerender = false;
+
+import { editions } from '../../data/licensing';
+import { product } from '../../data/products';
+import AccountLayout from '../../layouts/AccountLayout.astro';
+import { formatCount } from '../../lib/pricing';
+import { LicenseError, type LicensePayload } from '../../lib/licensing/license';
+import { dateOnly, requireAccount } from '../../server/http';
+import { inspectFile, type License } from '../../server/licenses';
+import { isAdmin } from '../../server/accounts';
+
+const account = requireAccount(Astro);
+if (account instanceof Response) return account;
+
+let error: string | null = null;
+let result: { payload: LicensePayload; state: string; known: License | null } | null = null;
+
+if (Astro.request.method === 'POST') {
+    const data = await Astro.request.formData();
+    const upload = data.get('file');
+    let text = String(data.get('text') ?? '');
+    if (upload instanceof File && upload.size > 0) {
+        text = upload.size > 64 * 1024 ? '' : await upload.text();
+    }
+    if (!text.trim()) {
+        error = 'Paste the license file, or choose it.';
+    } else {
+        try {
+            result = inspectFile(text);
+        } catch (err) {
+            if (!(err instanceof LicenseError)) throw err;
+            error = `Not a valid ENS license: ${err.message}.`;
+        }
+    }
+}
+
+const mine = result?.known && (result.known.account_id === account.id || isAdmin(account));
+const stale = result?.known && result.known.revision > result.payload.revision;
+---
+<AccountLayout title="Check a license file" section="check" error={error}>
+    <p slot="lede" class="lede">
+        Confirm a file is genuine and unchanged, and see what it unlocks, before you install it.
+    </p>
+
+    {result && (
+        <div class="callout callout--ok">
+            <p><strong>Genuine.</strong> Signed by ENS Solutions and unchanged.</p>
+            <dl class="data-list">
+                <div><dt>Product</dt><dd>{product(result.payload.product).name}</dd></div>
+                <div><dt>Edition</dt><dd>{editions[result.payload.edition].name}</dd></div>
+                <div><dt>Licensee</dt><dd>{result.payload.licensee.organization || result.payload.licensee.name}</dd></div>
+                <div><dt>Covers</dt><dd>{formatCount(result.payload.limit.quantity)} {result.payload.limit.unit}</dd></div>
+                <div><dt>Expires</dt><dd>{result.payload.expiresAt ? dateOnly(result.payload.expiresAt) : 'Never'}</dd></div>
+                <div><dt>Dates</dt><dd>{result.state === 'valid' ? 'In effect' : result.state}</dd></div>
+                <div><dt>Revision</dt><dd>{result.payload.revision}</dd></div>
+            </dl>
+            {result.known?.status === 'revoked' && <p class="notice notice--error">This license has been revoked.</p>}
+            {stale && <p class="notice">A newer revision ({result.known!.revision}) of this license exists. Install that one instead.</p>}
+            {mine && <p><a href={`/account/licenses/${result.payload.id}`}>Open this license</a></p>}
+        </div>
+    )}
+
+    <form method="post" enctype="multipart/form-data" class="panel">
+        <div class="field">
+            <label for="file">License file</label>
+            <input id="file" name="file" type="file" accept=".lic,text/plain">
+        </div>
+        <div class="field">
+            <label for="text">Or paste it</label>
+            <textarea id="text" name="text" rows="8" class="mono" spellcheck="false"></textarea>
+        </div>
+        <button class="btn btn--primary" type="submit">Check</button>
+    </form>
+</AccountLayout>

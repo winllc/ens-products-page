@@ -1,0 +1,108 @@
+---
+export const prerender = false;
+
+import AuditList from '../../../components/licensing/AuditList.astro';
+import LicenseDetails from '../../../components/licensing/LicenseDetails.astro';
+import { product } from '../../../data/products';
+import AccountLayout from '../../../layouts/AccountLayout.astro';
+import { auditFor } from '../../../server/audit';
+import { form, requireAccount, withNotice } from '../../../server/http';
+import { bindInstallation, LicenseActionError, licenseFor, renameLicense } from '../../../server/licenses';
+
+const account = requireAccount(Astro);
+if (account instanceof Response) return account;
+
+let license = licenseFor(account, Astro.params.id ?? '');
+if (!license) {
+    return new Response('Not found', { status: 404 });
+}
+
+let error: string | null = null;
+if (Astro.request.method === 'POST') {
+    const get = await form(Astro);
+    try {
+        if (get('action') === 'bind') {
+            license = bindInstallation(account, license, get('installationId'));
+            return Astro.redirect(withNotice(`/account/licenses/${license.id}`, 'license-updated'), 303);
+        }
+        if (get('action') === 'rename') {
+            license = renameLicense(account, license, get('label'));
+            return Astro.redirect(`/account/licenses/${license.id}`, 303);
+        }
+    } catch (err) {
+        if (!(err instanceof LicenseActionError)) throw err;
+        error = err.message;
+    }
+}
+
+const info = product(license.product);
+const activity = auditFor({ license: license.id }, 25);
+const usable = license.status !== 'revoked';
+---
+<AccountLayout title={license.label || `${info.name} license`} section="licenses" error={error}>
+    <p slot="lede" class="lede"><a href="/account">&larr; All licenses</a></p>
+
+    {usable && (
+        <div class="btn-row btn-row--top">
+            <a class="btn btn--primary" href={`/account/licenses/${license.id}/download`} download>Download license file</a>
+            <span class="btn-note">Revision {license.revision}. Install it in place of any earlier file for this license.</span>
+        </div>
+    )}
+
+    <LicenseDetails license={license} />
+
+    <h2 class="section-gap">Install it</h2>
+    <ol class="flow-steps">
+        <li>
+            <strong>Copy the file to the {info.name} server.</strong> The file is plain text and safe to move by
+            removable media; it carries no secrets, only a signature.
+        </li>
+        <li>
+            <strong>Point {info.name} at it.</strong> Set <code>ENS_LICENSE_FILE</code> to the file&rsquo;s path
+            (default <code>/etc/ens/{license.product}.lic</code>), or upload it on the application&rsquo;s
+            <em>Administration &rarr; License</em> page.
+        </li>
+        <li>
+            <strong>Check the license screen.</strong> The application verifies the signature offline and shows
+            what is unlocked, how many {license.payload.limit.unit} it covers, and when it expires.
+        </li>
+    </ol>
+
+    {usable && (
+        <div class="split section-gap">
+            <form method="post" class="panel">
+                <h3>Bind to one installation</h3>
+                <p class="muted small">
+                    Optional. Enter the installation id from the application&rsquo;s license screen and the new
+                    file works only there. Leave it empty to remove the binding.
+                </p>
+                <input type="hidden" name="action" value="bind">
+                <div class="field">
+                    <label for="installationId">Installation id</label>
+                    <input id="installationId" name="installationId" class="mono" maxlength="64" placeholder="e.g. CA-7F3K-29QD" value={license.payload.installationId ?? ''}>
+                </div>
+                <button class="btn btn--ghost" type="submit">Save and re-issue</button>
+            </form>
+            <form method="post" class="panel">
+                <h3>Name</h3>
+                <p class="muted small">For your own reference, such as the enclave or site it&rsquo;s installed at. Not in the file.</p>
+                <input type="hidden" name="action" value="rename">
+                <div class="field">
+                    <label for="label">Name</label>
+                    <input id="label" name="label" maxlength="120" value={license.label}>
+                </div>
+                <button class="btn btn--ghost" type="submit">Save name</button>
+            </form>
+        </div>
+    )}
+
+    <div class="callout section-gap">
+        <p>
+            Renewing, adding users or changing support tier? <a href={`/contact.html?product=pricing&message=${encodeURIComponent(`About license ${license.id} (${info.name}): `)}`}>Tell us what you need</a>;
+            the updated license appears here.
+        </p>
+    </div>
+
+    <h2 class="section-gap">History</h2>
+    <AuditList entries={activity} />
+</AccountLayout>

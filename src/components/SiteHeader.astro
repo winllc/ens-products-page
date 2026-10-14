@@ -4,6 +4,7 @@ import { products } from '../data/products';
 const links = [
     ...products.map((p) => ({ href: p.href, label: p.navLabel })),
     { href: '/pricing.html', label: 'Pricing' },
+    { href: '/licensing.html', label: 'Licensing' },
     { href: '/contact.html', label: 'Contact' },
 ];
 
@@ -22,7 +23,7 @@ const isCurrent = (href: string) => href.replace(/\.html$/, '') === here;
             {links.map((l) => (
                 <a href={l.href} aria-current={isCurrent(l.href) ? 'page' : undefined}>{l.label}</a>
             ))}
-            <a href="https://ens-solutions.com/">ens-solutions.com</a>
+            <a class="nav-account" href="/account">Account</a>
         </nav>
     </div>
 </header>

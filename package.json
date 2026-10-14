@@ -9,16 +9,24 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "render": "SITE_TEMPLATE_DIR=dist SITE_OUTPUT_DIR=dist-rendered sh docker/docker-entrypoint.d/30-render-site.sh",
+    "render": "SITE_TEMPLATE_DIR=dist/client SITE_OUTPUT_DIR=dist-rendered sh docker/docker-entrypoint.d/30-render-site.sh",
     "check": "astro check",
     "test": "vitest run",
     "test:watch": "vitest",
-    "verify": "npm run check && npm test && npm run build"
+    "verify": "npm run check && npm test && npm run build",
+    "license": "node scripts/license.mjs",
+    "start": "node dist/server/entry.mjs"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.10",
-    "astro": "^7.3.8",
+    "@types/node": "^22.20.5",
+    "@types/nodemailer": "^8.0.2",
     "typescript": "^6.0.3",
     "vitest": "^5.0.4"
+  },
+  "dependencies": {
+    "@astrojs/node": "^11.1.7",
+    "astro": "^7.3.8",
+    "nodemailer": "^10.1.1"
   }
 }

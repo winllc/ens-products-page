@@ -1,0 +1,50 @@
+---
+import { editions } from '../../data/licensing';
+import { product } from '../../data/products';
+import { formatCount } from '../../lib/pricing';
+import { dateOnly } from '../../server/http';
+import type { License } from '../../server/licenses';
+import StatusPill from './StatusPill.astro';
+
+interface Props {
+    licenses: (License & { owner_email?: string })[];
+    detailBase: string;
+    showOwner?: boolean;
+}
+
+const { licenses, detailBase, showOwner = false } = Astro.props;
+---
+<div class="table-scroll">
+    <table class="license-table">
+        <caption class="visually-hidden">Licenses</caption>
+        <thead>
+        <tr>
+            <th scope="col">License</th>
+            {showOwner && <th scope="col">Account</th>}
+            <th scope="col">Edition</th>
+            <th scope="col">Covers</th>
+            <th scope="col">Status</th>
+            <th scope="col">Expires</th>
+            <th scope="col"><span class="visually-hidden">Actions</span></th>
+        </tr>
+        </thead>
+        <tbody>
+        {licenses.map((l) => (
+            <tr>
+                <th scope="row">
+                    <a href={`${detailBase}${l.id}`}>{l.label || product(l.product).name}</a>
+                    <span class="th-note">{product(l.product).name} &middot; <span class="mono">{l.id}</span></span>
+                </th>
+                {showOwner && <td>{l.owner_email}</td>}
+                <td>{editions[l.edition].name}</td>
+                <td>{formatCount(l.payload.limit.quantity)} {l.payload.limit.unit}</td>
+                <td><StatusPill status={l.status} daysLeft={l.daysLeft} /></td>
+                <td>{l.payload.expiresAt ? dateOnly(l.payload.expiresAt) : 'Perpetual'}</td>
+                <td class="num">
+                    {l.status !== 'revoked' && <a href={`/account/licenses/${l.id}/download`}>Download</a>}
+                </td>
+            </tr>
+        ))}
+        </tbody>
+    </table>
+</div>

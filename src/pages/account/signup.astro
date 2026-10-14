@@ -1,0 +1,65 @@
+---
+export const prerender = false;
+
+import AccountLayout from '../../layouts/AccountLayout.astro';
+import { AccountError, signUp } from '../../server/accounts';
+import { form, limited, withNotice } from '../../server/http';
+import { PASSWORD_MIN } from '../../server/secrets';
+
+if (Astro.locals.account) {
+    return Astro.redirect('/account', 303);
+}
+
+let error: string | null = null;
+let field: string | undefined;
+const values = { name: '', email: '', organization: '', phone: '' };
+
+if (Astro.request.method === 'POST') {
+    const get = await form(Astro);
+    Object.assign(values, { name: get('name'), email: get('email'), organization: get('organization'), phone: get('phone') });
+    if (limited(Astro, 'signup', values.email.toLowerCase(), 5, 60)) {
+        error = 'Too many sign-ups from here. Try again in an hour.';
+    } else {
+        try {
+            await signUp({ ...values, password: get('password') });
+            // Same answer whether the address was new or already had an account.
+            return Astro.redirect(withNotice('/account/login', 'check-email'), 303);
+        } catch (err) {
+            if (!(err instanceof AccountError)) throw err;
+            error = err.message;
+            field = err.field;
+        }
+    }
+}
+---
+<AccountLayout title="Create an account" narrow error={error}>
+    <p slot="lede" class="lede">
+        One account holds your evaluation and purchased licenses for every ENS product. Free evaluation
+        licenses are available as soon as you confirm your email address.
+    </p>
+    <form class="auth-form" method="post" novalidate={false}>
+        <div class="field">
+            <label for="name">Name</label>
+            <input id="name" name="name" autocomplete="name" required maxlength="120" value={values.name} aria-invalid={field === 'name' ? 'true' : undefined}>
+        </div>
+        <div class="field">
+            <label for="email">Work email</label>
+            <input id="email" name="email" type="email" autocomplete="email" required maxlength="254" value={values.email} aria-invalid={field === 'email' ? 'true' : undefined}>
+        </div>
+        <div class="field">
+            <label for="organization">Organization <span class="optional">shown on your license files</span></label>
+            <input id="organization" name="organization" autocomplete="organization" maxlength="160" value={values.organization}>
+        </div>
+        <div class="field">
+            <label for="phone">Phone <span class="optional">optional</span></label>
+            <input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="40" value={values.phone}>
+        </div>
+        <div class="field">
+            <label for="password">Password</label>
+            <input id="password" name="password" type="password" autocomplete="new-password" required minlength={PASSWORD_MIN} maxlength="256" aria-describedby="password-hint" aria-invalid={field === 'password' ? 'true' : undefined}>
+            <p class="field-hint" id="password-hint">At least {PASSWORD_MIN} characters. A few unrelated words make a good one.</p>
+        </div>
+        <button class="btn btn--primary" type="submit">Create account</button>
+        <p class="small muted">Already have one? <a href="/account/login">Sign in</a>.</p>
+    </form>
+</AccountLayout>
