@@ -1,0 +1,37 @@
+# Demo deployment: the same site, with no port published on the host.
+#
+# The container is only reachable from the Docker network below, so put a
+# reverse proxy (Traefik, Caddy, nginx...) on that network and point it at
+#
+#     http://ens-products-demo:8080
+#
+# Run it as its own Compose project so it never collides with the default one:
+#
+#     docker compose -f docker-compose.demo.yml --env-file .env.demo up -d --build
+#
+# .env.demo uses the same variables as .env (see .env.example), plus
+# DEMO_NETWORK if the proxy's network has a different name.
+
+name: ens-products-page-demo
+
+services:
+  site:
+    build: .
+    image: ens-products-page
+    container_name: ens-products-demo
+    # No `ports:` on purpose: nothing listens on the host. nginx serves on
+    # 8080 inside the container, for the proxy on the network below.
+    environment:
+      READYROOM_DEMO_URL: "${READYROOM_DEMO_URL:-}"
+      CERTALERT_DEMO_URL: "${CERTALERT_DEMO_URL:-}"
+      MFA_PORTAL_DEMO_URL: "${MFA_PORTAL_DEMO_URL:-}"
+      DIRECTORY_PORTAL_DEMO_URL: "${DIRECTORY_PORTAL_DEMO_URL:-}"
+    networks:
+      - proxy
+    restart: unless-stopped
+
+networks:
+  proxy:
+    # Created on first `up` if it doesn't exist yet; a proxy started from
+    # another Compose project joins it by declaring it as `external: true`.
+    name: "${DEMO_NETWORK:-ens-demo}"

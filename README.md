@@ -34,6 +34,23 @@ docker run --rm -p 8080:8080 \
   ens-products-page
 ```
 
+### Demo deployment, behind a reverse proxy
+
+`docker-compose.demo.yml` runs the same site with **no port published on the
+host**. The container, `ens-products-demo`, is reachable only on the Docker
+network `ens-demo`, so a reverse proxy on that network serves it, at
+`http://ens-products-demo:8080`.
+
+```bash
+cp .env.example .env.demo   # demo URLs; add DEMO_NETWORK=... to use another network
+docker compose -f docker-compose.demo.yml --env-file .env.demo up -d --build
+```
+
+It runs as its own Compose project (`ens-products-page-demo`), so it never
+collides with the default one. The first `up` creates the network if it doesn't
+exist. A proxy started from another Compose project joins it by declaring it
+under `networks:` with `external: true` and `name: ens-demo`.
+
 `GET /healthz` returns `200 ok` for orchestrator health checks, and the image
 carries a `HEALTHCHECK` that uses it.
 
@@ -137,6 +154,7 @@ docker/docker-entrypoint.d/
   30-render-site.sh         Resolves demo URLs at container start
 Dockerfile
 docker-compose.yml
+docker-compose.demo.yml    Demo deployment: no host port, reverse-proxy network
 .env.example
 ```
 
