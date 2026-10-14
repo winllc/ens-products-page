@@ -1,0 +1,26 @@
+---
+/*
+ * A product's demo buttons, in both states. The container's render script
+ * keeps exactly one: the "demo" slot when NAME_DEMO_URL is set, the "nodemo"
+ * slot when it is not (see docker/docker-entrypoint.d/30-render-site.sh).
+ *
+ * The markers are emitted as raw HTML, each on its own line, because the
+ * script matches them line by line.
+ */
+import type { ProductId } from '../data/products';
+import { product } from '../data/products';
+
+interface Props {
+    product: ProductId;
+}
+
+const key = product(Astro.props.product).demoKey;
+const open = (kind: 'DEMO' | 'NODEMO') => `<!--${kind}:${key}-->`;
+const close = (kind: 'DEMO' | 'NODEMO') => `<!--/${kind}:${key}-->`;
+---
+<Fragment set:html={open('DEMO')} />
+<slot name="demo" />
+<Fragment set:html={close('DEMO')} />
+<Fragment set:html={open('NODEMO')} />
+<slot name="nodemo" />
+<Fragment set:html={close('NODEMO')} />

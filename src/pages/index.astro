@@ -1,0 +1,255 @@
+---
+import { bundleDiscounts, pilot, supportTiers, thresholds } from '../data/pricing';
+import { products } from '../data/products';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { formatPercent, formatUSD, startingPrice } from '../lib/pricing';
+
+const lowest = Math.min(...products.map((p) => startingPrice(p.id)));
+const firstBundle = bundleDiscounts[0]!;
+const topBundle = bundleDiscounts.at(-1)!;
+const mission = supportTiers.at(-1)!;
+---
+<BaseLayout
+    title="Products"
+    description="Identity and accountability software from ENS Solutions, LLC — a service-disabled veteran-owned IT firm serving the DoD, the Intelligence Community and commercial customers. ReadyRoom, CertAlert, RSA Operations Portal and Directory Services Portal."
+>
+<section class="hero">
+    <div class="wrap">
+        <p class="eyebrow">Essential Network Security Solutions &middot; Veteran-owned</p>
+        <h1>Your essential IT partner, now in software you can deploy.</h1>
+        <p class="lede">
+            ENS Solutions is a service-disabled veteran-owned IT consulting and management firm
+            supporting the Department of Defense, the Intelligence Community and commercial
+            customers. Identity, credential and access management is at the core of that work,
+            and our products package it for organizations that already run a directory and a
+            certificate authority — who is present, which credentials are about to lapse, how people
+            prove who they are, and how the directory itself is kept up to date.
+        </p>
+        <div class="btn-row">
+            <a class="btn btn--primary" href="#products-heading">Explore the products</a>
+            <a class="btn btn--ghost" href="/pricing.html">See pricing</a>
+        </div>
+
+        <dl class="facts">
+            <div>
+                <dt>Small business</dt>
+                <dd>SDVOSB</dd>
+            </div>
+            <div>
+                <dt>Facility clearance</dt>
+                <dd>Top Secret</dd>
+            </div>
+            <div>
+                <dt>CAGE</dt>
+                <dd><span class="mono">72Z38</span></dd>
+            </div>
+            <div>
+                <dt>UEI</dt>
+                <dd><span class="mono">C2KVS6MK3JJ8</span></dd>
+            </div>
+        </dl>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="products-heading">
+    <div class="wrap">
+        <h2 id="products-heading">Products</h2>
+
+        <div class="card-grid card-grid--pairs">
+            <article class="card card--link">
+                <h3>
+                    <a href="/products/readyroom.html">ReadyRoom</a>
+                    <span class="badge badge--live">Available</span>
+                </h3>
+                <p>
+                    Know who&rsquo;s in without a sign-in sheet. Windows sign-ins, locks and sign-outs
+                    become daily attendance and accountability for your directory, with managers
+                    alerted when someone isn&rsquo;t in by their expected time.
+                </p>
+                <p class="card-price">From {formatUSD(startingPrice('readyroom'))} a year</p>
+                <span class="card-cta">View product &rarr;</span>
+            </article>
+
+            <article class="card card--link">
+                <h3>
+                    <a href="/products/certalert.html">CertAlert</a>
+                    <span class="badge badge--live">Available</span>
+                </h3>
+                <p>
+                    Certificate expiration visibility for your whole directory. Indexes every certificate
+                    people and servers publish, alerts each server&rsquo;s points of contact before
+                    one lapses, and checks revocation and what servers are actually serving.
+                </p>
+                <p class="card-price">From {formatUSD(startingPrice('certalert'))} a year</p>
+                <span class="card-cta">View product &rarr;</span>
+            </article>
+
+            <article class="card card--link">
+                <h3>
+                    <a href="/products/mfa-portal.html">RSA Operations Portal</a>
+                    <span class="badge badge--live">Available</span>
+                </h3>
+                <p>
+                    Run your RSA SecurID program from one portal. Self-service token activation and PIN
+                    resets, a Trusted Agent directory with appointments, help desk tools, and token
+                    shipments to every site &mdash; on top of RSA Authentication Manager.
+                </p>
+                <p class="card-price">From {formatUSD(startingPrice('mfa-portal'))} a year</p>
+                <span class="card-cta">View product &rarr;</span>
+            </article>
+
+            <article class="card card--link">
+                <h3>
+                    <a href="/products/directory-portal.html">Directory Services Portal</a>
+                    <span class="badge badge--live">Available</span>
+                </h3>
+                <p>
+                    A web front end for LDAP directories with custom schemas. Build forms for any object
+                    class, publish scoped read/write or white-pages directories, grant access by user or
+                    group, and let people update their own details.
+                </p>
+                <p class="card-price">From {formatUSD(startingPrice('directory-portal'))} a year</p>
+                <span class="card-cta">View product &rarr;</span>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="pricing-heading">
+    <div class="wrap">
+        <h2 id="pricing-heading">Pricing you can see before you call</h2>
+        <p class="lede">
+            Annual subscriptions sized by your directory, with updates, patches and support included &mdash;
+            or a perpetual license where your contract vehicle needs a one-time purchase.
+        </p>
+        <div class="feature-grid feature-grid--pairs">
+            <div class="feature">
+                <h3>From {formatUSD(lowest)} a year</h3>
+                <p>
+                    Smaller tiers fit under the {formatUSD(thresholds.microPurchase)} micro-purchase threshold
+                    and can go on a government purchase card.
+                </p>
+            </div>
+            <div class="feature">
+                <h3>{formatPercent(firstBundle.rate)}&ndash;{formatPercent(topBundle.rate)} off the suite</h3>
+                <p>Take two or more products and the discount comes off the sum of all of them.</p>
+            </div>
+            <div class="feature">
+                <h3>{mission.name} support for DoD and IC</h3>
+                <p>{mission.hours} coverage, {mission.response} response, cleared on-site support and releases on media for air-gapped networks.</p>
+            </div>
+            <div class="feature">
+                <h3>A pilot that counts</h3>
+                <p>A {pilot.days}-day paid pilot for {formatUSD(pilot.price)}, credited in full toward the first year.</p>
+            </div>
+        </div>
+        <div class="btn-row">
+            <a class="btn btn--primary" href="/pricing.html">See pricing</a>
+            <a class="btn btn--ghost" href="/pricing.html#estimate">Build an estimate</a>
+        </div>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="look-heading">
+    <div class="wrap">
+        <h2 id="look-heading">A look inside</h2>
+        <p class="lede">Each product running against a demo directory with sample data.</p>
+        <div class="shot-strip">
+            <a class="shot-tile" href="/products/readyroom.html">
+                <picture>
+                    <source media="(max-width: 640px)" srcset="/assets/img/screens/readyroom-home-mobile.jpg" width="640" height="583">
+                    <img src="/assets/img/screens/readyroom-home.jpg" width="1440" height="852" loading="lazy" decoding="async" alt="ReadyRoom home page showing a manager&rsquo;s team, 86% accounted for">
+                </picture>
+                <span class="shot-tile-label">ReadyRoom &rarr;</span>
+            </a>
+            <a class="shot-tile" href="/products/certalert.html">
+                <picture>
+                    <source media="(max-width: 640px)" srcset="/assets/img/screens/certalert-metrics-mobile.jpg" width="700" height="460">
+                    <img src="/assets/img/screens/certalert-metrics.jpg" width="1440" height="900" loading="lazy" decoding="async" alt="CertAlert metrics: certificates valid, expiring soon and expired, and a chart of issued against expiring">
+                </picture>
+                <span class="shot-tile-label">CertAlert &rarr;</span>
+            </a>
+            <a class="shot-tile" href="/products/mfa-portal.html">
+                <picture>
+                    <source media="(max-width: 640px)" srcset="/assets/img/screens/rsa-portal-user-details-mobile.jpg" width="720" height="814">
+                    <img src="/assets/img/screens/rsa-portal-user-details.jpg" width="1440" height="900" loading="lazy" decoding="async" alt="RSA Operations Portal user details: a user&rsquo;s account, their SecurID token and PIN reset, lost-token and emergency-code actions">
+                </picture>
+                <span class="shot-tile-label">RSA Operations Portal &rarr;</span>
+            </a>
+            <a class="shot-tile" href="/products/directory-portal.html">
+                <picture>
+                    <source media="(max-width: 640px)" srcset="/assets/img/screens/directory-portal-staff-mobile.jpg" width="620" height="560">
+                    <img src="/assets/img/screens/directory-portal-staff.jpg" width="1440" height="900" loading="lazy" decoding="async" alt="Directory Services Portal staff directory listing employees">
+                </picture>
+                <span class="shot-tile-label">Directory Services Portal &rarr;</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="company-heading">
+    <div class="wrap">
+        <h2 id="company-heading">Who we are</h2>
+        <p class="lede">
+            An agile technology consulting firm focused on IT innovation and management, with
+            cleared staff and long-standing customer relationships across the mission community.
+            The products on this site come from the same practice areas we deliver as services.
+        </p>
+        <div class="feature-grid">
+            <div class="feature">
+                <h3>Identity, credential &amp; access management</h3>
+                <p>
+                    Multi-factor authentication, public key infrastructure, privileged access
+                    management and managed authentication services.
+                </p>
+            </div>
+            <div class="feature">
+                <h3>Software development</h3>
+                <p>
+                    Application and system design, product architecture and database engineering,
+                    built on Java, Spring, Node.js and React.
+                </p>
+            </div>
+            <div class="feature">
+                <h3>Systems engineering &amp; security</h3>
+                <p>
+                    COTS integration, enterprise architecture, cyber and network security, service
+                    desk and program management office support.
+                </p>
+            </div>
+        </div>
+        <p class="section-more">
+            <a href="https://ens-solutions.com/">Full company profile and careers at ens-solutions.com &rarr;</a>
+        </p>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="approach-heading">
+    <div class="wrap">
+        <h2 id="approach-heading">How we build</h2>
+        <div class="feature-grid">
+            <div class="feature">
+                <h3>The directory stays the source of truth</h3>
+                <p>
+                    People, groups and org structure come from LDAP. Our databases store only what
+                    the directory cannot — records, roles, permissions and history.
+                </p>
+            </div>
+            <div class="feature">
+                <h3>Certificate-first authentication</h3>
+                <p>
+                    Mutual TLS with X.509 client certificates where the environment supports it,
+                    with directory username and password as the fallback.
+                </p>
+            </div>
+            <div class="feature">
+                <h3>Deploys where you already are</h3>
+                <p>
+                    Containerized, self-hosted, and configured through environment variables and
+                    external config rather than edits to a shipped file.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+</BaseLayout>

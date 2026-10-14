@@ -224,7 +224,7 @@ code {
 .site-nav {
     margin-left: auto;
     display: flex;
-    gap: 1.25rem;
+    gap: .5rem 1.1rem;
     flex-wrap: wrap;
 }
 
@@ -237,6 +237,12 @@ code {
 
 .site-nav a:hover,
 .site-nav a[aria-current="page"] { color: var(--text); }
+
+/* Seven links: tighten up before they wrap onto a third line on tablets. */
+@media (max-width: 860px) {
+    .site-nav { gap: .4rem .9rem; }
+    .site-nav a { font-size: .875rem; }
+}
 
 .site-footer {
     border-top: 1px solid var(--border);
@@ -1032,3 +1038,345 @@ img { max-width: 100%; height: auto; }
     .site-header .wrap { gap: .5rem 1.5rem; padding-block: .75rem; }
     .site-nav { margin-left: 0; gap: .5rem 1.1rem; }
 }
+
+/* An element the page hides must stay hidden whatever display a class gives it. */
+[hidden] { display: none !important; }
+
+/* ---------------------------------------------------------------- *
+ * Pricing
+ * ---------------------------------------------------------------- */
+
+.card .card-price {
+    margin: -.25rem 0 1rem;
+    font-size: .875rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.num { text-align: right; white-space: nowrap; }
+.price { font-weight: 650; color: var(--text); }
+
+.th-note {
+    display: block;
+    font-weight: 400;
+    font-size: .8em;
+    color: var(--text-muted);
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.price-table td,
+.price-table th { vertical-align: middle; }
+.price-table thead th.num { white-space: normal; }
+
+/* Four columns of prices fit a phone once the padding comes in. */
+@media (max-width: 640px) {
+    .price-table { font-size: .85rem; }
+    .price-table th,
+    .price-table td { padding: .6rem .5rem; }
+    .price-table .col-maint { display: none; }
+    .price-table thead th { font-size: .66rem; letter-spacing: .02em; }
+}
+
+/* Says in words what the maintenance column says, for phones where it is hidden. */
+.price-table-note { margin: .6rem 0 0; }
+@media (min-width: 641px) {
+    .price-table-note { display: none; }
+}
+
+.price-notes {
+    list-style: none;
+    padding: 0;
+    margin: 1.5rem 0 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    gap: 1rem 2rem;
+    color: var(--text-muted);
+    font-size: .925rem;
+}
+
+.price-notes strong { color: var(--text); }
+
+.price-blocks {
+    display: grid;
+    /* minmax(0, ...) so a wide table scrolls inside its box instead of widening the page. */
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2.5rem;
+    margin-top: 1.75rem;
+}
+
+.price-block { scroll-margin-top: 90px; }
+.price-block > p { max-width: 75ch; margin-bottom: 0; }
+.price-block .table-scroll { margin-top: 1rem; }
+
+.price-block-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: .25rem 1rem;
+    margin-bottom: .35rem;
+}
+
+.price-block-head h3 { font-size: 1.25rem; margin: 0; }
+.price-block-head h3 a { color: var(--text); text-decoration: none; }
+.price-block-head h3 a:hover { color: var(--accent); }
+
+.rule-steps--stack { grid-template-columns: minmax(0, 1fr); margin-top: 0; }
+
+.services-table th.service-name { white-space: normal; }
+.services-table .th-note { margin-top: .2rem; font-size: .875rem; line-height: 1.5; }
+
+.support-card.is-featured { border-color: var(--accent); border-top-width: 3px; }
+
+.support-price {
+    margin: auto 0 0;
+    padding-top: 1.1rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: .75rem;
+}
+
+.support-price div { border-top: 1px solid var(--border); padding-top: .75rem; }
+
+.support-price dt {
+    font-size: .7rem;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text-muted);
+}
+
+.support-price dd { margin: .1rem 0 0; font-weight: 650; font-size: .95rem; }
+
+.support-cards .ticks { margin-bottom: 0; }
+
+.callout--value { margin-top: 1.5rem; }
+
+.example {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+    gap: 1.5rem 2.5rem;
+    align-items: center;
+}
+
+.example .table-scroll { margin-top: 0; }
+.example th[scope="row"] { white-space: normal; }
+.example > p { color: var(--text-muted); margin: 0; }
+
+@media (max-width: 860px) {
+    .example { grid-template-columns: minmax(0, 1fr); }
+}
+
+.faq {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: .75rem;
+    margin-top: 1.5rem;
+    max-width: 80ch;
+}
+
+.faq details {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: .9rem 1.2rem;
+}
+
+.faq summary {
+    cursor: pointer;
+    font-weight: 620;
+}
+
+.faq details[open] summary { margin-bottom: .5rem; }
+.faq details p { color: var(--text-muted); margin: 0; }
+
+/* ---------------------------------------------------------------- *
+ * Calculators: RSA help-desk savings and the quote estimator
+ * ---------------------------------------------------------------- */
+
+.calc {
+    margin-top: 2rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: clamp(1.25rem, 3vw, 1.75rem);
+}
+
+.calc > p { color: var(--text-muted); max-width: 75ch; }
+
+.calc-result {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
+    gap: 1px;
+    margin: 1.5rem 0 .75rem;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+}
+
+.calc-result > div { background: var(--surface-alt); padding: .9rem 1.1rem; }
+
+.calc-result dt {
+    font-size: .72rem;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text-muted);
+}
+
+.calc-result dd {
+    margin: .15rem 0 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+.estimator {
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+    gap: 2rem;
+    align-items: start;
+    margin-top: 1.5rem;
+}
+
+.estimator > noscript { grid-column: 1 / -1; }
+
+@media (max-width: 900px) {
+    .estimator { grid-template-columns: minmax(0, 1fr); }
+}
+
+.estimator-form { display: grid; gap: 1.25rem; }
+
+.est-group {
+    margin: 0;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.25rem 1.25rem;
+    min-width: 0;
+}
+
+.est-group legend {
+    font-size: .75rem;
+    font-weight: 650;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--accent);
+    padding: 0 .35rem;
+}
+
+.choice-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr));
+    gap: .75rem;
+}
+
+.choice {
+    display: flex;
+    gap: .6rem;
+    align-items: flex-start;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .7rem .85rem;
+    cursor: pointer;
+    font-size: .875rem;
+    color: var(--text-muted);
+    background: var(--bg);
+}
+
+.choice strong { display: block; color: var(--text); font-size: .95rem; }
+.choice:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.choice input { margin-top: .3rem; accent-color: var(--accent); }
+
+.check {
+    display: flex;
+    gap: .55rem;
+    align-items: flex-start;
+    cursor: pointer;
+    font-size: .925rem;
+}
+
+.check input { margin-top: .35rem; accent-color: var(--accent); flex: none; }
+.check--small { font-size: .85rem; color: var(--text-muted); }
+
+.est-products {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+    gap: .75rem;
+}
+
+.est-product {
+    display: grid;
+    gap: .6rem;
+    align-content: start;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .85rem;
+    background: var(--bg);
+}
+
+.est-product .check span { font-weight: 620; }
+.est-product.is-on { border-color: var(--accent); }
+.est-product:not(.is-on) .field,
+.est-product:not(.is-on) .check--small { opacity: .55; }
+
+.est-options { display: grid; gap: .7rem; }
+
+.field--inline {
+    grid-template-columns: auto 6rem;
+    align-items: center;
+    gap: .75rem;
+    justify-content: start;
+}
+
+.field--inline label { font-weight: 400; font-size: .925rem; }
+
+.estimate {
+    position: sticky;
+    top: 90px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 3px solid var(--accent);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 1.25rem 1.25rem 1rem;
+}
+
+@media (max-width: 900px) {
+    .estimate { position: static; }
+}
+
+.estimate h3 { font-size: 1.15rem; }
+.estimate .btn-row { margin-top: 1.25rem; }
+.estimate > p { margin: 1rem 0 0; }
+
+.quote-table { font-size: .9rem; }
+.quote-table th, .quote-table td { padding: .55rem .25rem; }
+.quote-table th[scope="row"] { white-space: normal; font-weight: 500; }
+
+.quote-sub {
+    display: block;
+    text-wrap: balance;
+    font-size: .8rem;
+    color: var(--text-muted);
+}
+
+.quote-discount td { color: var(--st-in); }
+.quote-total > * { font-weight: 700; }
+.quote-grand > * { font-size: 1.05rem; border-top: 2px solid var(--text); }
+
+.quote-notes {
+    margin: 1rem 0 0;
+    padding-left: 1.1rem;
+    font-size: .85rem;
+    color: var(--text-muted);
+    display: grid;
+    gap: .35rem;
+}
+
+.btn[aria-disabled] { pointer-events: none; opacity: .5; }
+
+/* Four inputs fit one row on desktop rather than wrapping three and one. */
+.calc-form .form-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); }

@@ -1,7 +1,8 @@
 #!/bin/sh
 #
 # Renders the site templates into the directory nginx serves, resolving the
-# per-product demo URLs from the environment.
+# per-product demo URLs from the environment. The templates are Astro's build
+# output (dist/), copied into the image by the Dockerfile.
 #
 # The official nginx image runs every executable /docker-entrypoint.d/*.sh
 # before starting nginx, so this happens once per container start. That is the

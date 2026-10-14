@@ -1,0 +1,59 @@
+---
+/*
+ * The "Pricing" section of a product page: the product's bands, how it is
+ * sized, and the way to the full price list and the estimator. Anything the
+ * page wants to add (a value anchor, a calculator) goes in the default slot.
+ */
+import { bundleDiscounts, pilot, productPricing, thresholds } from '../data/pricing';
+import type { ProductId } from '../data/products';
+import { product } from '../data/products';
+import { formatPercent, formatUSD, startingPrice } from '../lib/pricing';
+import PriceTable from './PriceTable.astro';
+
+interface Props {
+    product: ProductId;
+    lede?: string;
+}
+
+const info = product(Astro.props.product);
+const pricing = productPricing[info.id];
+const from = startingPrice(info.id);
+const first = bundleDiscounts[0]!;
+const last = bundleDiscounts.at(-1)!;
+const lede =
+    Astro.props.lede ??
+    `Annual subscriptions from ${formatUSD(from)} a year, sized by ${pricing.unit}. Updates, security patches and business-hours support are included.`;
+---
+<section class="section" aria-labelledby="pricing-heading">
+    <div class="wrap">
+        <h2 id="pricing-heading">Pricing</h2>
+        <p class="lede">{lede}</p>
+        {pricing.unitNote && <p class="muted">{pricing.unitNote}</p>}
+
+        <PriceTable product={info.id} />
+
+        <ul class="price-notes">
+            <li>
+                <strong>Perpetual option.</strong> For contract vehicles that only allow one-time purchases,
+                with maintenance charged yearly.
+            </li>
+            <li>
+                <strong>Suite discount.</strong> {formatPercent(first.rate)} off when you take {first.minProducts} products,
+                {formatPercent(last.rate)} off for {last.minProducts} or more.
+            </li>
+            <li>
+                <strong>Start small.</strong> A {pilot.days}-day paid pilot is {formatUSD(pilot.price)}, credited in full
+                toward the first year. Orders up to {formatUSD(thresholds.microPurchase)} fit the micro-purchase
+                threshold, so they can go on a government purchase card.
+            </li>
+        </ul>
+
+        <slot />
+
+        <div class="btn-row">
+            <a class="btn btn--primary" href={`/pricing.html?product=${info.id}#estimate`}>Build an estimate</a>
+            <a class="btn btn--ghost" href="/pricing.html">Full price list</a>
+            <a class="btn btn--ghost" href={`/contact.html?product=${info.id}`}>Request a quote</a>
+        </div>
+    </div>
+</section>

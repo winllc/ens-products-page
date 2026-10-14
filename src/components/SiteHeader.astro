@@ -1,0 +1,28 @@
+---
+import { products } from '../data/products';
+
+const links = [
+    ...products.map((p) => ({ href: p.href, label: p.navLabel })),
+    { href: '/pricing.html', label: 'Pricing' },
+    { href: '/contact.html', label: 'Contact' },
+];
+
+// Astro reports /products/certalert for /products/certalert.html, so compare
+// without the extension.
+const here = Astro.url.pathname.replace(/\.html$/, '');
+const isCurrent = (href: string) => href.replace(/\.html$/, '') === here;
+---
+<header class="site-header">
+    <div class="wrap">
+        <a class="brand" href="/">
+            <img class="brand-logo" src="/assets/img/brand/ens-solutions-logo.jpg" width="548" height="100"
+                 alt="ENS Solutions, LLC: Your Essential IT Partner. Service-Disabled Veteran-Owned Small Business">
+        </a>
+        <nav class="site-nav" aria-label="Site">
+            {links.map((l) => (
+                <a href={l.href} aria-current={isCurrent(l.href) ? 'page' : undefined}>{l.label}</a>
+            ))}
+            <a href="https://ens-solutions.com/">ens-solutions.com</a>
+        </nav>
+    </div>
+</header>

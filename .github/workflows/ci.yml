@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Type check
+        run: npm run check
+
+      - name: Pricing tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # The same render the container runs at start, against the build output:
+      # one product with a demo URL, the rest without.
+      - name: Render as the container would
+        env:
+          CERTALERT_DEMO_URL: https://demo.example.com/certalert
+        run: |
+          npm run render
+          grep -q 'href="https://demo.example.com/certalert"' dist-rendered/products/certalert.html
+          grep -q 'Demo unavailable' dist-rendered/products/readyroom.html
+          ! grep -rq '<!--\(NO\)\?DEMO:' dist-rendered
+          ! grep -rq '_DEMO_URL}' dist-rendered
+
+      - name: Docker image
+        run: docker build -t ens-products-page .

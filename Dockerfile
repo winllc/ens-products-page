@@ -1,6 +1,25 @@
-# Static site on nginx. No build stage: the pages are plain HTML and CSS, and
-# the only per-deployment values (the demo URLs) are resolved at container
-# start by 30-render-site.sh rather than baked into the image.
+# Two stages: Node builds the site with Astro, nginx serves the result.
+#
+# The build produces plain static files. The only per-deployment values (the
+# demo URLs) are still resolved at container start by 30-render-site.sh rather
+# than baked into the image, so one image serves every environment.
+
+# ---- Build -----------------------------------------------------------------
+FROM node:22-alpine AS build
+WORKDIR /app
+
+# Dependencies first, so editing a page doesn't reinstall them.
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund
+
+COPY astro.config.mjs tsconfig.json ./
+COPY public/ public/
+COPY src/ src/
+
+# The pricing arithmetic is tested before anything is built from it.
+RUN npm test && npm run build
+
+# ---- Serve -----------------------------------------------------------------
 FROM nginx:1.27-alpine
 
 # Serve on 8080 so the container can run as a non-root user if the platform
@@ -11,7 +30,7 @@ COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
 # Templates, not the served root. The entrypoint script renders these into
 # /usr/share/nginx/html on every start.
-COPY site/ /usr/share/nginx/template/
+COPY --from=build /app/dist/ /usr/share/nginx/template/
 
 COPY docker/docker-entrypoint.d/30-render-site.sh /docker-entrypoint.d/30-render-site.sh
 RUN chmod +x /docker-entrypoint.d/30-render-site.sh
@@ -20,7 +39,8 @@ RUN chmod +x /docker-entrypoint.d/30-render-site.sh
 # state instead of a broken link.
 ENV READYROOM_DEMO_URL="" \
     CERTALERT_DEMO_URL="" \
-    MFA_PORTAL_DEMO_URL=""
+    MFA_PORTAL_DEMO_URL="" \
+    DIRECTORY_PORTAL_DEMO_URL=""
 
 EXPOSE 8080
 

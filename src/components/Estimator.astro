@@ -1,0 +1,128 @@
+---
+/*
+ * Quote estimator. The form is rendered here from the price list; the
+ * arithmetic and the summary are src/scripts/estimator.ts, which calls the
+ * same quote() the tests cover. The configuration is kept in the page's query
+ * string, so an estimate can be bookmarked or sent to a colleague, and it
+ * hands over to the contact form as a pre-filled message.
+ *
+ * Without JavaScript the form stays hidden and a note points to the price
+ * tables above it, which carry the same numbers.
+ */
+import { multiYear, pilot, productPricing, services, supportTiers } from '../data/pricing';
+import { products } from '../data/products';
+import { formatPercent, formatUSD } from '../lib/pricing';
+
+const defaults: Record<string, number> = {
+    readyroom: 500,
+    certalert: 10_000,
+    'mfa-portal': 10_000,
+    'directory-portal': 10_000,
+};
+---
+<div class="estimator" id="estimator">
+    <noscript>
+        <p class="callout">
+            The estimator needs JavaScript. Every price it uses is in the tables above, or
+            <a href="/contact.html?product=pricing">ask us for a quote</a>.
+        </p>
+    </noscript>
+
+    <form class="estimator-form" hidden data-enhanced>
+        <fieldset class="est-group">
+            <legend>How you buy</legend>
+            <div class="choice-row">
+                <label class="choice">
+                    <input type="radio" name="model" value="subscription" checked>
+                    <span><strong>Annual subscription</strong> Support and updates included</span>
+                </label>
+                <label class="choice">
+                    <input type="radio" name="model" value="perpetual">
+                    <span><strong>Perpetual license</strong> One-time purchase, maintenance yearly</span>
+                </label>
+            </div>
+        </fieldset>
+
+        <fieldset class="est-group">
+            <legend>Products</legend>
+            <div class="est-products">
+                {products.map((p) => (
+                    <div class="est-product" data-product={p.id}>
+                        <label class="check">
+                            <input type="checkbox" name="product" value={p.id}>
+                            <span>{p.name}</span>
+                        </label>
+                        <div class="field">
+                            <label for={`qty-${p.id}`}>{productPricing[p.id].unit.replace(/^./, (c) => c.toUpperCase())}</label>
+                            <input id={`qty-${p.id}`} name={`qty-${p.id}`} type="number" inputmode="numeric" min="1" step="1" value={defaults[p.id]}>
+                        </div>
+                        {p.id === 'certalert' && (
+                            <label class="check check--small">
+                                <input type="checkbox" name="multiForest">
+                                <span>Several forests or directories</span>
+                            </label>
+                        )}
+                    </div>
+                ))}
+            </div>
+        </fieldset>
+
+        <fieldset class="est-group">
+            <legend>Support</legend>
+            <div class="choice-row">
+                {supportTiers.map((t, i) => (
+                    <label class="choice">
+                        <input type="radio" name="support" value={t.id} checked={i === 0}>
+                        <span>
+                            <strong>{t.name}</strong>
+                            {t.response} response, {t.hours.toLowerCase()}
+                        </span>
+                    </label>
+                ))}
+            </div>
+        </fieldset>
+
+        <fieldset class="est-group">
+            <legend>Terms and services</legend>
+            <div class="est-options">
+                <label class="check">
+                    <input type="checkbox" name="prepay">
+                    <span>Prepay {multiYear.years} years ({formatPercent(multiYear.discount)} off; subscription only)</span>
+                </label>
+                <label class="check">
+                    <input type="checkbox" name="pilot">
+                    <span>Start with a {pilot.days}-day paid pilot ({formatUSD(pilot.price)}, credited to year one)</span>
+                </label>
+                <label class="check">
+                    <input type="checkbox" name="install" checked>
+                    <span>{services.install.name}</span>
+                </label>
+                <label class="check">
+                    <input type="checkbox" name="ato">
+                    <span>{services.ato.name}</span>
+                </label>
+                <div class="field field--inline">
+                    <label for="est-training">Training, half-day sessions</label>
+                    <input id="est-training" name="training" type="number" inputmode="numeric" min="0" max="50" step="1" value="0">
+                </div>
+            </div>
+        </fieldset>
+    </form>
+
+    <aside class="estimate" hidden data-enhanced aria-labelledby="estimate-heading">
+        <h3 id="estimate-heading">Your estimate</h3>
+        <div data-out="body" aria-live="polite"></div>
+        <div class="btn-row">
+            <a class="btn btn--primary" data-out="quote" href="/contact.html?product=pricing">Request this quote</a>
+            <button class="btn btn--ghost" type="button" data-out="copy">Copy link</button>
+        </div>
+        <p class="small muted">
+            List prices in US dollars, before taxes. A quote from ENS Solutions is what binds; this is an
+            estimate from the published price list.
+        </p>
+    </aside>
+</div>
+
+<script>
+    import '../scripts/estimator';
+</script>

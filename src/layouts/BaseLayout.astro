@@ -1,0 +1,43 @@
+---
+/*
+ * The page shell every page shares: head, header, footer. Before the move to
+ * Astro these were copied into each page by hand; now a nav change is one edit
+ * in SiteHeader.astro.
+ */
+import SiteFooter from '../components/SiteFooter.astro';
+import SiteHeader from '../components/SiteHeader.astro';
+import '../styles/site.css';
+
+interface Props {
+    /** Page name. " — ENS Solutions, LLC" is appended. */
+    title: string;
+    description?: string;
+}
+
+const { title, description } = Astro.props;
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{title} — ENS Solutions, LLC</title>
+    {description && <meta name="description" content={description}>}
+    <link rel="icon" href="/assets/img/brand/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="/assets/img/brand/icon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="/assets/img/brand/apple-touch-icon.png">
+    <meta name="theme-color" content="#1d5a72">
+    <slot name="head" />
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<SiteHeader />
+
+<main id="main">
+<slot />
+</main>
+
+<SiteFooter />
+</body>
+</html>
