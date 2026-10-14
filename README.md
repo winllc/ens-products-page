@@ -6,8 +6,9 @@ for each product, served as static HTML from an nginx container.
 | Product | Page | Status |
 |---|---|---|
 | ReadyRoom | `/products/readyroom.html` | Available |
-| CertAlert | `/products/certalert.html` | Coming soon |
+| CertAlert | `/products/certalert.html` | Available |
 | RSA Operations Portal | `/products/mfa-portal.html` | Available |
+| Directory Services Portal | `/products/directory-portal.html` | Available |
 
 No build step, no CDN, no backend. The pages are plain HTML and one
 stylesheet, plus one small script on the contact page; the only per-deployment
@@ -47,6 +48,7 @@ Each product page has a demo button driven by one environment variable:
 | `READYROOM_DEMO_URL` | ReadyRoom |
 | `CERTALERT_DEMO_URL` | CertAlert |
 | `MFA_PORTAL_DEMO_URL` | RSA Operations Portal |
+| `DIRECTORY_PORTAL_DEMO_URL` | Directory Services Portal |
 
 Set one and that product's button becomes a live link to it. **Leave it empty
 and the page renders a "coming soon" state instead** — there is no way to get a
@@ -80,13 +82,28 @@ survives the render:
 <!--/NODEMO:READYROOM-->
 ```
 
-Substitution is restricted to the three `*_DEMO_URL` names, so no other `$NAME`
+Substitution is restricted to the four `*_DEMO_URL` names, so no other `$NAME`
 in the markup or CSS is touched. Non-HTML files are copied through byte for
 byte.
 
-To add a fourth product, add its `NAME_DEMO_URL` to the `export` list, the
+To add another product, add its `NAME_DEMO_URL` to the `export` list, the
 `enabled` list and the `vars` list in the render script, then use
 `<!--DEMO:NAME-->` markers in its page.
+
+### Cache busting
+
+nginx lets browsers keep everything under `/assets/` for a week, while the pages
+themselves are never cached. So the last step of the render script adds each
+asset's content hash to every reference to it in the pages
+(`/assets/css/site.css?v=e332f43848`). When an asset changes, its URL changes,
+so a returning visitor's browser fetches the new copy instead of styling new
+pages with last week's stylesheet. Without this, a phone that visited before a
+deploy showed the new pages with the old stylesheet: oversized logos, a layout
+wider than the screen, and the old colours.
+
+Write asset references in the HTML as plain absolute paths in double quotes
+(`src="/assets/..."`). The render script only versions references in that
+form.
 
 ### Rendering outside the container
 
@@ -107,14 +124,14 @@ Needs `envsubst` (GNU gettext) on `PATH`; the nginx image already ships it.
 
 ```
 site/                       Templates — the site itself
-  index.html                Homepage: company intro + the three product cards
+  index.html                Homepage: company intro + the four product cards
   contact.html              Contact form (opens the visitor's email app)
   404.html
   products/                 One page per product
   assets/css/site.css       The whole stylesheet
-  assets/img/               Product screenshots
   assets/js/contact.js      Composes the contact form's email; the site's only script
-  assets/favicon.svg
+  assets/img/brand/         ENS logo, icons, and the ReadyRoom and CertAlert logos
+  assets/img/screens/       Product screenshots (JPEG, 1440 px wide) and phone crops
 nginx/default.conf          Server config: port 8080, gzip, /healthz, 404
 docker/docker-entrypoint.d/
   30-render-site.sh         Resolves demo URLs at container start
@@ -128,9 +145,9 @@ docker-compose.yml
 ## Editing content
 
 Everything is hand-written HTML — edit the file for the page you want to
-change. The header, footer and nav are duplicated across the six pages rather
-than templated; with six pages that is cheaper than introducing a build step,
-but it does mean a nav change is a six-file change.
+change. The header, footer and nav are duplicated across the seven pages rather
+than templated; with seven pages that is cheaper than introducing a build step,
+but it does mean a nav change is a seven-file change.
 
 Colours, spacing and type are CSS custom properties declared once at the top of
 `site/assets/css/site.css`, with a dark-mode block right below. Re-skinning to
@@ -147,7 +164,7 @@ native `mailto:` form submission.
 
 - The recipient is the form's `action` and `data-recipient` attributes.
 - Product pages link to `/contact.html?product=readyroom` (or `certalert`,
-  `mfa-portal`) to pre-select the topic; the mapping is at the top of the script.
+  `mfa-portal`, `directory-portal`) to pre-select the topic; the mapping is at the top of the script.
 - The message is capped at 1,500 characters because some mail clients truncate
   long `mailto:` links.
 - Visitors with no email app configured get nothing to happen, so the page
@@ -161,7 +178,60 @@ and to the company
 plain links; nothing is embedded and no third-party script is loaded, so the
 site still makes no outbound requests of its own.
 
-### Where the ReadyRoom copy came from
+### Branding
+
+`site/assets/img/brand/` holds:
+
+- `ens-solutions-logo.jpg`: the official ENS Solutions logo, with tagline and
+  SDVOSB seal, exactly as ens-solutions.com serves it
+  (`/wp-content/uploads/2023/06/ENS-Web-Logo-1_with-SDVOSB.jpg`, 548 x 100). It
+  is in every page's header and footer. It's a JPEG on white, so in dark mode
+  it sits on a white plate rather than being recoloured.
+- `favicon-32.png`, `icon-192.png`, `apple-touch-icon.png`: the logo's dot mark,
+  cut from that file. The source is about 90 px tall, so the larger icons are
+  slightly soft. Replace them if a vector or larger master exists.
+- `readyroom-logo.png`: from `readyroom_logo_1.png` in `in-n-out-work`, trimmed,
+  with the white background made transparent. The artwork is one ink colour,
+  so dark mode inverts it.
+- `certalert-logo.png` and `certalert-logo-white.png`: `cert-alert`'s own logo
+  files, unchanged. Dark mode uses the white one.
+
+The site's accent colour is the logo's blue-teal (`--brand`, `#1d5a72`), and the
+stripe above the header is its bright teal (`--brand-teal`, `#1aa3b8`). The
+bright teal is too light for text on white (2.8:1), so it's used only as
+decoration. Dark mode uses a lighter teal (`#4cc3d6`) for links and buttons.
+
+### Screenshots
+
+`site/assets/img/screens/` holds screenshots of all four products. They're
+shown on each product page, and one per product on the homepage under "A look
+inside". Each was taken at 1440 px wide against demo data:
+
+- **ReadyRoom:** the `test/` Docker Compose stack, with the mock data from
+  `seed-mock-data.sh`, signed in as `alice`. `alice` is the mock manager, made
+  an administrator for the shots.
+- **CertAlert:** the `dev` profile's embedded sample directory, signed in as
+  `alice`.
+- **Directory Services Portal:** the built-in demo directory, signed in as
+  `admin`, after a few edits so the audit log had something to show.
+- **RSA Operations Portal (`rsa-portal-*`):** it needs a live RSA
+  Authentication Manager to run, so these are the portal's own Thymeleaf
+  templates and stylesheets rendered with sample data (fictional names, sites
+  and serials) and captured in Chromium at 1.5x, then scaled to 1440 px. The
+  portal's classification banners are hidden for the captures. Keep it that
+  way if you re-shoot them: no classification or handling markings anywhere on
+  this site.
+
+Each screenshot has a `-mobile.jpg` partner: a crop, at full resolution, of
+the part that matters. Pages serve it through `<picture>` on screens 640 px wide
+or narrower, where a whole 1440 px screenshot would shrink its text to about a
+quarter of its size. Replace both files together and keep the crop's `width`
+and `height` on its `<source>` in step.
+
+To replace a screenshot, keep the file name, or update the `src`, `width` and `height` in
+the pages that use it.
+
+### Where the product copy came from
 
 The ReadyRoom page is written from the `README.md` of the
 [`in-n-out-work`](https://github.com/winllc/in-n-out-work) repository, which is
@@ -170,20 +240,23 @@ workstation logon, lock, unlock and logoff events. Its technical summary
 reflects that codebase: Spring Boot 4 on Java 21, PostgreSQL, LDAP, a PowerShell
 client, and mutual TLS with an LDAP form-login fallback.
 
-### Where the RSA Operations Portal copy came from
+The CertAlert page is written from the `README.md` of
+[`cert-alert`](https://github.com/winllc/cert-alert): an index over the
+certificates an LDAP directory publishes, built against the IC IdAM Full Service
+Directory schema — Spring Boot 4 on Java 21, PostgreSQL with Flyway, a Tabler UI,
+certificate sign-in by fingerprint, changelog following, revocation and endpoint
+checks, and email round-ups to server points of contact.
 
-The RSA Operations Portal page (formerly listed as "MFA Portal") is written from
-the [`rsa-operations-portal`](https://github.com/winllc/rsa-operations-portal)
-repository. Its page keeps the old `mfa-portal.html` path, the
-`MFA_PORTAL_DEMO_URL` variable and the `?product=mfa-portal` contact key, so
-existing links and deployments keep working.
+The Directory Services Portal page is written from the `README.md` of
+[`directory-services-portal`](https://github.com/winllc/directory-services-portal):
+a web front end for LDAP directories with custom schemas, with a Spring Boot 4 /
+Java 21 API on the UnboundID LDAP SDK, a React client served by nginx, and
+password or X.509 sign-in.
 
-The screenshots in `site/assets/img/rsa-operations-portal/` are the product's
-own Thymeleaf templates and stylesheets rendered with sample data (fictional
-names, sites and serials) and captured in Chromium at 1440px wide, 1.5x scale.
-No customer data appears in them, and the portal's classification banners are
-hidden for the captures. Keep it that way if you re-shoot them: no
-classification or handling markings anywhere on this site.
-
-The CertAlert page describes a product that does not exist yet, and its feature
-copy is provisional — worth a read before this goes public.
+The RSA Operations Portal page (formerly listed as "MFA Portal") is written
+from the [`rsa-operations-portal`](https://github.com/winllc/rsa-operations-portal)
+repository: a Spring Boot and Thymeleaf portal with a MySQL database and a
+connector to RSA Authentication Manager's administration API. Its page keeps
+the old `mfa-portal.html` path, the `MFA_PORTAL_DEMO_URL` variable and the
+`?product=mfa-portal` contact key, so existing links and deployments keep
+working.

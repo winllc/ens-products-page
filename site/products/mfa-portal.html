@@ -7,7 +7,10 @@
     <meta name="description"
           content="RSA Operations Portal runs the day-to-day of an RSA SecurID program on top of RSA Authentication Manager: token assignment and self-service PIN resets, a Trusted Agent directory with appointments, multi-site token shipments, and help desk tools. Available now from ENS Solutions.">
     <link rel="stylesheet" href="/assets/css/site.css">
-    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="/assets/img/brand/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="/assets/img/brand/icon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="/assets/img/brand/apple-touch-icon.png">
+    <meta name="theme-color" content="#1d5a72">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -15,13 +18,14 @@
 <header class="site-header">
     <div class="wrap">
         <a class="brand" href="/">
-            <span class="brand-mark" aria-hidden="true">ENS</span>
-            <span>ENS Solutions</span>
+            <img class="brand-logo" src="/assets/img/brand/ens-solutions-logo.jpg" width="548" height="100"
+                 alt="ENS Solutions, LLC: Your Essential IT Partner. Service-Disabled Veteran-Owned Small Business">
         </a>
         <nav class="site-nav" aria-label="Site">
             <a href="/products/readyroom.html">ReadyRoom</a>
             <a href="/products/certalert.html">CertAlert</a>
             <a href="/products/mfa-portal.html" aria-current="page">RSA Operations Portal</a>
+            <a href="/products/directory-portal.html">Directory Portal</a>
             <a href="/contact.html">Contact</a>
             <a href="https://ens-solutions.com/">ens-solutions.com</a>
         </nav>
@@ -35,7 +39,7 @@
                 <a class="backlink" href="/">&larr; All products</a>
                 <div class="title-row">
                     <p class="eyebrow eyebrow--inline">RSA Operations Portal &middot; For RSA SecurID</p>
-                    <span class="badge badge--live">Available now</span>
+                    <span class="badge badge--live">Available</span>
                 </div>
                 <h1>Run your SecurID program from one portal.</h1>
                 <p class="lede">
@@ -60,9 +64,13 @@
             </div>
 
             <figure class="shot">
-                <a href="/assets/img/rsa-operations-portal/user-details.jpg">
-                    <img src="/assets/img/rsa-operations-portal/user-details.jpg" width="2160" height="1620"
-                         alt="RSA Operations Portal user details page, showing a user's account, their assigned SecurID token with Reset Pin, Mark Lost and Generate Emergency Token Code buttons, and their enrollment history.">
+                <a href="/assets/img/screens/rsa-portal-user-details.jpg" class="shot-link" target="_blank" rel="noopener">
+                    <picture>
+                        <source media="(max-width: 640px)" srcset="/assets/img/screens/rsa-portal-user-details-mobile.jpg" width="720" height="814">
+                        <img src="/assets/img/screens/rsa-portal-user-details.jpg" width="1440" height="900" decoding="async"
+                             alt="RSA Operations Portal user details page, showing a user's account, their assigned SecurID token with Reset Pin, Mark Lost and Generate Emergency Token Code buttons, and their enrollment history.">
+                    </picture>
+                    <span class="visually-hidden"> (opens full size in a new tab)</span>
                 </a>
                 <figcaption>Help desk view of a user: account status, token, and one-click PIN reset, lost-token and emergency-code actions.</figcaption>
             </figure>
@@ -116,35 +124,51 @@
     <section class="section" aria-labelledby="screens-heading">
         <div class="wrap">
             <h2 id="screens-heading">A look inside</h2>
-            <p class="muted">Screens from the product, shown with sample data. Select a screenshot to view it full size.</p>
+            <p class="lede">Screenshots of RSA Operations Portal with sample people, sites and tokens. Select one to see it full size.</p>
             <div class="shot-grid">
                 <figure class="shot">
-                    <a href="/assets/img/rsa-operations-portal/trusted-agent-directory.jpg">
-                        <img src="/assets/img/rsa-operations-portal/trusted-agent-directory.jpg" width="2160" height="1320" loading="lazy"
-                             alt="Trusted Agent Directory: a searchable table of Trusted Agents with their site, city, state and country, and Details and Schedule Appointment buttons on each row.">
+                    <a href="/assets/img/screens/rsa-portal-trusted-agents.jpg" class="shot-link" target="_blank" rel="noopener">
+                        <picture>
+                            <source media="(max-width: 640px)" srcset="/assets/img/screens/rsa-portal-trusted-agents-mobile.jpg" width="640" height="728">
+                            <img src="/assets/img/screens/rsa-portal-trusted-agents.jpg" width="1440" height="900" loading="lazy" decoding="async"
+                                 alt="Trusted Agent Directory: a searchable table of Trusted Agents with their site, city, state and country, and Details and Schedule Appointment buttons on each row.">
+                        </picture>
+                        <span class="visually-hidden"> (opens full size in a new tab)</span>
                     </a>
-                    <figcaption><strong>Trusted Agent Directory</strong>Searchable by name, site or location, with appointment booking on every row.</figcaption>
+                    <figcaption><strong>Trusted Agent Directory.</strong> Searchable by name, site or location, with appointment booking on every row.</figcaption>
                 </figure>
                 <figure class="shot">
-                    <a href="/assets/img/rsa-operations-portal/shipments.jpg">
-                        <img src="/assets/img/rsa-operations-portal/shipments.jpg" width="2160" height="1320" loading="lazy"
-                             alt="Shipments list: token shipments to several sites with the number of tokens requested, a status of New, Being Worked, Shipped or Received, and submitted, sent and received dates.">
+                    <a href="/assets/img/screens/rsa-portal-shipments.jpg" class="shot-link" target="_blank" rel="noopener">
+                        <picture>
+                            <source media="(max-width: 640px)" srcset="/assets/img/screens/rsa-portal-shipments-mobile.jpg" width="700" height="648">
+                            <img src="/assets/img/screens/rsa-portal-shipments.jpg" width="1440" height="900" loading="lazy" decoding="async"
+                                 alt="Shipments list: token shipments to several sites with the number of tokens requested, a status of New, Being Worked, Shipped or Received, and submitted, sent and received dates.">
+                        </picture>
+                        <span class="visually-hidden"> (opens full size in a new tab)</span>
                     </a>
-                    <figcaption><strong>Shipments</strong>Every token shipment from request to receipt, across all of your sites.</figcaption>
+                    <figcaption><strong>Shipments.</strong> Every token shipment from request to receipt, across all of your sites.</figcaption>
                 </figure>
                 <figure class="shot">
-                    <a href="/assets/img/rsa-operations-portal/trusted-agent-report.jpg">
-                        <img src="/assets/img/rsa-operations-portal/trusted-agent-report.jpg" width="2160" height="1410" loading="lazy"
-                             alt="Trusted Agent Report: the number of tokens a Trusted Agent has issued and an activity log of token assignments, emergency codes, shipments received and deprovisioned tokens.">
+                    <a href="/assets/img/screens/rsa-portal-ta-report.jpg" class="shot-link" target="_blank" rel="noopener">
+                        <picture>
+                            <source media="(max-width: 640px)" srcset="/assets/img/screens/rsa-portal-ta-report-mobile.jpg" width="700" height="462">
+                            <img src="/assets/img/screens/rsa-portal-ta-report.jpg" width="1440" height="900" loading="lazy" decoding="async"
+                                 alt="Trusted Agent Report: the number of tokens a Trusted Agent has issued and an activity log of token assignments, emergency codes, shipments received and deprovisioned tokens.">
+                        </picture>
+                        <span class="visually-hidden"> (opens full size in a new tab)</span>
                     </a>
-                    <figcaption><strong>Trusted Agent Report</strong>Tokens issued and a full activity log for each agent, with the same report per site.</figcaption>
+                    <figcaption><strong>Trusted Agent Report.</strong> Tokens issued and a full activity log for each agent, with the same report per site.</figcaption>
                 </figure>
                 <figure class="shot">
-                    <a href="/assets/img/rsa-operations-portal/home.jpg">
-                        <img src="/assets/img/rsa-operations-portal/home.jpg" width="2160" height="1620" loading="lazy"
-                             alt="Portal home page: a welcome banner, a system notification announcing new tokens at two sites, and the role-based navigation menu for Trusted Agent, token management and program office tasks.">
+                    <a href="/assets/img/screens/rsa-portal-home.jpg" class="shot-link" target="_blank" rel="noopener">
+                        <picture>
+                            <source media="(max-width: 640px)" srcset="/assets/img/screens/rsa-portal-home-mobile.jpg" width="700" height="499">
+                            <img src="/assets/img/screens/rsa-portal-home.jpg" width="1440" height="900" loading="lazy" decoding="async"
+                                 alt="Portal home page: a welcome banner, a system notification announcing new tokens at two sites, and the role-based navigation menu for Trusted Agent, token management and program office tasks.">
+                        </picture>
+                        <span class="visually-hidden"> (opens full size in a new tab)</span>
                     </a>
-                    <figcaption><strong>Home and navigation</strong>Announcements for every user, and menus that show each person only the tasks for their role.</figcaption>
+                    <figcaption><strong>Home.</strong> Announcements and getting-started guidance for every user, and menus that show each person only the tasks for their role.</figcaption>
                 </figure>
             </div>
         </div>
@@ -225,7 +249,10 @@
 
 <footer class="site-footer">
     <div class="wrap">
-        <span>&copy; ENS Solutions, LLC</span>
+        <div class="footer-brand">
+            <img class="footer-logo" src="/assets/img/brand/ens-solutions-logo.jpg" width="548" height="100" loading="lazy" alt="ENS Solutions, LLC">
+            <span>&copy; ENS Solutions, LLC &middot; Service-Disabled Veteran-Owned Small Business</span>
+        </div>
         <nav class="footer-links" aria-label="Elsewhere">
             <a href="/contact.html">Contact</a>
             <a href="https://ens-solutions.com/">ens-solutions.com</a>

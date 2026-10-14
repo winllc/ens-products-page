@@ -5,9 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Products — ENS Solutions, LLC</title>
     <meta name="description"
-          content="Identity and accountability software from ENS Solutions, LLC — a service-disabled veteran-owned IT firm serving the DoD, the Intelligence Community and commercial customers. ReadyRoom, CertAlert and RSA Operations Portal.">
+          content="Identity and accountability software from ENS Solutions, LLC — a service-disabled veteran-owned IT firm serving the DoD, the Intelligence Community and commercial customers. ReadyRoom, CertAlert, RSA Operations Portal and Directory Services Portal.">
     <link rel="stylesheet" href="/assets/css/site.css">
-    <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+    <link rel="icon" href="/assets/img/brand/favicon-32.png" type="image/png" sizes="32x32">
+    <link rel="icon" href="/assets/img/brand/icon-192.png" type="image/png" sizes="192x192">
+    <link rel="apple-touch-icon" href="/assets/img/brand/apple-touch-icon.png">
+    <meta name="theme-color" content="#1d5a72">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
@@ -15,13 +18,14 @@
 <header class="site-header">
     <div class="wrap">
         <a class="brand" href="/">
-            <span class="brand-mark" aria-hidden="true">ENS</span>
-            <span>ENS Solutions</span>
+            <img class="brand-logo" src="/assets/img/brand/ens-solutions-logo.jpg" width="548" height="100"
+                 alt="ENS Solutions, LLC: Your Essential IT Partner. Service-Disabled Veteran-Owned Small Business">
         </a>
         <nav class="site-nav" aria-label="Site">
             <a href="/products/readyroom.html">ReadyRoom</a>
             <a href="/products/certalert.html">CertAlert</a>
             <a href="/products/mfa-portal.html">RSA Operations Portal</a>
+            <a href="/products/directory-portal.html">Directory Portal</a>
             <a href="/contact.html">Contact</a>
             <a href="https://ens-solutions.com/">ens-solutions.com</a>
         </nav>
@@ -38,8 +42,8 @@
                 supporting the Department of Defense, the Intelligence Community and commercial
                 customers. Identity, credential and access management is at the core of that work,
                 and our products package it for organizations that already run a directory and a
-                certificate authority — who is present, which credentials are about to lapse, and
-                how people prove who they are.
+                certificate authority — who is present, which credentials are about to lapse, how people
+                prove who they are, and how the directory itself is kept up to date.
             </p>
             <div class="btn-row">
                 <a class="btn btn--primary" href="#products-heading">Explore the products</a>
@@ -71,7 +75,7 @@
         <div class="wrap">
             <h2 id="products-heading">Products</h2>
 
-            <div class="card-grid">
+            <div class="card-grid card-grid--pairs">
                 <article class="card card--link">
                     <h3>
                         <a href="/products/readyroom.html">ReadyRoom</a>
@@ -88,12 +92,12 @@
                 <article class="card card--link">
                     <h3>
                         <a href="/products/certalert.html">CertAlert</a>
-                        <span class="badge badge--pending">Coming soon</span>
+                        <span class="badge badge--live">Available</span>
                     </h3>
                     <p>
-                        Certificate expiration visibility for your whole directory. Ingests every user and
-                        server object, tracks the points of contact for each, and reports through a
-                        dashboard and metrics.
+                        Certificate expiration visibility for your whole directory. Indexes every certificate
+                        people and servers publish, alerts each server&rsquo;s points of contact before
+                        one lapses, and checks revocation and what servers are actually serving.
                     </p>
                     <span class="card-cta">View product &rarr;</span>
                 </article>
@@ -101,7 +105,7 @@
                 <article class="card card--link">
                     <h3>
                         <a href="/products/mfa-portal.html">RSA Operations Portal</a>
-                        <span class="badge badge--live">Available now</span>
+                        <span class="badge badge--live">Available</span>
                     </h3>
                     <p>
                         Run your RSA SecurID program from one portal. Self-service token activation and PIN
@@ -110,6 +114,56 @@
                     </p>
                     <span class="card-cta">View product &rarr;</span>
                 </article>
+
+                <article class="card card--link">
+                    <h3>
+                        <a href="/products/directory-portal.html">Directory Services Portal</a>
+                        <span class="badge badge--live">Available</span>
+                    </h3>
+                    <p>
+                        A web front end for LDAP directories with custom schemas. Build forms for any object
+                        class, publish scoped read/write or white-pages directories, grant access by user or
+                        group, and let people update their own details.
+                    </p>
+                    <span class="card-cta">View product &rarr;</span>
+                </article>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" aria-labelledby="look-heading">
+        <div class="wrap">
+            <h2 id="look-heading">A look inside</h2>
+            <p class="lede">Each product running against a demo directory with sample data.</p>
+            <div class="shot-strip">
+                <a class="shot-tile" href="/products/readyroom.html">
+                    <picture>
+                        <source media="(max-width: 640px)" srcset="/assets/img/screens/readyroom-home-mobile.jpg" width="640" height="583">
+                        <img src="/assets/img/screens/readyroom-home.jpg" width="1440" height="852" loading="lazy" decoding="async" alt="ReadyRoom home page showing a manager&rsquo;s team, 86% accounted for">
+                    </picture>
+                    <span class="shot-tile-label">ReadyRoom &rarr;</span>
+                </a>
+                <a class="shot-tile" href="/products/certalert.html">
+                    <picture>
+                        <source media="(max-width: 640px)" srcset="/assets/img/screens/certalert-metrics-mobile.jpg" width="700" height="460">
+                        <img src="/assets/img/screens/certalert-metrics.jpg" width="1440" height="900" loading="lazy" decoding="async" alt="CertAlert metrics: certificates valid, expiring soon and expired, and a chart of issued against expiring">
+                    </picture>
+                    <span class="shot-tile-label">CertAlert &rarr;</span>
+                </a>
+                <a class="shot-tile" href="/products/mfa-portal.html">
+                    <picture>
+                        <source media="(max-width: 640px)" srcset="/assets/img/screens/rsa-portal-user-details-mobile.jpg" width="720" height="814">
+                        <img src="/assets/img/screens/rsa-portal-user-details.jpg" width="1440" height="900" loading="lazy" decoding="async" alt="RSA Operations Portal user details: a user&rsquo;s account, their SecurID token and PIN reset, lost-token and emergency-code actions">
+                    </picture>
+                    <span class="shot-tile-label">RSA Operations Portal &rarr;</span>
+                </a>
+                <a class="shot-tile" href="/products/directory-portal.html">
+                    <picture>
+                        <source media="(max-width: 640px)" srcset="/assets/img/screens/directory-portal-staff-mobile.jpg" width="620" height="560">
+                        <img src="/assets/img/screens/directory-portal-staff.jpg" width="1440" height="900" loading="lazy" decoding="async" alt="Directory Services Portal staff directory listing employees">
+                    </picture>
+                    <span class="shot-tile-label">Directory Services Portal &rarr;</span>
+                </a>
             </div>
         </div>
     </section>
@@ -183,7 +237,10 @@
 
 <footer class="site-footer">
     <div class="wrap">
-        <span>&copy; ENS Solutions, LLC</span>
+        <div class="footer-brand">
+            <img class="footer-logo" src="/assets/img/brand/ens-solutions-logo.jpg" width="548" height="100" loading="lazy" alt="ENS Solutions, LLC">
+            <span>&copy; ENS Solutions, LLC &middot; Service-Disabled Veteran-Owned Small Business</span>
+        </div>
         <nav class="footer-links" aria-label="Elsewhere">
             <a href="/contact.html">Contact</a>
             <a href="https://ens-solutions.com/">ens-solutions.com</a>

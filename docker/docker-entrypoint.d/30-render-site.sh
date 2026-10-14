@@ -28,7 +28,8 @@ DST="${SITE_OUTPUT_DIR:-/usr/share/nginx/html}"
 READYROOM_DEMO_URL="${READYROOM_DEMO_URL:-}"
 CERTALERT_DEMO_URL="${CERTALERT_DEMO_URL:-}"
 MFA_PORTAL_DEMO_URL="${MFA_PORTAL_DEMO_URL:-}"
-export READYROOM_DEMO_URL CERTALERT_DEMO_URL MFA_PORTAL_DEMO_URL
+DIRECTORY_PORTAL_DEMO_URL="${DIRECTORY_PORTAL_DEMO_URL:-}"
+export READYROOM_DEMO_URL CERTALERT_DEMO_URL MFA_PORTAL_DEMO_URL DIRECTORY_PORTAL_DEMO_URL
 
 # Space-delimited list of the products that have a demo to link to, padded at
 # both ends so a match can be tested as " NAME " and READYROOM cannot match
@@ -39,6 +40,7 @@ enabled=" "
 if [ -n "$READYROOM_DEMO_URL" ];  then enabled="${enabled}READYROOM ";  fi
 if [ -n "$CERTALERT_DEMO_URL" ];  then enabled="${enabled}CERTALERT ";  fi
 if [ -n "$MFA_PORTAL_DEMO_URL" ]; then enabled="${enabled}MFA_PORTAL "; fi
+if [ -n "$DIRECTORY_PORTAL_DEMO_URL" ]; then enabled="${enabled}DIRECTORY_PORTAL "; fi
 
 if [ "$enabled" = " " ]; then
     echo "30-render-site.sh: no demo URLs configured; all demo links render as coming soon"
@@ -48,7 +50,7 @@ fi
 
 # Restrict substitution to the demo URLs. Without an explicit list envsubst
 # would also eat any other $NAME in the CSS or markup.
-vars='${READYROOM_DEMO_URL} ${CERTALERT_DEMO_URL} ${MFA_PORTAL_DEMO_URL}'
+vars='${READYROOM_DEMO_URL} ${CERTALERT_DEMO_URL} ${MFA_PORTAL_DEMO_URL} ${DIRECTORY_PORTAL_DEMO_URL}'
 
 rm -rf "$DST"
 mkdir -p "$DST"
@@ -81,3 +83,25 @@ find "$SRC" -type f | while IFS= read -r src; do
             ;;
     esac
 done
+
+# Cache busting. nginx lets browsers keep /assets/ for a week, but the pages
+# themselves are never cached. So every asset reference in a page gets the
+# file's content hash as a query string: when a stylesheet, script or image
+# changes, its URL changes, and a browser holding last week's copy fetches the
+# new one. Without this, a returning visitor gets new pages styled by an old
+# stylesheet.
+busting="$(mktemp)"
+find "$DST/assets" -type f | while IFS= read -r f; do
+    url="/${f#"$DST"/}"
+    hash="$(md5sum "$f" | cut -c1-10)"
+    # Escape the URL for use as a sed pattern ('#' is the delimiter).
+    re="$(printf '%s' "$url" | sed 's/[].[*^$\\#]/\\&/g')"
+    # Only a complete reference: the URL directly followed by its closing quote.
+    printf 's#"%s"#"%s?v=%s"#g\n' "$re" "$url" "$hash"
+done > "$busting"
+
+find "$DST" -type f -name '*.html' | while IFS= read -r page; do
+    sed -i -f "$busting" "$page"
+done
+rm -f "$busting"
+echo "30-render-site.sh: asset URLs versioned by content hash"
