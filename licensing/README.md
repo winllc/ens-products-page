@@ -125,9 +125,9 @@ Feature ids per product, as the applications should check them:
 | Product | Features |
 |---|---|
 | `certalert` | `directory-sync`, `changelog-sync`, `notifications`, `metrics`, `projects`, `revocation-checks`, `endpoint-checks`, `risky-names`, `directory-cleanup`, `classification-banners`, `multi-directory` (Enterprise) |
-| `mfa-portal` | `self-service`, `trusted-agents`, `help-desk`, `shipments`, `scheduled-jobs`, `branding` |
-| `readyroom` | `attendance`, `calendar`, `absence-alerts`, `metrics`, `org-chart`, `classification-banners` |
-| `directory-portal` | `directory-editor`, `form-builder`, `self-service-profile`, `white-pages`, `smart-card-sign-in` |
+| `mfa-portal` | `self-service`, `trusted-agents`, `help-desk`, `shipments`, `scheduled-jobs`, `branding`, `reports`, `bulk-upload`, `group-email` |
+| `readyroom` | `attendance`, `calendar`, `absence-alerts`, `metrics` (metrics and reports), `org-chart`, `classification-banners` |
+| `directory-portal` | `directory-editor`, `form-builder`, `self-service-profile`, `white-pages`, `smart-card-sign-in`, `metrics`, `data-analysis`, `schema-transfer` |
 
 Ship every app with all of a product's features gated from the start, even
 those every license includes today: a feature that's checked can be moved to
