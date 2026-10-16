@@ -185,7 +185,7 @@ Everything that matters is recorded in one tamper-evident audit trail, in the
 common ENS event format (`ens-audit/1`, the same as CertAlert, ReadyRoom, the
 RSA Operations Portal and the Directory Services Portal). The full format,
 and how to bring it into a SIEM, is on the docs site:
-[Audit logging](https://github.com/winllc/ens-apps-documentation/blob/main/docs/audit-logging.md)
+[Audit logging](https://github.com/winllc/ens-apps-documentation/blob/master/docs/audit-logging.md)
 (`audit-logging.md`).
 
 **What is recorded**
