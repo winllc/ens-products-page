@@ -18,9 +18,46 @@
  *   MAIL_FROM                   default "ENS Solutions <licensing@ens-solutions.com>"
  *   COOKIE_SECURE               "false" to allow sessions over plain HTTP
  *                               (local development only)
+ *
+ * The audit trail's outputs (see README, "Audit logging"):
+ *
+ *   ENS_AUDIT_STDOUT            "false" to stop writing events to stdout
+ *   ENS_AUDIT_FILE              e.g. /var/log/ens/licensing-portal/audit.jsonl
+ *   ENS_AUDIT_FILE_KEEP         rotated files to keep (default 30)
+ *   ENS_AUDIT_SPLUNK_URL        Splunk HEC base URL, e.g. https://splunk:8088
+ *   ENS_AUDIT_SPLUNK_TOKEN      HEC token, or ENS_AUDIT_SPLUNK_TOKEN_FILE
+ *   ENS_AUDIT_SPLUNK_INDEX      optional
+ *   ENS_AUDIT_SPLUNK_SOURCETYPE default ens:audit
+ *   ENS_AUDIT_SPLUNK_INSECURE   "true" skips TLS verification (test setups only)
+ *   ENS_AUDIT_SYSLOG_HOST       syslog receiver
+ *   ENS_AUDIT_SYSLOG_PORT       default 514 (udp, tcp) or 6514 (tls)
+ *   ENS_AUDIT_SYSLOG_PROTOCOL   udp, tcp or tls (default tcp)
+ *   ENS_AUDIT_SYSLOG_FACILITY   default local0
+ *   ENS_AUDIT_RETENTION_DAYS    0 (default) keeps events forever
  */
 
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+
+export interface AuditConfig {
+    stdout: boolean;
+    file: string | null;
+    fileKeep: number;
+    splunk: {
+        url: string;
+        token: string;
+        index: string | null;
+        sourcetype: string;
+        insecure: boolean;
+    } | null;
+    syslog: {
+        host: string;
+        port: number;
+        protocol: 'udp' | 'tcp' | 'tls';
+        facility: string;
+    } | null;
+    retentionDays: number;
+}
 
 export interface Config {
     publicUrl: string;
@@ -33,6 +70,7 @@ export interface Config {
     smtpUrl: string | null;
     mailFrom: string;
     cookieSecure: boolean;
+    audit: AuditConfig;
 }
 
 const list = (v: string | undefined) =>
@@ -61,8 +99,52 @@ export function config(): Config {
         smtpUrl: env.SMTP_URL?.trim() || null,
         mailFrom: env.MAIL_FROM ?? 'ENS Solutions <licensing@ens-solutions.com>',
         cookieSecure: env.COOKIE_SECURE ? env.COOKIE_SECURE !== 'false' : publicUrl.startsWith('https:'),
+        audit: auditConfig(env),
     };
     return cached;
+}
+
+const flag = (v: string | undefined, fallback: boolean) => (v === undefined || v.trim() === '' ? fallback : /^(1|true|yes|on)$/i.test(v.trim()));
+const int = (v: string | undefined, fallback: number) => {
+    const n = Number.parseInt(v ?? '', 10);
+    return Number.isFinite(n) && n >= 0 ? n : fallback;
+};
+
+function auditConfig(env: NodeJS.ProcessEnv): AuditConfig {
+    const splunkUrl = env.ENS_AUDIT_SPLUNK_URL?.trim().replace(/\/+$/, '') || '';
+    let splunkToken = env.ENS_AUDIT_SPLUNK_TOKEN?.trim() || '';
+    const tokenFile = env.ENS_AUDIT_SPLUNK_TOKEN_FILE?.trim();
+    if (!splunkToken && tokenFile) {
+        splunkToken = readFileSync(tokenFile, 'utf8').trim();
+    }
+    const syslogHost = env.ENS_AUDIT_SYSLOG_HOST?.trim() || '';
+    const protocol = (env.ENS_AUDIT_SYSLOG_PROTOCOL?.trim().toLowerCase() || 'tcp') as 'udp' | 'tcp' | 'tls';
+    if (!['udp', 'tcp', 'tls'].includes(protocol)) {
+        throw new Error(`ENS_AUDIT_SYSLOG_PROTOCOL must be udp, tcp or tls, not ${protocol}`);
+    }
+    return {
+        stdout: flag(env.ENS_AUDIT_STDOUT, true),
+        file: env.ENS_AUDIT_FILE?.trim() || null,
+        fileKeep: int(env.ENS_AUDIT_FILE_KEEP, 30),
+        splunk: splunkUrl
+            ? {
+                  url: splunkUrl,
+                  token: splunkToken,
+                  index: env.ENS_AUDIT_SPLUNK_INDEX?.trim() || null,
+                  sourcetype: env.ENS_AUDIT_SPLUNK_SOURCETYPE?.trim() || 'ens:audit',
+                  insecure: flag(env.ENS_AUDIT_SPLUNK_INSECURE, false),
+              }
+            : null,
+        syslog: syslogHost
+            ? {
+                  host: syslogHost,
+                  port: int(env.ENS_AUDIT_SYSLOG_PORT, protocol === 'tls' ? 6514 : 514),
+                  protocol,
+                  facility: env.ENS_AUDIT_SYSLOG_FACILITY?.trim().toLowerCase() || 'local0',
+              }
+            : null,
+        retentionDays: int(env.ENS_AUDIT_RETENTION_DAYS, 0),
+    };
 }
 
 /** Tests change the environment between cases. */
