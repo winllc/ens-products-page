@@ -1,0 +1,180 @@
+---
+export const prerender = false;
+
+import AuditList from '../../../components/licensing/AuditList.astro';
+import LicenseTable from '../../../components/licensing/LicenseTable.astro';
+import { editions, type Edition } from '../../../data/licensing';
+import { productPricing, supportTiers, type SupportTierId } from '../../../data/pricing';
+import { products, type ProductId } from '../../../data/products';
+import AccountLayout from '../../../layouts/AccountLayout.astro';
+import { AccountError, accountById, isAdmin, setDisabled, setRole } from '../../../server/accounts';
+import { auditFor } from '../../../server/audit';
+import { dateOnly, form, requireAdmin, withNotice } from '../../../server/http';
+import { issueLicense, LicenseActionError, licensesOf } from '../../../server/licenses';
+
+const admin = requireAdmin(Astro);
+if (admin instanceof Response) return admin;
+
+const owner = accountById(Astro.params.id ?? '');
+if (!owner) return new Response('Not found', { status: 404 });
+
+const editionChoices: Edition[] = ['subscription', 'perpetual', 'pilot', 'evaluation'];
+let error: string | null = null;
+
+if (Astro.request.method === 'POST') {
+    const get = await form(Astro);
+    const here = `/admin/accounts/${owner.id}`;
+    try {
+        switch (get('action')) {
+            case 'issue': {
+                const product = get('product') as ProductId;
+                const edition = get('edition') as Edition;
+                const support = get('support') as SupportTierId;
+                if (!products.some((p) => p.id === product)) throw new LicenseActionError('Choose a product');
+                if (!editionChoices.includes(edition)) throw new LicenseActionError('Choose an edition');
+                if (!supportTiers.some((t) => t.id === support)) throw new LicenseActionError('Choose a support tier');
+                const years = Number(get('years')) || 1;
+                const days = get('days') ? Number(get('days')) : undefined;
+                const start = get('start') ? new Date(`${get('start')}T00:00:00Z`) : undefined;
+                const license = issueLicense(
+                    admin,
+                    owner,
+                    {
+                        product,
+                        edition,
+                        quantity: Number(get('quantity')),
+                        support,
+                        start,
+                        days,
+                        years: edition === 'subscription' || edition === 'perpetual' ? years : undefined,
+                        enterprise: get('enterprise') === 'on',
+                        installationId: get('installationId') || null,
+                        licenseeOrganization: get('licenseeOrganization'),
+                    },
+                    { label: get('label'), orderReference: get('orderReference') },
+                );
+                return Astro.redirect(withNotice(`/admin/licenses/${license.id}`, 'license-issued'), 303);
+            }
+            case 'role':
+                setRole(admin, owner, get('role') === 'admin' ? 'admin' : 'customer');
+                return Astro.redirect(withNotice(here, 'account-updated'), 303);
+            case 'disable':
+                setDisabled(admin, owner, get('disabled') === 'true');
+                return Astro.redirect(withNotice(here, 'account-updated'), 303);
+        }
+    } catch (err) {
+        if (!(err instanceof LicenseActionError || err instanceof AccountError)) throw err;
+        error = err.message;
+    }
+}
+
+const licenses = licensesOf(owner.id);
+const today = new Date().toISOString().slice(0, 10);
+---
+<AccountLayout title={owner.name} eyebrow="Administration · Account" section="admin-accounts" error={error}>
+    <p slot="lede" class="lede">{owner.email}{owner.organization && <> &middot; {owner.organization}</>}</p>
+
+    <dl class="data-list">
+        <div><dt>Email</dt><dd>{owner.email} {owner.email_verified_at ? <span class="muted small">(confirmed {dateOnly(owner.email_verified_at)})</span> : <span class="pill pill--not-yet-valid">Unconfirmed</span>}</dd></div>
+        <div><dt>Phone</dt><dd>{owner.phone || '—'}</dd></div>
+        <div><dt>Joined</dt><dd>{dateOnly(owner.created_at)}</dd></div>
+        <div><dt>Last sign-in</dt><dd>{dateOnly(owner.last_login_at)}</dd></div>
+        <div><dt>Role</dt><dd>{isAdmin(owner) ? 'Administrator' : 'Customer'}{owner.disabled_at && <span class="pill pill--revoked"> Disabled</span>}</dd></div>
+    </dl>
+
+    <h2 class="section-gap">Licenses</h2>
+    {licenses.length ? <LicenseTable licenses={licenses} detailBase="/admin/licenses/" /> : <p class="muted">None yet.</p>}
+
+    <h2 class="section-gap" id="issue">Issue a license</h2>
+    {!owner.email_verified_at ? (
+        <p class="notice">This account hasn&rsquo;t confirmed its email address yet, so it can&rsquo;t hold a license.</p>
+    ) : (
+        <form method="post" class="panel issue-form">
+            <input type="hidden" name="action" value="issue">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="product">Product</label>
+                    <select id="product" name="product" required>
+                        {products.map((p) => <option value={p.id}>{p.name} ({productPricing[p.id].unit})</option>)}
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="edition">Edition</label>
+                    <select id="edition" name="edition" required>
+                        {editionChoices.map((e) => <option value={e}>{editions[e].name}{editions[e].days ? ` (${editions[e].days} days default)` : ''}</option>)}
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="quantity">Covers (users or tracked people)</label>
+                    <input id="quantity" name="quantity" type="number" min="1" step="1" required value="2500">
+                </div>
+                <div class="field">
+                    <label for="support">Support</label>
+                    <select id="support" name="support">
+                        {supportTiers.map((t) => <option value={t.id}>{t.name}</option>)}
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="start">Starts</label>
+                    <input id="start" name="start" type="date" value={today}>
+                </div>
+                <div class="field">
+                    <label for="years">Term in years <span class="optional">subscription, or perpetual maintenance</span></label>
+                    <select id="years" name="years">
+                        <option value="1">1 year</option>
+                        <option value="2">2 years</option>
+                        <option value="3">3 years</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="days">Term in days <span class="optional">overrides the above</span></label>
+                    <input id="days" name="days" type="number" min="1" step="1">
+                </div>
+                <div class="field">
+                    <label for="orderReference">Order reference</label>
+                    <input id="orderReference" name="orderReference" maxlength="120" placeholder="PO, contract or CLIN">
+                </div>
+                <div class="field">
+                    <label for="licenseeOrganization">Licensee organization <span class="optional">on the file</span></label>
+                    <input id="licenseeOrganization" name="licenseeOrganization" maxlength="160" value={owner.organization}>
+                </div>
+                <div class="field">
+                    <label for="label">Name <span class="optional">optional</span></label>
+                    <input id="label" name="label" maxlength="120" placeholder="e.g. SIPR enclave">
+                </div>
+                <div class="field">
+                    <label for="installationId">Installation id <span class="optional">optional</span></label>
+                    <input id="installationId" name="installationId" class="mono" maxlength="64">
+                </div>
+                <div class="field field--check">
+                    <label class="check">
+                        <input type="checkbox" name="enterprise">
+                        <span>Enterprise features below the Enterprise band (e.g. CertAlert multi-forest)</span>
+                    </label>
+                </div>
+            </div>
+            <button class="btn btn--primary" type="submit">Issue license</button>
+        </form>
+    )}
+
+    <h2 class="section-gap">Account</h2>
+    <div class="btn-row">
+        {owner.id !== admin.id && (
+            <>
+                <form method="post">
+                    <input type="hidden" name="action" value="role">
+                    <input type="hidden" name="role" value={owner.role === 'admin' ? 'customer' : 'admin'}>
+                    <button class="btn btn--ghost" type="submit">{owner.role === 'admin' ? 'Remove administrator role' : 'Make administrator'}</button>
+                </form>
+                <form method="post">
+                    <input type="hidden" name="action" value="disable">
+                    <input type="hidden" name="disabled" value={owner.disabled_at ? 'false' : 'true'}>
+                    <button class:list={['btn', owner.disabled_at ? 'btn--ghost' : 'btn--danger']} type="submit">{owner.disabled_at ? 'Enable account' : 'Disable account'}</button>
+                </form>
+            </>
+        )}
+    </div>
+
+    <h2 class="section-gap">History</h2>
+    <AuditList entries={auditFor({ account: owner.id }, 50)} />
+</AccountLayout>

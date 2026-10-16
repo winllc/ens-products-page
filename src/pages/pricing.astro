@@ -1,0 +1,400 @@
+---
+/*
+ * Pricing. Every number on this page comes from src/data/pricing.ts, through
+ * the functions in src/lib/pricing.ts; nothing here is typed in by hand.
+ */
+import Estimator from '../components/Estimator.astro';
+import PriceTable from '../components/PriceTable.astro';
+import { dodComponentExample } from '../data/examples';
+import {
+    PERPETUAL_MULTIPLE,
+    bundleDiscounts,
+    enterpriseCertificatePlatformRange,
+    evaluation,
+    multiYear,
+    pilot,
+    pinResetTicketCost,
+    productPricing,
+    services,
+    supportTiers,
+    thresholds,
+} from '../data/pricing';
+import { products } from '../data/products';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import {
+    formatPercent,
+    formatRange,
+    formatUSD,
+    helpDeskSavings,
+    quote,
+    startingPrice,
+} from '../lib/pricing';
+
+const lowest = Math.min(...products.map((p) => startingPrice(p.id)));
+const firstBundle = bundleDiscounts[0]!;
+const topBundle = bundleDiscounts.at(-1)!;
+const standard = supportTiers[0]!;
+
+const anchors: Record<string, string> = {
+    certalert:
+        `CertAlert is priced against the outage it prevents: one certificate nobody renewed can take a ` +
+        `mission system offline. Enterprise certificate-management platforms commonly run ` +
+        `${formatUSD(enterpriseCertificatePlatformRange.low)}–${formatUSD(enterpriseCertificatePlatformRange.high)}+ a year; ` +
+        `CertAlert does the job for on-premises directory shops at a fraction of that.`,
+    'mfa-portal':
+        `A PIN reset ticket costs a help desk ${formatUSD(pinResetTicketCost.low)}–${formatUSD(pinResetTicketCost.high)}. ` +
+        `A 10,000-user organization doing 300 resets a month spends ` +
+        `${formatUSD(helpDeskSavings(300, pinResetTicketCost.low))}–${formatUSD(helpDeskSavings(300, pinResetTicketCost.high))} ` +
+        `a year on them; self-service resets pay for the portal several times over.`,
+    readyroom: productPricing.readyroom.unitNote ?? '',
+    'directory-portal':
+        'Sized by the people in the directory it fronts. Custom schema or form work is billed separately, as time and materials.',
+};
+
+const example = quote(dodComponentExample);
+const exampleLink =
+    '/pricing.html?p=' +
+    dodComponentExample.lines.map((l) => `${l.product}:${l.quantity}`).join(',') +
+    `&support=${dodComponentExample.support}&ato=1#estimate`;
+
+const serviceList = [services.install, services.ato, services.training, services.custom];
+const servicePrice = (s: (typeof serviceList)[number]) =>
+    s.low === null || s.high === null ? 'Time and materials' : formatRange({ low: s.low, high: s.high });
+---
+<BaseLayout
+    title="Pricing"
+    description="Published pricing for ReadyRoom, CertAlert, RSA Operations Portal and Directory Services Portal: annual subscriptions by directory size with support included, a perpetual option, suite discounts, support tiers and services."
+>
+<section class="hero">
+    <div class="wrap">
+        <p class="eyebrow">Pricing</p>
+        <h1>Published prices, built for how government buys.</h1>
+        <p class="lede">
+            Every product is an annual subscription, sized by your directory, with updates, security patches and
+            business-hours support included. If your contract vehicle only allows one-time purchases, each one
+            is also sold as a perpetual license with yearly maintenance.
+        </p>
+        <div class="btn-row">
+            <a class="btn btn--primary" href="#estimate">Build an estimate</a>
+            <a class="btn btn--ghost" href="/contact.html?product=pricing">Request a quote</a>
+        </div>
+
+        <dl class="facts">
+            <div>
+                <dt>Subscriptions from</dt>
+                <dd>{formatUSD(lowest)} a year</dd>
+            </div>
+            <div>
+                <dt>Suite discount</dt>
+                <dd>{formatPercent(firstBundle.rate)}&ndash;{formatPercent(topBundle.rate)} off {firstBundle.minProducts}+ products</dd>
+            </div>
+            <div>
+                <dt>Paid pilot</dt>
+                <dd>{pilot.days} days, {formatUSD(pilot.price)}, credited</dd>
+            </div>
+            <div>
+                <dt>Micro-purchase</dt>
+                <dd>Smaller tiers fit {formatUSD(thresholds.microPurchase)}</dd>
+            </div>
+        </dl>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="products-heading">
+    <div class="wrap">
+        <h2 id="products-heading">Price list</h2>
+        <p class="lede">
+            Annual subscription by size, and the perpetual license with its Standard maintenance for buyers
+            who need a one-time purchase.
+        </p>
+        <div class="price-blocks">
+            {products.map((p) => (
+                <article class="price-block" id={`price-${p.id}`}>
+                    <div class="price-block-head">
+                        <h3><a href={p.href}>{p.name}</a></h3>
+                        <span class="muted small">{p.tagline} &middot; from {formatUSD(startingPrice(p.id))} a year</span>
+                    </div>
+                    <p class="muted">{anchors[p.id]}</p>
+                    <PriceTable product={p.id} />
+                </article>
+            ))}
+        </div>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="suite-heading">
+    <div class="wrap">
+        <h2 id="suite-heading">Suite discount</h2>
+        <div class="split">
+            <div>
+                <p class="lede">
+                    Take two or more products and the discount comes off the sum of all of them, whatever the mix
+                    and whatever their sizes.
+                </p>
+            </div>
+            <ul class="rule-steps rule-steps--stack">
+                {bundleDiscounts.map((b, i) => (
+                    <li>
+                        <span class="rule-rank">{formatPercent(b.rate)} off</span>
+                        <span><strong>{b.minProducts}{i === bundleDiscounts.length - 1 ? ' or more' : ''} products</strong></span>
+                    </li>
+                ))}
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="support-heading">
+    <div class="wrap">
+        <h2 id="support-heading">Support and maintenance</h2>
+        <p class="lede">
+            Standard is included in every subscription; Premium and Mission are yearly add-ons. On a perpetual
+            license the same tiers are the yearly maintenance charge, as a share of the license.
+        </p>
+        <div class="card-grid support-cards">
+            {supportTiers.map((t) => (
+                <article class={t.id === 'mission' ? 'card support-card is-featured' : 'card support-card'}>
+                    <p class="card-kicker">{t.hours} &middot; {t.response} response</p>
+                    <h3>{t.name}</h3>
+                    <p>{t.summary}</p>
+                    <ul class="ticks">
+                        {t.features.map((f) => <li>{f}</li>)}
+                    </ul>
+                    <dl class="support-price">
+                        <div>
+                            <dt>Subscription</dt>
+                            <dd>{t.subscriptionRate === 0 ? 'Included' : `+${formatPercent(t.subscriptionRate)} a year`}</dd>
+                        </div>
+                        <div>
+                            <dt>Perpetual</dt>
+                            <dd>{formatPercent(t.perpetualRate)} of license a year</dd>
+                        </div>
+                    </dl>
+                </article>
+            ))}
+        </div>
+        <p class="small muted">
+            Mission is built for DoD and Intelligence Community programs: around-the-clock coverage, cleared
+            engineers on site, and every release delivered on media for networks with no internet route.
+            Subscription add-ons are a share of the subscription after any suite discount.
+        </p>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="perpetual-heading">
+    <div class="wrap">
+        <h2 id="perpetual-heading">Subscription or perpetual</h2>
+        <div class="feature-grid feature-grid--pairs">
+            <div class="feature">
+                <h3>Annual subscription</h3>
+                <p>
+                    One yearly price per product, with updates, security patches and {standard.name} support
+                    included. Most programs now prefer it: it scales with the directory, and there is no
+                    separate maintenance contract to renew. Prepay {multiYear.years} years and take
+                    {formatPercent(multiYear.discount)} off.
+                </p>
+            </div>
+            <div class="feature">
+                <h3>Perpetual license</h3>
+                <p>
+                    For vehicles that only allow one-time purchases. The license lists at
+                    {PERPETUAL_MULTIPLE}&times; the annual subscription for the same size, and maintenance is
+                    {formatPercent(standard.perpetualRate)} of the license a year for {standard.name}, more for
+                    Premium or Mission.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="services-heading">
+    <div class="wrap">
+        <h2 id="services-heading">Services</h2>
+        <p class="lede">Priced separately, so you only pay for the help you need.</p>
+        <div class="table-scroll">
+            <table class="services-table">
+                <caption class="visually-hidden">Services price list</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Service</th>
+                    <th scope="col" class="num">Price</th>
+                </tr>
+                </thead>
+                <tbody>
+                {serviceList.map((s) => (
+                    <tr>
+                        <th scope="row" class="service-name">{s.name}<span class="th-note">{s.description}</span></th>
+                        <td class="num price">{servicePrice(s)}<span class="th-note">{s.low === null ? '' : s.per}</span></td>
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="buying-heading">
+    <div class="wrap">
+        <h2 id="buying-heading">Ways to buy</h2>
+        <div class="card-grid card-grid--pairs">
+            <article class="card">
+                <p class="card-kicker">Evaluate</p>
+                <h3>{evaluation.days}-day evaluation, free</h3>
+                <p>
+                    Run the product&rsquo;s container on your own hardware against your own directory, at no cost.
+                    <a href="/account/signup">Create an account</a> to download the evaluation license.
+                </p>
+            </article>
+            <article class="card">
+                <p class="card-kicker">Pilot</p>
+                <h3>{pilot.days}-day paid pilot, {formatUSD(pilot.price)}</h3>
+                <p>
+                    A supported pilot in your environment, with the full {formatUSD(pilot.price)} credited toward
+                    your first year if you go ahead.
+                </p>
+            </article>
+            <article class="card">
+                <p class="card-kicker">Purchase card</p>
+                <h3>Under the thresholds that matter</h3>
+                <p>
+                    The smallest tier of every product fits under the {formatUSD(thresholds.microPurchase)}
+                    micro-purchase threshold, so it can go on a government purchase card. Most multi-product
+                    orders stay under the {formatUSD(thresholds.simplifiedAcquisition)} simplified acquisition
+                    threshold.
+                </p>
+            </article>
+            <article class="card">
+                <p class="card-kicker">Contract vehicles</p>
+                <h3>Direct or through your reseller</h3>
+                <p>
+                    Buy from ENS Solutions directly, as a service-disabled veteran-owned small business, or
+                    through the reseller or vehicle your contracting office already uses, at the same list
+                    prices.
+                </p>
+            </article>
+        </div>
+        <p class="small muted">
+            Thresholds are those in FAR 2.101 from {thresholds.effective}. Your contracting officer has the final word on
+            which route applies.
+        </p>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="example-heading">
+    <div class="wrap">
+        <h2 id="example-heading">What a typical order comes to</h2>
+        <p class="lede">
+            A 10,000-user DoD component taking CertAlert and RSA Operations Portal, with Mission support, on
+            subscription.
+        </p>
+        <div class="example">
+            <div class="table-scroll">
+                <table>
+                    <caption class="visually-hidden">Worked example</caption>
+                    <tbody>
+                    {example.lines.map((l) => (
+                        <tr>
+                            <th scope="row">{products.find((p) => p.id === l.product)!.name} <span class="th-note">{l.tierLabel} {productPricing[l.product].unit}</span></th>
+                            <td class="num">{formatUSD(l.list ?? 0)}</td>
+                        </tr>
+                    ))}
+                    <tr class="quote-discount">
+                        <th scope="row">Suite discount ({formatPercent(example.bundleRate)})</th>
+                        <td class="num">&minus;{formatUSD(example.bundleDiscount)}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">{example.support.tier.name} support (+{formatPercent(example.support.rate)})</th>
+                        <td class="num">{formatUSD(example.support.amount)}</td>
+                    </tr>
+                    <tr class="quote-total">
+                        <th scope="row">Per year</th>
+                        <td class="num">{formatUSD(example.annual)}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">One time: installation of both products and the ATO package</th>
+                        <td class="num">from {formatUSD(example.servicesTotal.low)}</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p>
+                That fits under the simplified acquisition threshold with room to spare, and a single product at
+                its smallest tier fits under the micro-purchase threshold.
+                <a href={exampleLink}>Open this example in the estimator &rarr;</a>
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="estimate" aria-labelledby="estimate-section-heading">
+    <div class="wrap">
+        <h2 id="estimate-section-heading">Build an estimate</h2>
+        <p class="lede">
+            Pick products, sizes and support, and see what it comes to. The link in your address bar keeps the
+            configuration, so you can send it to a colleague or your contracting office.
+        </p>
+        <Estimator />
+    </div>
+</section>
+
+<section class="section" aria-labelledby="faq-heading">
+    <div class="wrap">
+        <h2 id="faq-heading">Questions buyers ask</h2>
+        <div class="faq">
+            <details>
+                <summary>What counts as a user?</summary>
+                <p>
+                    For CertAlert and Directory Services Portal, the people in the directory the product is pointed
+                    at. For RSA Operations Portal, users with a SecurID token in the security domain it serves.
+                    ReadyRoom counts only the people it tracks, so a few units can start without licensing the
+                    whole organization.
+                </p>
+            </details>
+            <details>
+                <summary>What does the subscription include?</summary>
+                <p>
+                    The software, every update and security patch released during the term, and {standard.name}
+                    support: email, business hours, {standard.response.toLowerCase()} response. Installation,
+                    the ATO package and training are separate.
+                </p>
+            </details>
+            <details>
+                <summary>Our vehicle can&rsquo;t do subscriptions. What then?</summary>
+                <p>
+                    Buy a perpetual license at {PERPETUAL_MULTIPLE}&times; the annual price, then maintenance
+                    yearly at {formatPercent(standard.perpetualRate)} of the license for {standard.name}, or more
+                    for Premium or Mission. The suite discount applies to the licenses the same way.
+                </p>
+            </details>
+            <details>
+                <summary>Do you support classified and air-gapped networks?</summary>
+                <p>
+                    The products are self-hosted, so they run inside your own enclave. Mission support adds cleared
+                    on-site support and delivers each release on media, and classified installations are quoted on
+                    top of the standard installation range.
+                </p>
+            </details>
+            <details>
+                <summary>Can we try it first?</summary>
+                <p>
+                    The {evaluation.days}-day evaluation container is free. For a supported trial in your
+                    environment, the {pilot.days}-day pilot is {formatUSD(pilot.price)} and is credited in full
+                    toward the first year.
+                </p>
+            </details>
+            <details>
+                <summary>Is the price different through a reseller?</summary>
+                <p>No. List prices are the same whether you buy from us or through a reseller or contract vehicle.</p>
+            </details>
+        </div>
+
+        <div class="callout">
+            <p>
+                Need a formal quote, or a price for a size not listed?
+                <a href="/contact.html?product=pricing">Get in touch</a> or email
+                <a href="mailto:info@ens-solutions.com">info@ens-solutions.com</a>.
+            </p>
+        </div>
+    </div>
+</section>
+</BaseLayout>

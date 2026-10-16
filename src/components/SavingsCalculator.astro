@@ -1,0 +1,62 @@
+---
+/*
+ * RSA Operations Portal: what self-service PIN resets save the help desk,
+ * set against the subscription for the same number of users. The sentence
+ * above the form is computed at build time, so the anchor reads correctly
+ * without JavaScript; the form is enhanced by src/scripts/savings.ts.
+ */
+import { pinResetTicketCost } from '../data/pricing';
+import { formatUSD, helpDeskSavings } from '../lib/pricing';
+
+const exampleResets = 300;
+const low = helpDeskSavings(exampleResets, pinResetTicketCost.low);
+const high = helpDeskSavings(exampleResets, pinResetTicketCost.high);
+const midCost = (pinResetTicketCost.low + pinResetTicketCost.high) / 2;
+---
+<div class="calc" id="savings-calc">
+    <h3>What self-service PIN resets are worth</h3>
+    <p>
+        A PIN reset ticket costs a help desk {formatUSD(pinResetTicketCost.low)}&ndash;{formatUSD(pinResetTicketCost.high)}
+        to handle. A 10,000-user organization doing {exampleResets} resets a month spends
+        {formatUSD(low)}&ndash;{formatUSD(high)} a year on them &mdash; several times the portal&rsquo;s subscription.
+    </p>
+    <form class="calc-form" hidden data-enhanced>
+        <div class="form-grid">
+            <div class="field">
+                <label for="sv-users">SecurID users</label>
+                <input id="sv-users" name="users" type="number" inputmode="numeric" min="1" step="1" value="10000">
+            </div>
+            <div class="field">
+                <label for="sv-resets">PIN resets per month</label>
+                <input id="sv-resets" name="resets" type="number" inputmode="numeric" min="0" step="1" value={exampleResets}>
+            </div>
+            <div class="field">
+                <label for="sv-cost">Cost per ticket ($)</label>
+                <input id="sv-cost" name="cost" type="number" inputmode="decimal" min="0" step="1" value={midCost}>
+            </div>
+            <div class="field">
+                <label for="sv-share">Handled by self-service (%)</label>
+                <input id="sv-share" name="share" type="number" inputmode="numeric" min="0" max="100" step="5" value="100">
+            </div>
+        </div>
+        <dl class="calc-result" aria-live="polite">
+            <div>
+                <dt>Help desk cost avoided per year</dt>
+                <dd data-out="savings">—</dd>
+            </div>
+            <div>
+                <dt>Subscription for that many users</dt>
+                <dd data-out="price">—</dd>
+            </div>
+            <div>
+                <dt>Net per year</dt>
+                <dd data-out="net">—</dd>
+            </div>
+        </dl>
+        <p class="small muted" data-out="note"></p>
+    </form>
+</div>
+
+<script>
+    import '../scripts/savings';
+</script>

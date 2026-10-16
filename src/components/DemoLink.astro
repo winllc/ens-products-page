@@ -1,0 +1,16 @@
+---
+/*
+ * The "Open the demo" button. Its href is a ${NAME_DEMO_URL} placeholder that
+ * the render script fills in at container start. Use inside DemoSwitch's
+ * "demo" slot only, so it never survives without a URL.
+ */
+import type { ProductId } from '../data/products';
+import { product } from '../data/products';
+
+interface Props {
+    product: ProductId;
+}
+
+const href = '${' + product(Astro.props.product).demoKey + '_DEMO_URL}';
+---
+<a class="btn btn--primary" href={href} target="_blank" rel="noopener">Open the demo<span class="visually-hidden"> (opens in a new tab)</span></a>

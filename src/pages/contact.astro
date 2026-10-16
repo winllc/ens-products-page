@@ -1,0 +1,101 @@
+---
+import { CONTACT_MESSAGE_LIMIT, contactTopics } from '../data/products';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const topics = ['General inquiry', ...Object.values(contactTopics), 'IT services'];
+---
+<BaseLayout
+    title="Contact"
+    description="Contact ENS Solutions, LLC about ReadyRoom, CertAlert, RSA Operations Portal, Directory Services Portal or our IT services."
+>
+<section class="hero">
+    <div class="wrap">
+        <p class="eyebrow">Contact</p>
+        <h1>Talk to ENS Solutions.</h1>
+        <p class="lede">
+            Questions about a product, a quote or a paid pilot, a demo against your own environment, or
+            requirements you would like to see reflected in something we are building &mdash; send us a
+            note.
+        </p>
+    </div>
+</section>
+
+<section class="section" aria-label="Contact form and details">
+    <div class="wrap contact-layout">
+        <!--
+            No backend: the script composes an email from these fields and opens the visitor's own
+            mail app. Without JavaScript the browser's built-in mailto form submission is the fallback.
+        -->
+        <form class="contact-form" id="contact-form" action="mailto:info@ens-solutions.com"
+              method="post" enctype="text/plain" data-recipient="info@ens-solutions.com">
+            <div class="form-grid">
+                <div class="field">
+                    <label for="name">Name</label>
+                    <input id="name" name="name" type="text" autocomplete="name" required maxlength="120">
+                </div>
+                <div class="field">
+                    <label for="email">Email</label>
+                    <input id="email" name="email" type="email" autocomplete="email" required maxlength="200">
+                </div>
+                <div class="field">
+                    <label for="organization">Organization <span class="optional">optional</span></label>
+                    <input id="organization" name="organization" type="text" autocomplete="organization" maxlength="160">
+                </div>
+                <div class="field">
+                    <label for="phone">Phone <span class="optional">optional</span></label>
+                    <input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="40">
+                </div>
+                <div class="field field--wide">
+                    <label for="topic">What is this about?</label>
+                    <select id="topic" name="topic" required>
+                        {topics.map((t) => <option value={t}>{t}</option>)}
+                    </select>
+                </div>
+                <div class="field field--wide">
+                    <label for="message">Message</label>
+                    <textarea id="message" name="message" rows="7" required maxlength={CONTACT_MESSAGE_LIMIT}
+                              aria-describedby="message-hint"></textarea>
+                    <p class="field-hint" id="message-hint">Up to 1,500 characters.</p>
+                </div>
+            </div>
+
+            <div class="btn-row">
+                <button class="btn btn--primary" type="submit">Compose email</button>
+                <span class="btn-note">Opens your email app with the message ready to send.</span>
+            </div>
+
+            <p class="form-status" id="form-status" role="status" hidden></p>
+        </form>
+
+        <aside class="contact-aside" aria-labelledby="direct-heading">
+            <h2 id="direct-heading">Reach us directly</h2>
+            <dl class="contact-list">
+                <div>
+                    <dt>Email</dt>
+                    <dd><a href="mailto:info@ens-solutions.com">info@ens-solutions.com</a></dd>
+                </div>
+                <div>
+                    <dt>Phone</dt>
+                    <dd><a href="tel:+13019254008">301-925-4008</a></dd>
+                </div>
+                <div>
+                    <dt>Web</dt>
+                    <dd><a href="https://ens-solutions.com/">ens-solutions.com</a></dd>
+                </div>
+                <div>
+                    <dt>LinkedIn</dt>
+                    <dd><a href="https://www.linkedin.com/company/ens-solutions-llc/">ENS Solutions, LLC</a></dd>
+                </div>
+            </dl>
+            <p class="muted small">
+                The form doesn&rsquo;t send anything by itself &mdash; it opens a draft in your own email
+                app, and nothing is stored on this site.
+            </p>
+        </aside>
+    </div>
+</section>
+
+<script>
+    import '../scripts/contact';
+</script>
+</BaseLayout>

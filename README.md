@@ -1,7 +1,9 @@
 # ens-products-page
 
 Product site for **ENS Solutions, LLC** — a homepage overview linking to a page
-for each product, served as static HTML from an nginx container.
+for each product, served as static HTML from an nginx container — and the
+licensing service behind it, where customers sign up, download free
+evaluation licenses and manage the licenses they buy.
 
 | Product | Page | Status |
 |---|---|---|
@@ -10,9 +12,56 @@ for each product, served as static HTML from an nginx container.
 | RSA Operations Portal | `/products/mfa-portal.html` | Available |
 | Directory Services Portal | `/products/directory-portal.html` | Available |
 
-No build step, no CDN, no backend. The pages are plain HTML and one
-stylesheet, plus one small script on the contact page; the only per-deployment
-values are the demo URLs, and those are resolved when the container starts.
+Plus `/pricing.html` (the price list, support tiers, services, buying terms
+and a quote estimator), `/licensing.html` (how licensing works),
+`/contact.html`, and the licensing pages: `/account` for customers and
+`/admin` for ENS staff.
+
+The site is built with [Astro](https://astro.build) and TypeScript. The
+marketing pages are prerendered to plain static files and served by nginx,
+with no CDN and no third-party script. The licensing pages are rendered on
+demand by a small Node service (Astro's Node adapter, with SQLite through
+Node's built-in `node:sqlite`), which nginx proxies `/account`, `/admin` and
+`/api/licensing` to. One codebase, two containers: see
+[Licensing service](#licensing-service).
+
+The header, footer and page shell are shared components; the product line,
+the price list and the license feature catalog are typed data every page
+reads; interactive features are TypeScript modules bundled per page; and the
+pricing and licensing logic is unit tested.
+
+---
+
+## Developing
+
+Needs Node.js 22.12 or newer.
+
+```bash
+npm install
+npm run dev        # http://localhost:4321, reloads on save
+npm test           # pricing, licensing, accounts (Vitest)
+npm run check      # TypeScript and Astro type check
+npm run build      # static pages into dist/client/, the licensing server into dist/server/
+npm run verify     # all three
+npm start          # run the built licensing server (it serves the static pages too)
+```
+
+`npm run dev` runs the licensing pages as well, with a database and a
+generated signing key in `./data/` and confirmation emails printed to the
+terminal instead of sent. Set `COOKIE_SECURE=false` only if you test through
+an `http://` address other than localhost, and `ADMIN_EMAILS=you@example.com`
+to make your account an administrator.
+
+`npm run dev` shows both states of every demo button, because the demo
+markers are only resolved by the container (see [Demo links](#demo-links)).
+`npm run render` runs that step locally against `dist/client/`, into
+`dist-rendered/`; it needs `envsubst` (GNU gettext) on `PATH`.
+
+The Java license verifier has its own build: `cd licensing/java && mvn test`.
+
+CI (`.github/workflows/ci.yml`) runs the type check, the tests, the build, the
+container's render step, a start-up check of the licensing service, both
+Docker images and the Java verifier's tests on every pull request.
 
 ---
 
@@ -25,10 +74,21 @@ docker compose up --build
 
 Then open <http://localhost:8080>.
 
-Without Compose:
+Compose runs two containers from one Dockerfile:
+
+| Service | Target | Image | |
+|---|---|---|---|
+| `site` | `web` | `nginx:1.27-alpine` | Static pages; proxies the licensing paths to `licensing` |
+| `licensing` | `licensing` | `node:22-alpine` | Accounts and licenses; data in the `licensing-data` volume; no published port |
+
+A shared `node:22-alpine` stage installs dependencies, runs the tests and
+builds both.
+
+Without Compose, the static site on its own (the account pages then show a
+"licensing unavailable" page; everything else works):
 
 ```bash
-docker build -t ens-products-page .
+docker build --target web -t ens-products-page .
 docker run --rm -p 8080:8080 \
   -e READYROOM_DEMO_URL="https://demo.example.com/readyroom" \
   ens-products-page
@@ -51,8 +111,73 @@ collides with the default one. The first `up` creates the network if it doesn't
 exist. A proxy started from another Compose project joins it by declaring it
 under `networks:` with `external: true` and `name: ens-demo`.
 
+Its licensing service, `ens-products-demo-licensing`, sits on the same network
+for the site container to proxy to; point the reverse proxy only at
+`ens-products-demo`. Set `PUBLIC_URL` in `.env.demo` to the demo's public
+address so confirmation links work.
+
 `GET /healthz` returns `200 ok` for orchestrator health checks, and the image
-carries a `HEALTHCHECK` that uses it.
+carries a `HEALTHCHECK` that uses it. The licensing image's equivalent is
+`GET /api/licensing/health`, which also checks the database and signing key.
+
+---
+
+## Licensing service
+
+Customers create an account, confirm their email, and download a free 30-day
+evaluation license for any product, one per product per account. Licenses
+they buy (subscriptions, perpetual licenses, pilots) are issued into the same
+account by ENS staff at `/admin` against the order, and renewals re-issue them
+there. Everything that creates or changes a license goes through this
+service, and every change is in an audit log customers and staff can read.
+
+| Customers (`/account`) | ENS staff (`/admin`) |
+|---|---|
+| Sign up, confirm email, reset password | Find accounts and licenses; renewals due in 60 days |
+| Download evaluation licenses | Issue subscription, perpetual, pilot or evaluation licenses with order reference |
+| Download any license they hold | Renew (new expiry, or new end of maintenance) |
+| Bind a license to an installation id | Revoke and reinstate |
+| Name licenses; check a license file | Make administrators; disable accounts |
+| Their own activity history | Full audit history |
+
+How a license file unlocks features in the applications, the file format,
+and the Java library the applications use are in
+[`licensing/README.md`](licensing/README.md).
+
+### Configuration
+
+All in the `licensing` service's environment (see `.env.example`):
+
+| Variable | |
+|---|---|
+| `PUBLIC_URL` | The address customers use, e.g. `https://products.ens-solutions.com`. Links in emails start with it; `https:` also makes session cookies Secure. **Set it.** |
+| `ADMIN_EMAILS` | Comma-separated. These accounts become administrators once they confirm their email. This is how the first administrator is made; others can then be promoted at `/admin/accounts`. |
+| `LICENSE_SIGNING_KEY` | The Ed25519 private key, from `npm run license -- keygen` (PEM, or the one-line form it prints). **A secret.** Unset, a key is generated in the data volume on first start, with a warning in the log. |
+| `LICENSE_SIGNING_KEY_FILE` | Or a path to it, e.g. a Docker secret. |
+| `LICENSE_TRUSTED_KEYS` | Retired public keys still accepted by *Check a file*, after a key rotation. |
+| `SMTP_URL`, `MAIL_FROM` | Outgoing mail for confirmations and password resets. Unset, messages are written to the service's log. |
+| `DATA_DIR` | `/data` in the image: `licensing.sqlite` and, if generated, the signing key. |
+
+Back up the `licensing-data` volume, and above all the signing key: if it is
+lost, existing files still verify but no new license can be signed for
+applications that only trust it.
+
+### Security notes
+
+- Passwords: scrypt; at least 12 characters. Session, confirmation and reset
+  tokens are random and stored only as SHA-256 hashes.
+- Sign-up, sign-in and reset answer the same way whether or not an address
+  has an account, and are rate limited per client address and address tried.
+- Form posts are checked for same origin (Astro's `security.checkOrigin`);
+  cookies are HttpOnly, SameSite=Lax, and Secure on `https:`.
+- Account pages are `no-store`, framed by nobody, and carry a strict CSP.
+- nginx overwrites `X-Forwarded-For` with the real client address; the
+  service trusts forwarded headers because only nginx can reach it. Don't
+  publish its port.
+- The signing key never leaves the service. `GET /api/licensing/keys` serves
+  the public keys; `GET /api/licensing/licenses/<id>/status` tells an
+  application with a network route whether a license is revoked, and nothing
+  about the customer.
 
 ---
 
@@ -81,14 +206,27 @@ docker compose up -d --force-recreate
 
 ### How that works
 
-`site/` holds templates, not the served files. The image copies it to
-`/usr/share/nginx/template`, and `docker/docker-entrypoint.d/30-render-site.sh`
-renders it into `/usr/share/nginx/html` on every start — the official nginx
-entrypoint runs every executable in `/docker-entrypoint.d` before starting
-nginx.
+Astro's build output, `dist/`, holds templates, not the served files. The image
+copies it to `/usr/share/nginx/template`, and
+`docker/docker-entrypoint.d/30-render-site.sh` renders it into
+`/usr/share/nginx/html` on every start — the official nginx entrypoint runs
+every executable in `/docker-entrypoint.d` before starting nginx.
 
-Each product page carries two mutually exclusive blocks, and exactly one
-survives the render:
+In the source, a product page wraps its demo buttons in `DemoSwitch`:
+
+```astro
+<DemoSwitch product="readyroom">
+    <Fragment slot="demo">
+        <DemoLink product="readyroom" />
+    </Fragment>
+    <Fragment slot="nodemo">
+        <span class="btn btn--disabled" aria-disabled="true">Demo unavailable</span>
+    </Fragment>
+</DemoSwitch>
+```
+
+which builds to two mutually exclusive blocks, of which exactly one survives
+the render:
 
 ```html
 <!--DEMO:READYROOM-->
@@ -99,36 +237,50 @@ survives the render:
 <!--/NODEMO:READYROOM-->
 ```
 
+The render script works line by line, which is why `astro.config.mjs` turns
+off `compressHTML`: the markers must stay on lines of their own.
+
 Substitution is restricted to the four `*_DEMO_URL` names, so no other `$NAME`
 in the markup or CSS is touched. Non-HTML files are copied through byte for
 byte.
 
-To add another product, add its `NAME_DEMO_URL` to the `export` list, the
-`enabled` list and the `vars` list in the render script, then use
-`<!--DEMO:NAME-->` markers in its page.
+To add another product, add it to `src/data/products.ts` with its `demoKey`,
+add its `NAME_DEMO_URL` to the `export` list, the `enabled` list and the `vars`
+list in the render script and to the Dockerfile and Compose files, then use
+`DemoSwitch` in its page.
 
 ### Cache busting
 
-nginx lets browsers keep everything under `/assets/` for a week, while the pages
-themselves are never cached. So the last step of the render script adds each
-asset's content hash to every reference to it in the pages
-(`/assets/css/site.css?v=e332f43848`). When an asset changes, its URL changes,
-so a returning visitor's browser fetches the new copy instead of styling new
-pages with last week's stylesheet. Without this, a phone that visited before a
-deploy showed the new pages with the old stylesheet: oversized logos, a layout
-wider than the screen, and the old colours.
+The pages themselves are never cached. Everything else is, and two mechanisms
+make sure a returning visitor never gets new pages with old assets:
 
-Write asset references in the HTML as plain absolute paths in double quotes
+- **The stylesheet and scripts** are bundled by Astro into `/_astro/` with a
+  content hash in the file name (`/_astro/BaseLayout.CkhJsfDJ.css`). A changed
+  file is a new URL, so nginx lets browsers keep `/_astro/` for a year. Pages the licensing service
+  renders use the same bundles.
+- **Images** under `public/assets/` keep their names, and nginx lets browsers
+  keep them for a week. The last step of the render script adds each one's
+  content hash to every reference to it in the pages
+  (`/assets/img/brand/ens-solutions-logo.jpg?v=f52784c931`).
+
+Without this, a phone that visited before a deploy showed the new pages with
+the old stylesheet: oversized logos, a layout wider than the screen, and the
+old colours.
+
+Write image references in the markup as plain absolute paths in double quotes
 (`src="/assets/..."`). The render script only versions references in that
 form.
 
 ### Rendering outside the container
 
 The script takes `SITE_TEMPLATE_DIR` and `SITE_OUTPUT_DIR` overrides, which is
-how it is exercised without Docker:
+how `npm run render` exercises it without Docker:
 
 ```bash
-SITE_TEMPLATE_DIR=site SITE_OUTPUT_DIR=/tmp/out \
+npm run build
+READYROOM_DEMO_URL=https://demo.example.com/readyroom npm run render
+# or by hand:
+SITE_TEMPLATE_DIR=dist SITE_OUTPUT_DIR=/tmp/out \
 READYROOM_DEMO_URL=https://demo.example.com/readyroom \
   sh docker/docker-entrypoint.d/30-render-site.sh
 ```
@@ -140,40 +292,130 @@ Needs `envsubst` (GNU gettext) on `PATH`; the nginx image already ships it.
 ## Layout
 
 ```
-site/                       Templates — the site itself
-  index.html                Homepage: company intro + the four product cards
-  contact.html              Contact form (opens the visitor's email app)
-  404.html
-  products/                 One page per product
-  assets/css/site.css       The whole stylesheet
-  assets/js/contact.js      Composes the contact form's email; the site's only script
-  assets/img/brand/         ENS logo, icons, and the ReadyRoom and CertAlert logos
-  assets/img/screens/       Product screenshots (JPEG, 1440 px wide) and phone crops
-nginx/default.conf          Server config: port 8080, gzip, /healthz, 404
+src/
+  pages/                    One file per URL
+    index.astro             Homepage: company intro, product cards, pricing teaser
+    pricing.astro           Price list, support, services, buying terms, estimator
+    licensing.astro         How licensing works, for buyers and installers
+    contact.astro           Contact form (opens the visitor's email app)
+    404.astro, licensing-unavailable.astro
+    products/               One page per product, each ending in its pricing
+    account/                Customer licensing pages (rendered on demand)
+    admin/                  ENS staff licensing pages (rendered on demand)
+    api/licensing/          Public keys, license status, health
+  layouts/
+    BaseLayout.astro        The page shell: <head>, header, footer
+    AccountLayout.astro     Licensing page shell: heading, account nav, notices
+  components/
+    SiteHeader.astro, SiteFooter.astro
+    DemoSwitch.astro        Demo / no-demo blocks for the render script
+    DemoLink.astro          The "Open the demo" button
+    PriceTable.astro        A product's size bands and prices
+    ProductPricing.astro    The "Pricing" section of a product page
+    SavingsCalculator.astro RSA Operations Portal help-desk savings
+    Estimator.astro         The quote estimator's form
+    licensing/              License table, details, status pill, audit list
+  data/
+    products.ts             The product line: names, paths, demo keys, contact topics
+    pricing.ts              Every price and pricing rule
+    licensing.ts            Features per product, editions, evaluation size
+    examples.ts             Worked examples quoted on the site
+  lib/
+    pricing.ts              Pricing arithmetic (pure functions)
+    licensing/license.ts    The license file: format, signing, verification, state
+    licensing/issue.ts      Building a license from what was sold
+  server/                   The licensing service: config, database and migrations,
+                            accounts, sessions, licenses, audit log, mail, keys
+  middleware.ts             Loads the signed-in account on licensing pages
+  scripts/                  Browser code: contact form, estimator, savings calculator
+  styles/site.css           The whole stylesheet
+public/assets/img/          Brand images and product screenshots, served as-is
+licensing/                  The applications' side: Java verifier, Spring example,
+                            cross-language fixtures (see licensing/README.md)
+scripts/license.mjs         keygen, public-key, inspect, verify
+nginx/default.conf.template Server config: port 8080, gzip, caching, licensing proxy
 docker/docker-entrypoint.d/
   30-render-site.sh         Resolves demo URLs at container start
-Dockerfile
-docker-compose.yml
-docker-compose.demo.yml    Demo deployment: no host port, reverse-proxy network
+astro.config.mjs            Build settings: Node adapter, .html file URLs, origin checks
+Dockerfile                  Build, then the `web` and `licensing` images
+docker-compose.yml          Both services and the licensing data volume
+docker-compose.demo.yml     Demo deployment: no host port, reverse-proxy network
 .env.example
+.github/workflows/ci.yml
 ```
 
 ---
 
 ## Editing content
 
-Everything is hand-written HTML — edit the file for the page you want to
-change. The header, footer and nav are duplicated across the seven pages rather
-than templated; with seven pages that is cheaper than introducing a build step,
-but it does mean a nav change is a seven-file change.
+Page copy is HTML inside each `.astro` file under `src/pages/` — edit the file
+for the page you want to change. The header, footer and `<head>` are in
+`BaseLayout.astro` and its components, so a nav change is one edit.
 
 Colours, spacing and type are CSS custom properties declared once at the top of
-`site/assets/css/site.css`, with a dark-mode block right below. Re-skinning to
-match brand colours means editing those tokens and nothing else.
+`src/styles/site.css`, with a dark-mode block right below. Re-skinning to match
+brand colours means editing those tokens and nothing else.
+
+### Pricing
+
+Every price on the site lives in `src/data/pricing.ts` and is never typed into
+a page: the pricing page, each product page's pricing section, the homepage,
+the RSA savings calculator and the estimator all read it, at build time and in
+the browser. Change a number there and rebuild. `npm test` checks the
+arithmetic, including that the worked example on the pricing page still comes
+to roughly $55K a year.
+
+The rules it encodes:
+
+- **Annual subscriptions**, tiered by size, include updates, security patches
+  and Standard (business-hours) support. ReadyRoom is sized by tracked people,
+  RSA Operations Portal by SecurID users, the others by directory users. The
+  largest band of each product is priced on request, except Enterprise or
+  multi-forest CertAlert, which is a "from" price.
+- **Perpetual licenses** list at `PERPETUAL_MULTIPLE` (2.75x) the annual
+  subscription for the same band, with yearly maintenance as a share of the
+  license: Standard 20%, Premium 28%, Mission 35%.
+- **Support add-ons** on a subscription are the same percentages of the
+  subscription after the suite discount (Standard is included). That is the
+  reading that makes the plan's example come out at roughly $55K: CertAlert
+  plus RSA Operations Portal at 10,000 users is $55,000, less 25% is $41,250,
+  plus 35% for Mission is $55,688 a year.
+- **Suite discount**: 25% off the sum for two products, 30% for three or more.
+  Products priced on request count toward the discount but are left out of
+  the estimator's totals.
+- **Multi-year prepay**: 10% off three years paid up front (subscription only).
+- **Services**: installation $5K–15K per product, STIG-hardened image and ATO
+  package $10K–25K, training $2,500 per half-day, custom Directory Services
+  Portal schema and form work on time and materials.
+- **Evaluation and pilot**: the 30-day evaluation container is free; the
+  90-day paid pilot is $5,000, credited toward year one.
+- **Acquisition thresholds**: the FAR 2.101 micro-purchase ($15,000) and
+  simplified acquisition ($350,000) thresholds in effect from 1 October 2025.
+  The estimator says which one an order fits.
+- **Reseller margin**: list prices are set to carry a 15–25% reseller margin,
+  so the site states one list price whichever way a customer buys. The
+  margin itself is not published.
+
+Money is whole dollars. Percentages are applied with integer scaling so that
+halves round up, as they would on a hand-written quote.
+
+### Quote estimator
+
+`/pricing.html#estimate` lets a buyer pick products, sizes, the license model,
+support tier, prepay, pilot and services, and prices it with the same
+`quote()` the tests cover (`src/scripts/estimator.ts`). The configuration is
+kept in the query string (`?p=certalert:10000,mfa-portal:10000&support=mission`),
+so an estimate can be bookmarked or forwarded, and product pages link to it
+with `?product=certalert` to start from that product. "Request this quote"
+opens the contact form with the topic set to *Pricing and quotes* and the
+estimate written into the message.
+
+Without JavaScript the estimator is hidden behind a note; the price tables on
+the same page carry every number it uses.
 
 ### Contact form
 
-`/contact.html` has no server side. On submit, `assets/js/contact.js` checks the
+`/contact.html` has no server side. On submit, `src/scripts/contact.ts` checks the
 required fields and builds a `mailto:` link to `info@ens-solutions.com` with a
 subject and a body laid out from the fields, which opens a draft in the
 visitor's own email app — the message is sent from there, and nothing is stored
@@ -182,9 +424,13 @@ native `mailto:` form submission.
 
 - The recipient is the form's `action` and `data-recipient` attributes.
 - Product pages link to `/contact.html?product=readyroom` (or `certalert`,
-  `mfa-portal`, `directory-portal`) to pre-select the topic; the mapping is at the top of the script.
-- The message is capped at 1,500 characters because some mail clients truncate
-  long `mailto:` links.
+  `mfa-portal`, `directory-portal`, `pricing`, `pilot`) to pre-select the
+  topic; the mapping is `contactTopics` in `src/data/products.ts`, and the
+  topic list in the form is built from it.
+- `?message=...` pre-fills the message, which is how the estimator hands over
+  a quote.
+- The message is capped at 1,500 characters (`CONTACT_MESSAGE_LIMIT`) because
+  some mail clients truncate long `mailto:` links.
 - Visitors with no email app configured get nothing to happen, so the page
   also lists the address and phone number directly.
 
@@ -198,7 +444,7 @@ site still makes no outbound requests of its own.
 
 ### Branding
 
-`site/assets/img/brand/` holds:
+`public/assets/img/brand/` holds:
 
 - `ens-solutions-logo.jpg`: the official ENS Solutions logo, with tagline and
   SDVOSB seal, exactly as ens-solutions.com serves it
@@ -221,7 +467,7 @@ decoration. Dark mode uses a lighter teal (`#4cc3d6`) for links and buttons.
 
 ### Screenshots
 
-`site/assets/img/screens/` holds screenshots of all four products. They're
+`public/assets/img/screens/` holds screenshots of all four products. They're
 shown on each product page, and one per product on the homepage under "A look
 inside". Each was taken at 1440 px wide against demo data:
 

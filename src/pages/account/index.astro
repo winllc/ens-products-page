@@ -1,0 +1,85 @@
+---
+export const prerender = false;
+
+import LicenseTable from '../../components/licensing/LicenseTable.astro';
+import { editions, evaluationLimit } from '../../data/licensing';
+import { productPricing } from '../../data/pricing';
+import { products } from '../../data/products';
+import AccountLayout from '../../layouts/AccountLayout.astro';
+import { formatCount } from '../../lib/pricing';
+import { auditFor } from '../../server/audit';
+import { requireAccount } from '../../server/http';
+import { canTakeEvaluation, licensesOf } from '../../server/licenses';
+import AuditList from '../../components/licensing/AuditList.astro';
+
+const account = requireAccount(Astro);
+if (account instanceof Response) return account;
+
+const licenses = licensesOf(account.id);
+const verified = account.email_verified_at !== null;
+const evaluation = editions.evaluation;
+const activity = auditFor({ account: account.id }, 15);
+---
+<AccountLayout title="Your licenses" section="licenses">
+    <p slot="lede" class="lede">
+        {account.name}{account.organization && <>, {account.organization}</>}
+    </p>
+
+    {!verified && (
+        <div class="callout callout--warn">
+            <p>
+                <strong>Confirm your email address to take licenses.</strong> We sent a link to
+                {account.email} when you signed up.
+            </p>
+            <form method="post" action="/account/verify">
+                <button class="btn btn--ghost" type="submit">Send the link again</button>
+            </form>
+        </div>
+    )}
+
+    <h2>Licenses</h2>
+    {licenses.length ? (
+        <LicenseTable licenses={licenses} detailBase="/account/licenses/" />
+    ) : (
+        <p class="muted">No licenses yet. Start with a free evaluation below, or <a href="/pricing.html#estimate">price a purchase</a>.</p>
+    )}
+
+    <h2 id="evaluate" class="section-gap">Free evaluation licenses</h2>
+    <p class="muted">
+        {evaluation.days} days of every feature, sized at each product&rsquo;s smallest tier, one per product.
+        Evaluation copies show an evaluation banner and are not for production use.
+    </p>
+    <div class="card-grid card-grid--pairs">
+        {products.map((p) => {
+            const available = verified && canTakeEvaluation(account, p.id);
+            const taken = !canTakeEvaluation(account, p.id);
+            return (
+                <article class="card">
+                    <h3><a href={p.href}>{p.name}</a></h3>
+                    <p>{p.tagline}. Covers up to {formatCount(evaluationLimit(p.id))} {productPricing[p.id].unit}.</p>
+                    <form method="post" action="/account/evaluation" class="card-action">
+                        <input type="hidden" name="product" value={p.id}>
+                        <button class="btn btn--primary" type="submit" disabled={!available}>
+                            {taken ? 'Evaluation taken' : 'Get evaluation license'}
+                        </button>
+                        {taken && <a class="small" href="/contact.html?product=pilot">Need longer? Ask about a pilot</a>}
+                    </form>
+                </article>
+            );
+        })}
+    </div>
+
+    <h2 class="section-gap">Buy, renew or upgrade</h2>
+    <p>
+        Subscriptions, perpetual licenses, pilots and renewals are issued here once your order is in.
+        <a href="/pricing.html#estimate">Build an estimate</a> or <a href="/contact.html?product=pricing">ask for a quote</a>;
+        the license appears on this page as soon as we issue it.
+    </p>
+
+    {activity.length > 0 && (
+        <>
+            <h2 class="section-gap">Recent activity</h2>
+            <AuditList entries={activity} />
+        </>
+    )}
+</AccountLayout>

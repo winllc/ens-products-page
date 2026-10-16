@@ -1,0 +1,64 @@
+---
+/*
+ * What a license says, laid out for people: the same facts the application
+ * reads from the file.
+ */
+import { editions, productFeatures } from '../../data/licensing';
+import { supportTiers } from '../../data/pricing';
+import { product } from '../../data/products';
+import { formatCount } from '../../lib/pricing';
+import { dateOnly } from '../../server/http';
+import type { License } from '../../server/licenses';
+import StatusPill from './StatusPill.astro';
+
+interface Props {
+    license: License;
+}
+
+const { license } = Astro.props;
+const p = license.payload;
+const info = product(license.product);
+const all = productFeatures[license.product];
+const unlocked = new Set(p.features);
+const support = supportTiers.find((t) => t.id === p.support);
+---
+<div class="license-summary">
+    <dl class="data-list">
+        <div><dt>Product</dt><dd><a href={info.href}>{info.name}</a></dd></div>
+        <div><dt>Edition</dt><dd>{editions[license.edition].name}</dd></div>
+        <div><dt>Status</dt><dd><StatusPill status={license.status} daysLeft={license.daysLeft} /></dd></div>
+        <div><dt>Covers</dt><dd>{formatCount(p.limit.quantity)} {p.limit.unit}</dd></div>
+        <div><dt>Licensee</dt><dd>{p.licensee.name}{p.licensee.organization && <>, {p.licensee.organization}</>}</dd></div>
+        <div><dt>Support</dt><dd>{support?.name ?? p.support}</dd></div>
+        <div><dt>Valid from</dt><dd>{dateOnly(p.notBefore)}</dd></div>
+        <div>
+            <dt>Expires</dt>
+            <dd>{p.expiresAt ? dateOnly(p.expiresAt) : 'Never (perpetual)'}{p.graceDays > 0 && <span class="muted small"> + {p.graceDays}-day grace period</span>}</dd>
+        </div>
+        {p.maintenanceUntil && <div><dt>Maintenance</dt><dd>Releases up to {dateOnly(p.maintenanceUntil)}</dd></div>}
+        <div><dt>Installation</dt><dd>{p.installationId ? <span class="mono">{p.installationId}</span> : <span class="muted">Any installation</span>}</dd></div>
+        <div><dt>License id</dt><dd><span class="mono">{license.id}</span>, revision {license.revision}</dd></div>
+        {license.order_reference && <div><dt>Order</dt><dd>{license.order_reference}</dd></div>}
+    </dl>
+    {license.status === 'revoked' && (
+        <p class="notice notice--error">Revoked {dateOnly(license.revoked_at)}: {license.revoked_reason}</p>
+    )}
+    {p.watermark && (
+        <p class="notice">Evaluation license: the application shows an evaluation banner and it is not for production use.</p>
+    )}
+</div>
+
+<h2 class="section-gap">What it unlocks</h2>
+<ul class="feature-checklist">
+    {all.map((f) => {
+        const on = unlocked.has(`${license.product}.${f.id}`);
+        return (
+            <li class:list={{ 'is-off': !on }}>
+                <strong>{f.name}</strong>
+                <span class="muted"> &mdash; {f.description}</span>
+                {!on && <span class="small muted"> (Enterprise)</span>}
+                <span class="visually-hidden">{on ? ' (included)' : ' (not included)'}</span>
+            </li>
+        );
+    })}
+</ul>

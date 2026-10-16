@@ -1,0 +1,249 @@
+---
+import ProductPricing from '../../components/ProductPricing.astro';
+import DemoLink from '../../components/DemoLink.astro';
+import DemoSwitch from '../../components/DemoSwitch.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+    title="Directory Services Portal"
+    description="Directory Services Portal is a web front end for LDAP directories with custom schemas: administrators build forms for any object class, publish them as scoped directories, and grant read and write access to users and groups. From ENS Solutions."
+>
+<section class="hero">
+    <div class="wrap">
+        <a class="backlink" href="/">&larr; All products</a>
+        <div class="title-row">
+            <p class="eyebrow eyebrow--inline">Directory Services Portal &middot; Web front end for LDAP</p>
+            <span class="badge badge--live">Available</span>
+        </div>
+        <h1>Your directory&rsquo;s own schema, as forms people can use.</h1>
+        <p class="lede">
+            Directory Services Portal puts a web front end on LDAP directories, including those with
+            custom, non-standard schemas. Administrators build forms for any object class, publish them
+            as directories scoped to one part of the tree, and decide who can read or edit each one.
+            Every user gets a profile page showing where they appear and what they can update
+            themselves &mdash; without anyone needing an LDAP browser.
+        </p>
+
+        <div class="btn-row">
+            <DemoSwitch product="directory-portal">
+                <Fragment slot="demo">
+                    <DemoLink product="directory-portal" />
+                    <a class="btn btn--ghost" href="#how-heading">See how it works</a>
+                    <span class="btn-note">Opens the Directory Services Portal demo environment in a new tab.</span>
+                </Fragment>
+                <Fragment slot="nodemo">
+                    <span class="btn btn--disabled" aria-disabled="true">Demo unavailable</span>
+                    <a class="btn btn--ghost" href="#how-heading">See how it works</a>
+                    <span class="btn-note">No demo URL is configured for this deployment.</span>
+                </Fragment>
+            </DemoSwitch>
+        </div>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="how-heading">
+    <div class="wrap">
+        <h2 id="how-heading">How it works</h2>
+        <p class="lede">Administrators set it up once, and people use it from any browser.</p>
+        <ol class="flow-steps">
+            <li>
+                <strong>Load the schema.</strong> Read it straight from the directory, including
+                non-standard object classes and attributes, or import OpenLDAP schema files and
+                <span class="mono">cn=config</span> LDIF. Add display names and descriptions, or define
+                elements the server does not publish.
+            </li>
+            <li>
+                <strong>Build a form.</strong> Pick the object classes and the editor suggests their
+                attributes, then warns about schema problems before they reach the directory. Fields can
+                be text, text areas or drop-downs, including drop-downs filled from a directory search.
+                For example, choose a manager by name and store their DN.
+            </li>
+            <li>
+                <strong>Publish it as a directory.</strong> Link the form to a base DN, a scope and an
+                optional filter. The portal only reads or writes entries inside that part of the tree.
+                Choose read/write, or a read-only &ldquo;white pages&rdquo; that nobody can write through,
+                administrators included.
+            </li>
+            <li>
+                <strong>Grant access.</strong> Give users or directory groups view, or view-and-edit, access to
+                each directory. A matrix shows every grant at a glance.
+            </li>
+        </ol>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="screens-heading">
+    <div class="wrap">
+        <h2 id="screens-heading">See it in use</h2>
+        <p class="lede">Screenshots of Directory Services Portal running against a demo directory with sample people and data. Select one to see it full size.</p>
+        <div class="shot-grid">
+            <figure class="shot shot--wide">
+                <a href="/assets/img/screens/directory-portal-staff.jpg" class="shot-link" target="_blank" rel="noopener">
+                    <picture>
+                        <source media="(max-width: 640px)" srcset="/assets/img/screens/directory-portal-staff-mobile.jpg" width="620" height="560">
+                        <img src="/assets/img/screens/directory-portal-staff.jpg" width="1440" height="900" loading="lazy" decoding="async"
+                             alt="Directory Services Portal staff directory: a searchable table of employees with job title, department, e-mail and phone, and a New employee button.">
+                    </picture>
+                    <span class="visually-hidden"> (opens full size in a new tab)</span>
+                </a>
+                <figcaption><strong>A directory.</strong> A published form becomes a searchable, sortable list that people with access can edit.</figcaption>
+            </figure>
+            <figure class="shot">
+                <a href="/assets/img/screens/directory-portal-form-editor.jpg" class="shot-link" target="_blank" rel="noopener">
+                    <picture>
+                        <source media="(max-width: 640px)" srcset="/assets/img/screens/directory-portal-form-editor-mobile.jpg" width="640" height="780">
+                        <img src="/assets/img/screens/directory-portal-form-editor.jpg" width="1440" height="900" loading="lazy" decoding="async"
+                             alt="Directory Services Portal form editor for an Employee form built on inetOrgPerson plus a custom acmePerson class, listing fields marked required, self-service, multi-valued or read only.">
+                    </picture>
+                    <span class="visually-hidden"> (opens full size in a new tab)</span>
+                </a>
+                <figcaption><strong>Form editor.</strong> Build a form from any object classes, including custom schema, and mark each field required, self-service or read only.</figcaption>
+            </figure>
+            <figure class="shot">
+                <a href="/assets/img/screens/directory-portal-audit.jpg" class="shot-link" target="_blank" rel="noopener">
+                    <picture>
+                        <source media="(max-width: 640px)" srcset="/assets/img/screens/directory-portal-audit-mobile.jpg" width="680" height="690">
+                        <img src="/assets/img/screens/directory-portal-audit.jpg" width="1440" height="900" loading="lazy" decoding="async"
+                             alt="Directory Services Portal audit log: sign-ins, entry updates and a denied edit, with one update expanded to show who made it, from where, and the job title before and after.">
+                    </picture>
+                    <span class="visually-hidden"> (opens full size in a new tab)</span>
+                </a>
+                <figcaption><strong>Audit log.</strong> Every change and sign-in, with who made it and what changed, including edits the portal refused.</figcaption>
+            </figure>
+        </div>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="users-heading">
+    <div class="wrap">
+        <h2 id="users-heading">For the people in the directory</h2>
+        <div class="card-grid card-grid--pairs">
+            <article class="card">
+                <p class="card-kicker">Directories</p>
+                <h3>Search, browse and edit</h3>
+                <p>
+                    Each directory is a searchable, sortable list. Entries can be viewed, created, edited
+                    and deleted according to the user&rsquo;s access. Only changed values are written,
+                    and changing the naming attribute renames the entry.
+                </p>
+            </article>
+            <article class="card">
+                <p class="card-kicker">My profile</p>
+                <h3>Everywhere you appear, in one place</h3>
+                <p>
+                    Each user sees every directory that lists them and can update the fields marked
+                    self-service, such as a phone number, without raising a ticket.
+                </p>
+            </article>
+            <article class="card">
+                <p class="card-kicker">Validation</p>
+                <h3>Checked twice before it reaches the directory</h3>
+                <p>
+                    Required fields, single-value rules, allowed options, formats (email, phone, URL,
+                    number, DN), patterns and length limits are checked in the browser and again on the
+                    server.
+                </p>
+            </article>
+            <article class="card">
+                <p class="card-kicker">Sign-in</p>
+                <h3>Directory password or smart card</h3>
+                <p>
+                    Users sign in with their own directory password, or with a client certificate such
+                    as a CAC or PIV card. Each certificate is mapped to exactly one directory user. The
+                    portal can also be set to accept certificates only.
+                </p>
+            </article>
+        </div>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="security-heading">
+    <div class="wrap">
+        <h2 id="security-heading">Security</h2>
+        <div class="feature-grid">
+            <div class="feature">
+                <h3>Certificates checked before mapping</h3>
+                <p>
+                    Validity dates, client-authentication key usage and, optionally, the chain to your
+                    CAs and revocation (OCSP or CRL). Optionally, the certificate must also be the one
+                    published on the user&rsquo;s entry.
+                </p>
+            </div>
+            <div class="feature">
+                <h3>Namespaces enforced on the server</h3>
+                <p>
+                    Every DN is parsed and checked against the directory&rsquo;s base, scope and filter,
+                    and writes are limited to the form&rsquo;s writable fields. User input in filters is
+                    always escaped.
+                </p>
+            </div>
+            <div class="feature">
+                <h3>Hardened sessions</h3>
+                <p>
+                    HttpOnly, SameSite=Strict session cookies, a new session ID at sign-in, CSRF
+                    protection on every change, login throttling, and password attributes that
+                    are never sent to the browser.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="tech-heading">
+    <div class="wrap">
+        <h2 id="tech-heading">What you need to run it</h2>
+        <div class="table-scroll">
+            <table>
+                <caption class="visually-hidden">Directory Services Portal technical summary</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Component</th>
+                    <th scope="col">Detail</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <th scope="row">API</th>
+                    <td>Spring Boot 4 on Java 21, using the UnboundID LDAP SDK over a pooled service-account connection</td>
+                </tr>
+                <tr>
+                    <th scope="row">Web client</th>
+                    <td>A static React build served by nginx, which forwards <span class="mono">/api</span> to the API so the browser sees a single origin</td>
+                </tr>
+                <tr>
+                    <th scope="row">Directory</th>
+                    <td>Any LDAP / LDAPS server, with StartTLS supported. The service account needs read access to the schema and the exposed parts of the tree, and write access wherever users edit</td>
+                </tr>
+                <tr>
+                    <th scope="row">Storage</th>
+                    <td>No database. Forms, directories, grants and custom schema are kept in a single JSON configuration file</td>
+                </tr>
+                <tr>
+                    <th scope="row">Authentication</th>
+                    <td>Password sign-in verified by an LDAP bind; optional mutual TLS, ended at the web proxy or at the API</td>
+                </tr>
+                <tr>
+                    <th scope="row">Deployment</th>
+                    <td>Separate containers for the web client and the API, plus a Docker Compose stack with a demo OpenLDAP server</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="callout">
+            <p>
+                Want to see Directory Services Portal against your own schema?
+                <a href="/contact.html?product=directory-portal">Get in touch</a> or email
+                <a href="mailto:info@ens-solutions.com">info@ens-solutions.com</a>.
+            </p>
+        </div>
+    </div>
+</section>
+
+<ProductPricing product="directory-portal">
+    <p class="muted">
+        Custom schema mappings and form work beyond what your administrators build themselves are billed as
+        time and materials. <a href="/pricing.html#services-heading">See services</a>.
+    </p>
+</ProductPricing>
+</BaseLayout>

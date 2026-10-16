@@ -1,0 +1,113 @@
+---
+export const prerender = false;
+
+import AuditList from '../../../components/licensing/AuditList.astro';
+import LicenseDetails from '../../../components/licensing/LicenseDetails.astro';
+import { product } from '../../../data/products';
+import AccountLayout from '../../../layouts/AccountLayout.astro';
+import { accountById } from '../../../server/accounts';
+import { auditFor } from '../../../server/audit';
+import { dateOnly, form, requireAdmin, withNotice } from '../../../server/http';
+import {
+    LicenseActionError,
+    licenseById,
+    reinstateLicense,
+    renewLicense,
+    revokeLicense,
+} from '../../../server/licenses';
+
+const admin = requireAdmin(Astro);
+if (admin instanceof Response) return admin;
+
+let license = licenseById(Astro.params.id ?? '');
+if (!license) return new Response('Not found', { status: 404 });
+
+let error: string | null = null;
+if (Astro.request.method === 'POST') {
+    const get = await form(Astro);
+    const here = `/admin/licenses/${license.id}`;
+    try {
+        switch (get('action')) {
+            case 'renew':
+                renewLicense(admin, license, new Date(`${get('until')}T23:59:59Z`), get('orderReference'));
+                return Astro.redirect(withNotice(here, 'license-updated'), 303);
+            case 'revoke':
+                revokeLicense(admin, license, get('reason'));
+                return Astro.redirect(withNotice(here, 'license-revoked'), 303);
+            case 'reinstate':
+                reinstateLicense(admin, license);
+                return Astro.redirect(withNotice(here, 'license-reinstated'), 303);
+        }
+    } catch (err) {
+        if (!(err instanceof LicenseActionError)) throw err;
+        error = err.message;
+    }
+}
+
+const owner = accountById(license.account_id)!;
+const perpetual = license.edition === 'perpetual';
+const current = perpetual ? license.payload.maintenanceUntil : license.payload.expiresAt;
+// Suggest a year on from the current end, or from today if that has passed.
+const base = Math.max(Date.now(), current ? Date.parse(current) : Date.now());
+const suggested = new Date(base + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+---
+<AccountLayout title={license.label || product(license.product).name} eyebrow="Administration" section="admin-licenses" error={error}>
+    <p slot="lede" class="lede">
+        Held by <a href={`/admin/accounts/${owner.id}`}>{owner.name}</a> ({owner.email}{owner.organization && <>, {owner.organization}</>})
+    </p>
+
+    <div class="btn-row btn-row--top">
+        {license.status !== 'revoked' && <a class="btn btn--ghost" href={`/account/licenses/${license.id}/download`}>Download file</a>}
+    </div>
+
+    <LicenseDetails license={license} />
+
+    <div class="split section-gap">
+        {license.status !== 'revoked' ? (
+            <>
+                <form method="post" class="panel">
+                    <h3>{perpetual ? 'Extend maintenance' : 'Renew'}</h3>
+                    <p class="muted small">
+                        Re-signs the license as revision {license.revision + 1} with a new
+                        {perpetual ? ' end of maintenance' : ' expiry'} (currently {dateOnly(current)}). The customer
+                        downloads the new file from their account.
+                    </p>
+                    <input type="hidden" name="action" value="renew">
+                    <div class="field">
+                        <label for="until">{perpetual ? 'Maintenance until' : 'Expires'}</label>
+                        <input id="until" name="until" type="date" required value={suggested}>
+                    </div>
+                    <div class="field">
+                        <label for="orderReference">Order reference <span class="optional">optional</span></label>
+                        <input id="orderReference" name="orderReference" maxlength="120">
+                    </div>
+                    <button class="btn btn--primary" type="submit">Renew and re-issue</button>
+                </form>
+                <form method="post" class="panel panel--danger">
+                    <h3>Revoke</h3>
+                    <p class="muted small">
+                        Stops downloads and marks the license revoked for applications that check status online.
+                        A copy already installed offline keeps working until it expires; for a perpetual license,
+                        tell the customer.
+                    </p>
+                    <input type="hidden" name="action" value="revoke">
+                    <div class="field">
+                        <label for="reason">Reason</label>
+                        <input id="reason" name="reason" required maxlength="300">
+                    </div>
+                    <button class="btn btn--danger" type="submit">Revoke license</button>
+                </form>
+            </>
+        ) : (
+            <form method="post" class="panel">
+                <h3>Reinstate</h3>
+                <p class="muted small">Makes the license downloadable and in effect again.</p>
+                <input type="hidden" name="action" value="reinstate">
+                <button class="btn btn--primary" type="submit">Reinstate license</button>
+            </form>
+        )}
+    </div>
+
+    <h2 class="section-gap">History</h2>
+    <AuditList entries={auditFor({ license: license.id }, 50)} />
+</AccountLayout>

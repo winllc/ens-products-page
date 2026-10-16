@@ -1,0 +1,10 @@
+node_modules
+dist
+dist-rendered
+.astro
+.git
+.idea
+.env
+.env.demo
+licensing/java/target
+data

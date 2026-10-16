@@ -1,6 +1,8 @@
 services:
   site:
-    build: .
+    build:
+      context: .
+      target: web
     image: ens-products-page
     environment:
       # Set a URL to turn that product's demo button into a live link.
@@ -9,4 +11,31 @@ services:
       CERTALERT_DEMO_URL: "${CERTALERT_DEMO_URL:-}"
       MFA_PORTAL_DEMO_URL: "${MFA_PORTAL_DEMO_URL:-}"
       DIRECTORY_PORTAL_DEMO_URL: "${DIRECTORY_PORTAL_DEMO_URL:-}"
+      # Where nginx sends /account, /admin and /api/licensing.
+      LICENSING_UPSTREAM: "licensing:4321"
+    depends_on:
+      - licensing
     restart: unless-stopped
+
+  # Accounts, evaluation downloads and license management. Only nginx talks to
+  # it; it publishes no port.
+  licensing:
+    build:
+      context: .
+      target: licensing
+    image: ens-products-licensing
+    environment:
+      PUBLIC_URL: "${PUBLIC_URL:-http://localhost:8080}"
+      ADMIN_EMAILS: "${ADMIN_EMAILS:-}"
+      LICENSE_SIGNING_KEY: "${LICENSE_SIGNING_KEY:-}"
+      LICENSE_TRUSTED_KEYS: "${LICENSE_TRUSTED_KEYS:-}"
+      SMTP_URL: "${SMTP_URL:-}"
+      MAIL_FROM: "${MAIL_FROM:-ENS Solutions <licensing@ens-solutions.com>}"
+      COOKIE_SECURE: "${COOKIE_SECURE:-}"
+    volumes:
+      - licensing-data:/data
+    restart: unless-stopped
+
+volumes:
+  # The licensing database, and the signing key if none is passed in. Back it up.
+  licensing-data:

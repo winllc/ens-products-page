@@ -1,0 +1,60 @@
+---
+/*
+ * A product's size bands with their subscription and perpetual prices, read
+ * from src/data/pricing.ts. Static HTML, so prices are there without
+ * JavaScript and for anyone who prints the page.
+ */
+import { productPricing, supportTiers } from '../data/pricing';
+import type { ProductId } from '../data/products';
+import { product } from '../data/products';
+import { formatPercent, formatTierPrice, percentOf, perpetualPrice, tierLabel } from '../lib/pricing';
+
+interface Props {
+    product: ProductId;
+    /** Leave out the perpetual columns, where the page explains them elsewhere. */
+    compact?: boolean;
+}
+
+const { compact = false } = Astro.props;
+const info = product(Astro.props.product);
+const pricing = productPricing[info.id];
+const standard = supportTiers[0]!;
+const unit = pricing.unit.charAt(0).toUpperCase() + pricing.unit.slice(1);
+const rows = pricing.tiers.map((tier, i) => ({
+    label: tierLabel(pricing.tiers, i),
+    annual: formatTierPrice(tier.annual, tier.startingAt),
+    perpetual: tier.annual === null ? 'Contact us' : formatTierPrice(perpetualPrice(tier.annual), tier.startingAt),
+    maintenance:
+        tier.annual === null
+            ? '—'
+            : formatTierPrice(percentOf(perpetualPrice(tier.annual), standard.perpetualRate), tier.startingAt),
+}));
+---
+<div class="table-scroll">
+    <table class="price-table">
+        <caption class="visually-hidden">{info.name} list prices by size</caption>
+        <thead>
+        <tr>
+            <th scope="col">{unit}</th>
+            <th scope="col" class="num">Annual subscription</th>
+            {!compact && <th scope="col" class="num">Perpetual license</th>}
+            {!compact && <th scope="col" class="num col-maint">Maintenance per year <span class="th-note">(Standard, {formatPercent(standard.perpetualRate)})</span></th>}
+        </tr>
+        </thead>
+        <tbody>
+        {rows.map((r) => (
+            <tr>
+                <th scope="row">{r.label}</th>
+                <td class="num price">{r.annual}</td>
+                {!compact && <td class="num">{r.perpetual}</td>}
+                {!compact && <td class="num col-maint">{r.maintenance}</td>}
+            </tr>
+        ))}
+        </tbody>
+    </table>
+</div>
+{!compact && (
+    <p class="price-table-note small muted">
+        Perpetual licenses carry {standard.name} maintenance at {formatPercent(standard.perpetualRate)} of the license a year.
+    </p>
+)}

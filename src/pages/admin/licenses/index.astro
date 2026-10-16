@@ -1,0 +1,39 @@
+---
+export const prerender = false;
+
+import LicenseTable from '../../../components/licensing/LicenseTable.astro';
+import AccountLayout from '../../../layouts/AccountLayout.astro';
+import { requireAdmin } from '../../../server/http';
+import { allLicenses } from '../../../server/licenses';
+
+const admin = requireAdmin(Astro);
+if (admin instanceof Response) return admin;
+
+const search = Astro.url.searchParams.get('q') ?? '';
+const status = Astro.url.searchParams.get('status') ?? '';
+const licenses = allLicenses({ search, status });
+const statuses = [
+    ['', 'Any status'],
+    ['valid', 'Active'],
+    ['grace', 'Grace period'],
+    ['expired', 'Expired'],
+    ['revoked', 'Revoked'],
+] as const;
+---
+<AccountLayout title="Licenses" eyebrow="Administration" section="admin-licenses">
+    <form class="filter-bar" method="get">
+        <div class="field">
+            <label for="q">Search</label>
+            <input id="q" name="q" type="search" value={search} placeholder="License id, email, organization or order">
+        </div>
+        <div class="field">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                {statuses.map(([v, l]) => <option value={v} selected={v === status}>{l}</option>)}
+            </select>
+        </div>
+        <button class="btn btn--ghost" type="submit">Filter</button>
+    </form>
+    <p class="muted small">{licenses.length} {licenses.length === 1 ? 'license' : 'licenses'}</p>
+    <LicenseTable licenses={licenses} detailBase="/admin/licenses/" showOwner />
+</AccountLayout>

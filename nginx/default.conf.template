@@ -1,0 +1,94 @@
+# Static product site, and the proxy in front of the licensing service.
+#
+# The static files are rendered into /usr/share/nginx/html at container start
+# by /docker-entrypoint.d/30-render-site.sh, which resolves the demo URLs; Astro
+# builds them in the image's first stage.
+#
+# This is a template: the nginx entrypoint replaces ${LICENSING_UPSTREAM} and
+# ${DNS_RESOLVER} from the environment before nginx starts.
+
+server {
+    listen       8080;
+    listen       [::]:8080;
+    server_name  _;
+
+    root  /usr/share/nginx/html;
+    index index.html;
+
+    # Nothing here is user-generated, but these cost nothing and keep the
+    # scanners quiet.
+    add_header X-Content-Type-Options "nosniff"        always;
+    add_header X-Frame-Options        "SAMEORIGIN"     always;
+    add_header Referrer-Policy        "strict-origin-when-cross-origin" always;
+
+    # No directory listings.
+    autoindex off;
+
+    gzip             on;
+    gzip_vary        on;
+    gzip_min_length  512;
+    gzip_types       text/plain text/css application/javascript text/javascript image/svg+xml;
+
+    # The licensing service is looked up per request, so nginx starts (and the
+    # static site works) even when it isn't running; requests for it then get
+    # the "licensing unavailable" page.
+    resolver ${DNS_RESOLVER} valid=30s ipv6=off;
+    set $licensing http://${LICENSING_UPSTREAM};
+
+    location ~ ^/(account|admin|api/licensing)(/|$) {
+        proxy_pass $licensing;
+        proxy_http_version 1.1;
+        proxy_set_header Host              $host;
+        proxy_set_header X-Forwarded-Host  $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # Overwrite, never append: the licensing service rate-limits by the
+        # first address in this header, so a client must not be able to set it.
+        proxy_set_header X-Forwarded-For   $remote_addr;
+        proxy_set_header X-Real-IP         $remote_addr;
+        # nginx adds these to every response already; drop the service's copies
+        # so each is sent once. Its CSP (frame-ancestors 'none') still applies.
+        proxy_hide_header X-Frame-Options;
+        proxy_hide_header X-Content-Type-Options;
+        proxy_hide_header Referrer-Policy;
+        proxy_read_timeout 30s;
+        client_max_body_size 256k;
+        error_page 502 503 504 /licensing-unavailable.html;
+    }
+
+    # Container orchestrators want a cheap endpoint that does not read from disk.
+    location = /healthz {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 "ok\n";
+    }
+
+    # Astro's bundles (the stylesheet and the page scripts) carry a content hash
+    # in their file names, so a changed file is a new URL and they can be kept
+    # for as long as the browser likes.
+    location /_astro/ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Images under /assets/ keep their names; the render script versions every
+    # reference to them by content hash instead. The demo URLs are filled in at
+    # container start, so HTML must not be cached across a restart.
+    location /assets/ {
+        expires 7d;
+        add_header Cache-Control "public";
+    }
+
+    location / {
+        add_header Cache-Control "no-cache";
+        # Allow /products/readyroom as well as /products/readyroom.html.
+        try_files $uri $uri.html $uri/ =404;
+    }
+
+    error_page 404 /404.html;
+    location = /404.html {
+        internal;
+    }
+    location = /licensing-unavailable.html {
+        internal;
+    }
+}
