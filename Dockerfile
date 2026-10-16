@@ -4,7 +4,7 @@
 #                                       in front of the licensing service
 #   docker build --target licensing .   Node: accounts, license issue and
 #                                       management (/account, /admin,
-#                                       /api/licensing)
+#                                       /api/licensing, /api/audit)
 #
 # The web image works on its own; without a licensing service behind it the
 # account pages show a "licensing unavailable" page. docker-compose.yml runs
@@ -29,7 +29,10 @@ RUN npm test && npm run build
 # ---- Licensing service ------------------------------------------------------
 FROM node:22-alpine AS licensing
 WORKDIR /app
+# Recorded in every audit event's "version"; e.g. --build-arg ENS_VERSION=$(git describe).
+ARG ENS_VERSION=dev
 ENV NODE_ENV=production \
+    ENS_VERSION=${ENS_VERSION} \
     HOST=0.0.0.0 \
     PORT=4321 \
     DATA_DIR=/data \
@@ -44,6 +47,11 @@ COPY scripts/license.mjs scripts/license.mjs
 
 # The database and (if none is passed in) the signing key live here.
 RUN mkdir -p /data && chown node:node /data
+# The audit file, if ENS_AUDIT_FILE is set (e.g. /var/log/ens/licensing-portal/audit.jsonl).
+# Group 0 with rwx too, for OpenShift's arbitrary user ids.
+RUN mkdir -p /var/log/ens/licensing-portal \
+    && chown -R node:0 /var/log/ens \
+    && chmod -R 2775 /var/log/ens
 VOLUME /data
 USER node
 

@@ -38,15 +38,17 @@ jobs:
           npm run render
           grep -q 'href="https://demo.example.com/certalert"' dist-rendered/products/certalert.html
           grep -q 'Demo unavailable' dist-rendered/products/readyroom.html
-          ! grep -rq '<!--\(NO\)\?DEMO:' dist-rendered
-          ! grep -rq '_DEMO_URL}' dist-rendered
+          if grep -rq '<!--\(NO\)\?DEMO:' dist-rendered; then exit 1; fi
+          if grep -rq '_DEMO_URL}' dist-rendered; then exit 1; fi
 
       - name: Licensing service starts and answers
         run: |
           DATA_DIR=$RUNNER_TEMP/licensing HOST=127.0.0.1 PORT=4321 node dist/server/entry.mjs &
-          for i in $(seq 1 20); do curl -fsS http://127.0.0.1:4321/api/licensing/health && break; sleep 1; done
+          for _ in $(seq 1 20); do curl -fsS http://127.0.0.1:4321/api/licensing/health && break; sleep 1; done
           curl -fsS http://127.0.0.1:4321/api/licensing/keys | grep -q Ed25519
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4321/account)" = 303
+          # The audit pull API wants a bearer token; the service records its own start.
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4321/api/audit/events)" = 401
 
       - name: Docker images
         run: |

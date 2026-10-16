@@ -36,7 +36,7 @@ services:
     restart: unless-stopped
 
   # Accounts and license management. Reachable only from the site container,
-  # which proxies /account, /admin and /api/licensing to it.
+  # which proxies /account, /admin, /api/licensing and /api/audit to it.
   licensing:
     build:
       context: .
@@ -50,14 +50,32 @@ services:
       LICENSE_TRUSTED_KEYS: "${LICENSE_TRUSTED_KEYS:-}"
       SMTP_URL: "${SMTP_URL:-}"
       MAIL_FROM: "${MAIL_FROM:-ENS Solutions <licensing@ens-solutions.com>}"
+      # Audit trail outputs (README, "Audit logging"). The database always
+      # has the full trail; these copy it to stdout, a file, Splunk or syslog.
+      ENS_AUDIT_STDOUT: "${ENS_AUDIT_STDOUT:-true}"
+      ENS_AUDIT_FILE: "${ENS_AUDIT_FILE:-}"
+      ENS_AUDIT_FILE_KEEP: "${ENS_AUDIT_FILE_KEEP:-30}"
+      ENS_AUDIT_SPLUNK_URL: "${ENS_AUDIT_SPLUNK_URL:-}"
+      ENS_AUDIT_SPLUNK_TOKEN: "${ENS_AUDIT_SPLUNK_TOKEN:-}"
+      ENS_AUDIT_SPLUNK_TOKEN_FILE: "${ENS_AUDIT_SPLUNK_TOKEN_FILE:-}"
+      ENS_AUDIT_SPLUNK_INDEX: "${ENS_AUDIT_SPLUNK_INDEX:-}"
+      ENS_AUDIT_SPLUNK_SOURCETYPE: "${ENS_AUDIT_SPLUNK_SOURCETYPE:-ens:audit}"
+      ENS_AUDIT_SPLUNK_INSECURE: "${ENS_AUDIT_SPLUNK_INSECURE:-false}"
+      ENS_AUDIT_SYSLOG_HOST: "${ENS_AUDIT_SYSLOG_HOST:-}"
+      ENS_AUDIT_SYSLOG_PORT: "${ENS_AUDIT_SYSLOG_PORT:-}"
+      ENS_AUDIT_SYSLOG_PROTOCOL: "${ENS_AUDIT_SYSLOG_PROTOCOL:-tcp}"
+      ENS_AUDIT_SYSLOG_FACILITY: "${ENS_AUDIT_SYSLOG_FACILITY:-local0}"
+      ENS_AUDIT_RETENTION_DAYS: "${ENS_AUDIT_RETENTION_DAYS:-0}"
     volumes:
       - licensing-data:/data
+      - ens-audit:/var/log/ens
     networks:
       - proxy
     restart: unless-stopped
 
 volumes:
   licensing-data:
+  ens-audit:
 
 networks:
   proxy:
