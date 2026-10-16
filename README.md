@@ -138,7 +138,7 @@ service, and every change is in an audit log customers and staff can read.
 | Download any license they hold | Renew (new expiry, or new end of maintenance) |
 | Bind a license to an installation id | Revoke and reinstate |
 | Name licenses; check a license file | Make administrators; disable accounts |
-| Their own activity history | Full audit history |
+| Their own activity history | Full audit log: search, export, verify, SIEM delivery |
 
 How a license file unlocks features in the applications, the file format,
 and the Java library the applications use are in
@@ -178,6 +178,74 @@ applications that only trust it.
   the public keys; `GET /api/licensing/licenses/<id>/status` tells an
   application with a network route whether a license is revoked, and nothing
   about the customer.
+
+### Audit logging
+
+Everything that matters is recorded in one tamper-evident audit trail, in the
+common ENS event format (`ens-audit/1`, the same as CertAlert, ReadyRoom, the
+RSA Operations Portal and the Directory Services Portal). The full format,
+and how to bring it into a SIEM, is on the docs site:
+[Audit logging](https://github.com/winllc/ens-apps-documentation/blob/main/docs/audit-logging.md)
+(`audit-logging.md`).
+
+**What is recorded**
+
+| Category | Actions |
+|---|---|
+| authentication | `auth.login` (success and failure; on failure the address tried is the actor and `reason` says why), `auth.logout`, `auth.lockout` (rate limit hit on sign-in, sign-up, reset or resend), `account.password-changed`, `account.password-reset`, `account.password-reset-requested` |
+| authorization | `access.denied`: every 403 from the service (a non-administrator on `/admin`), with method, path and reason; repeats within 60 seconds are collapsed into one event with `details.count` |
+| account | `account.created`, `account.verified` (and failed confirmation links), `account.updated` (old and new values), `account.role-changed`, `account.disabled`, `account.enabled` |
+| data | `license.issued`, `license.downloaded`, `license.bound`, `license.renamed`, `license.renewed`, `license.revoked`, `license.reinstated` |
+| audit | `audit.exported`, `audit.verified`, `audit.token-created`, `audit.token-revoked`, `audit.pruned`, `audit.delivery-failed`, `audit.delivery-recovered` |
+| system | `system.started`, `system.stopped`, `job.failed` (retention) |
+
+Passwords, session and email tokens, API tokens and license files are never
+recorded. Customers see their own sign-ins and the changes to their account
+and licenses on their account page; administrators see everything at
+**`/admin/audit`**: filters, paging, each event in full, CSV and NDJSON
+export, *Verify integrity*, delivery status per output, and API tokens.
+
+**Where it goes.** The SQLite database is the record (table `audit_events`,
+each event hash-chained to the one before; appends are serialized by
+SQLite's write lock). The outputs copy it:
+
+| Variable | Default | |
+|---|---|---|
+| `ENS_AUDIT_STDOUT` | `true` | One raw JSON line per event on stdout, with no prefix. The service's own diagnostics go to stderr, so every stdout line starting `{"schema":"ens-audit/1"` is an event. |
+| `ENS_AUDIT_FILE` | empty (off) | Also append the lines to this file, e.g. `/var/log/ens/licensing-portal/audit.jsonl` (the `ens-audit` volume). Rotated daily or at 100 MB to `audit-YYYY-MM-DD.jsonl`. |
+| `ENS_AUDIT_FILE_KEEP` | `30` | Rotated files to keep. |
+| `ENS_AUDIT_SPLUNK_URL` | empty (off) | Splunk HEC base URL, e.g. `https://splunk.example.com:8088`. Events are posted to `/services/collector/event` in batches of up to 100. |
+| `ENS_AUDIT_SPLUNK_TOKEN`, `ENS_AUDIT_SPLUNK_TOKEN_FILE` | | The HEC token, or a file holding it. Never logged. |
+| `ENS_AUDIT_SPLUNK_INDEX` | empty | Optional index. |
+| `ENS_AUDIT_SPLUNK_SOURCETYPE` | `ens:audit` | |
+| `ENS_AUDIT_SPLUNK_INSECURE` | `false` | `true` skips certificate checks (test setups only; a warning is logged). For a private CA set `NODE_EXTRA_CA_CERTS`. |
+| `ENS_AUDIT_SYSLOG_HOST` | empty (off) | Syslog receiver. RFC 5424, APP-NAME `licensing-portal`, MSGID the action, the JSON line as the message. |
+| `ENS_AUDIT_SYSLOG_PORT` | `514`, or `6514` for tls | |
+| `ENS_AUDIT_SYSLOG_PROTOCOL` | `tcp` | `udp`, `tcp` or `tls` (octet-counted framing on tcp and tls). |
+| `ENS_AUDIT_SYSLOG_FACILITY` | `local0` | |
+| `ENS_AUDIT_RETENTION_DAYS` | `0` (keep forever) | Above 0, a daily job deletes older events once every enabled forwarder has delivered them, never the newest, and records `audit.pruned`. |
+
+HEC and syslog are delivered in the background from a cursor kept in the
+database: at-least-once (de-duplicate on `id`), retried with backoff up to
+five minutes, and never in the way of a request. After 15 minutes of failure
+the service records `audit.delivery-failed`. Startup logs one line per
+output to stderr saying whether it is on.
+
+**Getting it into Splunk.** Any one of:
+
+- **HEC**: create a HEC token (sourcetype `ens:audit`), set
+  `ENS_AUDIT_SPLUNK_URL` and `ENS_AUDIT_SPLUNK_TOKEN`.
+- **Universal Forwarder**: set `ENS_AUDIT_FILE` and monitor it with
+  `sourcetype = ens:audit` (the lines are JSON, so `KV_MODE = json` or
+  `INDEXED_EXTRACTIONS = json`), or collect the container's stdout from the
+  Docker logging driver and keep the lines that start `{"schema":"ens-audit/1"`.
+- **Pull API**: create a token at `/admin/audit` (shown once; only its hash
+  is kept) and poll
+  `GET /api/audit/events?after=<last seq>&limit=500` with
+  `Authorization: Bearer <token>`. It returns NDJSON in seq order, or
+  `{"events":[...],"next":<seq>}` with `Accept: application/json`; pass
+  `next` as `after` on the next call. nginx proxies `/api/audit` to the
+  licensing service.
 
 ---
 
@@ -303,6 +371,7 @@ src/
     account/                Customer licensing pages (rendered on demand)
     admin/                  ENS staff licensing pages (rendered on demand)
     api/licensing/          Public keys, license status, health
+    api/audit/              Audit pull API for SIEMs (bearer token)
   layouts/
     BaseLayout.astro        The page shell: <head>, header, footer
     AccountLayout.astro     Licensing page shell: heading, account nav, notices
@@ -325,7 +394,8 @@ src/
     licensing/license.ts    The license file: format, signing, verification, state
     licensing/issue.ts      Building a license from what was sold
   server/                   The licensing service: config, database and migrations,
-                            accounts, sessions, licenses, audit log, mail, keys
+                            accounts, sessions, licenses, audit trail (audit*.ts:
+                            format and chain, store, outputs, pull API), mail, keys
   middleware.ts             Loads the signed-in account on licensing pages
   scripts/                  Browser code: contact form, estimator, savings calculator
   styles/site.css           The whole stylesheet
