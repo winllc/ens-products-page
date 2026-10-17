@@ -30,6 +30,7 @@ services:
       PUBLIC_URL: "${PUBLIC_URL:-http://localhost:8080}"
       ADMIN_EMAILS: "${ADMIN_EMAILS:-}"
       LICENSE_SIGNING_KEY: "${LICENSE_SIGNING_KEY:-}"
+      LICENSE_SIGNING_KEY_P256: "${LICENSE_SIGNING_KEY_P256:-}"
       LICENSE_TRUSTED_KEYS: "${LICENSE_TRUSTED_KEYS:-}"
       SMTP_URL: "${SMTP_URL:-}"
       MAIL_FROM: "${MAIL_FROM:-ENS Solutions <licensing@ens-solutions.com>}"

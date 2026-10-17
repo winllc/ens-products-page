@@ -2,7 +2,7 @@
 <!--
   ENS license verifier: checks ENS Solutions license files inside the
   applications (CertAlert, RSA Operations Portal, ReadyRoom, Directory
-  Services Portal). Plain Java 21 with no runtime dependencies, so it adds
+  Services Portal). Plain Java 17 or later with no runtime dependencies, so it adds
   nothing to an application's dependency tree or its ATO package, and works
   with no network.
 -->
@@ -13,12 +13,13 @@
 
     <groupId>com.enssolutions</groupId>
     <artifactId>ens-license</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
     <name>ENS license verifier</name>
 
     <properties>
-        <maven.compiler.release>21</maven.compiler.release>
+        <!-- 17: the oldest Java an application builds the library for (the RSA Operations Portal). -->
+        <maven.compiler.release>17</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <junit.version>5.11.4</junit.version>
     </properties>

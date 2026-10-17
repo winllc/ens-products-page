@@ -13,8 +13,11 @@ import {
     licenseById,
     reinstateLicense,
     renewLicense,
+    resignLicense,
     revokeLicense,
 } from '../../../server/licenses';
+import { signingKeys } from '../../../server/keys';
+import { algorithmName } from '../../../lib/licensing/license';
 
 const admin = requireAdmin(Astro);
 if (admin instanceof Response) return admin;
@@ -37,6 +40,9 @@ if (Astro.request.method === 'POST') {
             case 'reinstate':
                 reinstateLicense(admin, license);
                 return Astro.redirect(withNotice(here, 'license-reinstated'), 303);
+            case 'resign':
+                resignLicense(admin, license);
+                return Astro.redirect(withNotice(here, 'license-updated'), 303);
         }
     } catch (err) {
         if (!(err instanceof LicenseActionError)) throw err;
@@ -50,6 +56,10 @@ const current = perpetual ? license.payload.maintenanceUntil : license.payload.e
 // Suggest a year on from the current end, or from today if that has passed.
 const base = Math.max(Date.now(), current ? Date.parse(current) : Date.now());
 const suggested = new Date(base + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+// Signed with fewer keys than are in use now, e.g. issued before the P-256 key was set.
+const keys = signingKeys();
+const signedWith = new Set(license.key_id.split(','));
+const missing = keys.filter((k) => !signedWith.has(k.id));
 ---
 <AccountLayout title={license.label || product(license.product).name} eyebrow="Administration" section="admin-licenses" error={error}>
     <p slot="lede" class="lede">
@@ -83,6 +93,19 @@ const suggested = new Date(base + 365 * 24 * 60 * 60 * 1000).toISOString().slice
                     </div>
                     <button class="btn btn--primary" type="submit">Renew and re-issue</button>
                 </form>
+                {missing.length > 0 && (
+                    <form method="post" class="panel">
+                        <h3>Re-sign</h3>
+                        <p class="muted small">
+                            This revision is not signed with {missing.map((k) => algorithmName[k.algorithm]).join(' or ')}.
+                            Re-signs it, changing nothing else, as revision {license.revision + 1} with
+                            {' '}{keys.map((k) => algorithmName[k.algorithm]).join(' and ')}, so it also verifies on
+                            Java in FIPS mode. The customer downloads the new file from their account.
+                        </p>
+                        <input type="hidden" name="action" value="resign">
+                        <button class="btn btn--primary" type="submit">Re-sign and re-issue</button>
+                    </form>
+                )}
                 <form method="post" class="panel panel--danger">
                     <h3>Revoke</h3>
                     <p class="muted small">

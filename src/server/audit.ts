@@ -62,7 +62,8 @@ export type AuditAction =
     | 'license.renamed'
     | 'license.renewed'
     | 'license.revoked'
-    | 'license.reinstated';
+    | 'license.reinstated'
+    | 'license.resigned';
 
 /* ---- Request context ------------------------------------------------------ */
 

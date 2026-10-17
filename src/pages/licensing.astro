@@ -85,8 +85,8 @@ const how: Record<Edition, string> = {
             <div class="feature">
                 <h3>Signed, not secret</h3>
                 <p>
-                    A license file is plain text with an Ed25519 signature from ENS Solutions. The application
-                    checks it against the public key built into it. Any change to the file makes it invalid,
+                    A license file is plain text signed by ENS Solutions. The application checks the signature
+                    against the public keys built into it: Ed25519, or ECDSA P-256 on a Java runtime in FIPS mode. Any change to the file makes it invalid,
                     and there is nothing in it worth protecting, so it can travel by email or removable media.
                 </p>
             </div>

@@ -4,17 +4,27 @@ import { featuresFor } from '../../data/licensing';
 import { buildPayload, normalizeInstallationId } from './issue';
 import {
     LicenseError,
+    extractTokens,
     licenseFile,
     licenseState,
+    publicKeyBase64,
+    publicKeyFromBase64,
     signToken,
+    signTokens,
     signingKeyFromPem,
     summaryLines,
     verifyLicense,
+    verifyLicenseDetailed,
 } from './license';
 
 function key() {
     const { privateKey } = generateKeyPairSync('ed25519');
     return signingKeyFromPem(privateKey.export({ type: 'pkcs8', format: 'pem' }).toString());
+}
+
+function p256Key() {
+    const { privateKey } = generateKeyPairSync('ec', { namedCurve: 'P-256' });
+    return signingKeyFromPem(privateKey.export({ type: 'pkcs8', format: 'pem' }).toString(), 'ECDSA-P256');
 }
 
 const licensee = { name: 'Pat Rivera', organization: 'Example Agency', email: 'Pat@Example.gov ' };
@@ -51,6 +61,77 @@ describe('license files', () => {
 
     it('rejects junk', () => {
         expect(() => verifyLicense('hello', trusted)).toThrow(/Not an ENS license/);
+    });
+});
+
+describe('ECDSA P-256 signatures, for Java in FIPS mode', () => {
+    const ed = key();
+    const ec = p256Key();
+    const trusted = new Map([
+        [ed.id, ed.publicKey],
+        [ec.id, ec.publicKey],
+    ]);
+    const payload = buildPayload({ product: 'certalert', edition: 'subscription', licensee, quantity: 10_000 }, { id: 'lic_p256', revision: 1, now });
+    const names = { product: 'CertAlert', edition: 'Subscription' };
+    const dual = licenseFile(signTokens(payload, [ec, ed]), summaryLines(payload, names, ['Ed25519', 'ECDSA-P256']));
+
+    it('signs with each key over the same payload, Ed25519 first whatever the order given', () => {
+        const tokens = extractTokens(dual);
+        expect(tokens.map((t) => t.split('.')[0])).toEqual([ed.id, ec.id]);
+        expect(new Set(tokens.map((t) => t.split('.')[1])).size).toBe(1);
+        expect(dual.match(/-----BEGIN ENS LICENSE-----/g)).toHaveLength(2);
+        // DER-encoded ECDSA, as Java's SHA256withECDSA expects.
+        expect(Buffer.from(tokens[1]!.split('.')[2]!, 'base64url')[0]).toBe(0x30);
+    });
+
+    it('prefers Ed25519 and falls back to P-256', () => {
+        expect(verifyLicenseDetailed(dual, trusted)).toMatchObject({ keyId: ed.id, algorithm: 'Ed25519', payload });
+        expect(verifyLicenseDetailed(dual, trusted, { algorithms: ['ECDSA-P256'] })).toMatchObject({ keyId: ec.id, algorithm: 'ECDSA-P256', payload });
+        expect(verifyLicenseDetailed(dual, new Map([[ec.id, ec.publicKey]])).keyId).toBe(ec.id);
+        expect(verifyLicense(signToken(payload, ec), trusted)).toEqual(payload);
+    });
+
+    it('says why an Ed25519-only file fails without Ed25519', () => {
+        expect(() => verifyLicenseDetailed(signToken(payload, ed), trusted, { algorithms: ['ECDSA-P256'] })).toThrow(/ECDSA P-256 signature/);
+    });
+
+    it('rejects a changed payload or signature', () => {
+        const [kid, , sig] = signToken(payload, ec).split('.') as [string, string, string];
+        const forged = Buffer.from(JSON.stringify({ ...payload, limit: { ...payload.limit, quantity: 1_000_000 } })).toString('base64url');
+        expect(() => verifyLicense(`${kid}.${forged}.${sig}`, trusted)).toThrow(expect.objectContaining({ code: 'bad-signature' }));
+        const [, body] = signToken(payload, ec).split('.');
+        const other = signToken({ ...payload, id: 'lic_other' }, ec).split('.')[2];
+        expect(() => verifyLicense(`${kid}.${body}.${other}`, trusted)).toThrow(expect.objectContaining({ code: 'bad-signature' }));
+    });
+
+    it('accepts any good signature from a trusted key', () => {
+        const [first, second] = extractTokens(dual) as [string, string];
+        const broken = first.replace(/\.[^.]+$/, `.${Buffer.alloc(64).toString('base64url')}`);
+        expect(verifyLicenseDetailed(licenseFile([broken, second], []), trusted).keyId).toBe(ec.id);
+        expect(() => verifyLicense(licenseFile([broken, second], []), new Map([[ed.id, ed.publicKey]]))).toThrow(/does not match/);
+    });
+
+    it('refuses blocks for different licenses in one file', () => {
+        const other = signToken({ ...payload, id: 'lic_other' }, ec);
+        expect(() => verifyLicense(licenseFile([signToken(payload, ed), other], []), trusted)).toThrow(/different licenses/);
+    });
+
+    it('accepts only Ed25519 and P-256 keys, each where it is expected', () => {
+        const ed25519Pem = generateKeyPairSync('ed25519').privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
+        const p384Pem = generateKeyPairSync('ec', { namedCurve: 'P-384' }).privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
+        expect(() => signingKeyFromPem(ed25519Pem, 'ECDSA-P256')).toThrow(/must be ECDSA P-256, not ed25519/);
+        expect(() => signingKeyFromPem(p384Pem, 'ECDSA-P256')).toThrow(/secp384r1/);
+        expect(() => signingKeyFromPem(ec.privateKey.export({ type: 'pkcs8', format: 'pem' }).toString())).toThrow(/must be Ed25519/);
+        const rsa = generateKeyPairSync('rsa', { modulusLength: 2048 }).publicKey;
+        expect(() => publicKeyFromBase64(publicKeyBase64(rsa))).toThrow(/Ed25519 or ECDSA P-256/);
+        expect(publicKeyFromBase64(publicKeyBase64(ec.publicKey)).asymmetricKeyType).toBe('ec');
+    });
+
+    it('names the signatures in the summary only when there are several', () => {
+        expect(summaryLines(payload, names).join('\n')).not.toContain('Signatures');
+        expect(summaryLines(payload, names, ['Ed25519']).join('\n')).not.toContain('Signatures');
+        expect(dual).toContain('# Signatures:   Ed25519, ECDSA P-256');
+        expect(dual).toContain('Any change to the blocks below');
     });
 });
 

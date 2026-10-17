@@ -154,12 +154,14 @@ All in the `licensing` service's environment (see `.env.example`):
 | `ADMIN_EMAILS` | Comma-separated. These accounts become administrators once they confirm their email. This is how the first administrator is made; others can then be promoted at `/admin/accounts`. |
 | `LICENSE_SIGNING_KEY` | The Ed25519 private key, from `npm run license -- keygen` (PEM, or the one-line form it prints). **A secret.** Unset, a key is generated in the data volume on first start, with a warning in the log. |
 | `LICENSE_SIGNING_KEY_FILE` | Or a path to it, e.g. a Docker secret. |
-| `LICENSE_TRUSTED_KEYS` | Retired public keys still accepted by *Check a file*, after a key rotation. |
+| `LICENSE_SIGNING_KEY_P256` | Optional ECDSA P-256 private key, from `npm run license -- keygen --alg p256`. **A secret.** Set, every license is also signed with it, so it verifies on Java in FIPS mode, which has no Ed25519 (`licensing/README.md`, "FIPS 140-3"). Never generated. |
+| `LICENSE_SIGNING_KEY_P256_FILE` | Or a path to it. |
+| `LICENSE_TRUSTED_KEYS` | Retired public keys (Ed25519 or ECDSA P-256) still accepted by *Check a file*, after a key rotation. |
 | `SMTP_URL`, `MAIL_FROM` | Outgoing mail for confirmations and password resets. Unset, messages are written to the service's log. |
 | `DATA_DIR` | `/data` in the image: `licensing.sqlite` and, if generated, the signing key. |
 
-Back up the `licensing-data` volume, and above all the signing key: if it is
-lost, existing files still verify but no new license can be signed for
+Back up the `licensing-data` volume, and above all the signing keys: if one
+is lost, existing files still verify but no new license can be signed for
 applications that only trust it.
 
 ### Security notes
@@ -195,7 +197,7 @@ and how to bring it into a SIEM, is on the docs site:
 | authentication | `auth.login` (success and failure; on failure the address tried is the actor and `reason` says why), `auth.logout`, `auth.lockout` (rate limit hit on sign-in, sign-up, reset or resend), `account.password-changed`, `account.password-reset`, `account.password-reset-requested` |
 | authorization | `access.denied`: every 403 from the service (a non-administrator on `/admin`), with method, path and reason; repeats within 60 seconds are collapsed into one event with `details.count` |
 | account | `account.created`, `account.verified` (and failed confirmation links), `account.updated` (old and new values), `account.role-changed`, `account.disabled`, `account.enabled` |
-| data | `license.issued`, `license.downloaded`, `license.bound`, `license.renamed`, `license.renewed`, `license.revoked`, `license.reinstated` |
+| data | `license.issued`, `license.downloaded`, `license.bound`, `license.renamed`, `license.renewed`, `license.revoked`, `license.reinstated`, `license.resigned` |
 | audit | `audit.exported`, `audit.verified`, `audit.token-created`, `audit.token-revoked`, `audit.pruned`, `audit.delivery-failed`, `audit.delivery-recovered` |
 | system | `system.started`, `system.stopped`, `job.failed` (retention) |
 

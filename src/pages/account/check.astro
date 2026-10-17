@@ -14,7 +14,7 @@ const account = requireAccount(Astro);
 if (account instanceof Response) return account;
 
 let error: string | null = null;
-let result: { payload: LicensePayload; state: string; known: License | null } | null = null;
+let result: { payload: LicensePayload; state: string; known: License | null; fipsReady: boolean } | null = null;
 
 if (Astro.request.method === 'POST') {
     const data = await Astro.request.formData();
@@ -54,6 +54,14 @@ const stale = result?.known && result.known.revision > result.payload.revision;
                 <div><dt>Expires</dt><dd>{result.payload.expiresAt ? dateOnly(result.payload.expiresAt) : 'Never'}</dd></div>
                 <div><dt>Dates</dt><dd>{result.state === 'valid' ? 'In effect' : result.state}</dd></div>
                 <div><dt>Revision</dt><dd>{result.payload.revision}</dd></div>
+                <div>
+                    <dt>FIPS mode</dt>
+                    <dd>
+                        {result.fipsReady
+                            ? 'Has an ECDSA P-256 signature, so it also verifies on Java in FIPS mode'
+                            : 'Ed25519 signature only: Java runtimes in FIPS mode (such as Red Hat OpenJDK on a FIPS-enabled host) can’t check it. Ask ENS Solutions to re-issue it with an ECDSA P-256 signature.'}
+                    </dd>
+                </div>
             </dl>
             {result.known?.status === 'revoked' && <p class="notice notice--error">This license has been revoked.</p>}
             {stale && <p class="notice">A newer revision ({result.known!.revision}) of this license exists. Install that one instead.</p>}

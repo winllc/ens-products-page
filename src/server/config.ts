@@ -9,8 +9,13 @@
  *                               (default ./data)
  *   LICENSE_SIGNING_KEY         Ed25519 private key, PEM
  *   LICENSE_SIGNING_KEY_FILE    ...or a path to it
+ *   LICENSE_SIGNING_KEY_P256    Optional ECDSA P-256 private key, PEM. When
+ *                               set, every license is also signed with it,
+ *                               for Java runtimes in FIPS mode
+ *   LICENSE_SIGNING_KEY_P256_FILE ...or a path to it
  *   LICENSE_TRUSTED_KEYS        Older public keys still accepted when
  *                               checking a file, comma-separated base64 SPKI
+ *                               (Ed25519 or ECDSA P-256)
  *   ADMIN_EMAILS                Comma-separated; these accounts are
  *                               administrators once their email is verified
  *   SMTP_URL                    e.g. smtps://user:pass@mail.example.com:465.
@@ -65,6 +70,8 @@ export interface Config {
     databasePath: string;
     signingKeyPem: string | null;
     signingKeyFile: string | null;
+    signingKeyP256Pem: string | null;
+    signingKeyP256File: string | null;
     trustedKeys: string[];
     adminEmails: Set<string>;
     smtpUrl: string | null;
@@ -94,6 +101,8 @@ export function config(): Config {
         databasePath: env.LICENSING_DB ?? resolve(dataDir, 'licensing.sqlite'),
         signingKeyPem: env.LICENSE_SIGNING_KEY?.trim() || null,
         signingKeyFile: env.LICENSE_SIGNING_KEY_FILE?.trim() || null,
+        signingKeyP256Pem: env.LICENSE_SIGNING_KEY_P256?.trim() || null,
+        signingKeyP256File: env.LICENSE_SIGNING_KEY_P256_FILE?.trim() || null,
         trustedKeys: list(env.LICENSE_TRUSTED_KEYS),
         adminEmails: new Set(list(env.ADMIN_EMAILS).map((e) => e.toLowerCase())),
         smtpUrl: env.SMTP_URL?.trim() || null,
