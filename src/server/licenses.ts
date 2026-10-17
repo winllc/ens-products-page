@@ -4,8 +4,10 @@
  * against an order, installation binding, renewal, revocation. Each writes
  * the audit log.
  *
- * A license row keeps the payload and signed token of its current revision.
- * Any change re-signs the license with the same id and revision + 1; the
+ * A license row keeps the payload and signed tokens of its current revision:
+ * one per signing key (Ed25519, and ECDSA P-256 when configured), one per
+ * line in `token`, Ed25519 first. Any change re-signs the license with the
+ * same id and revision + 1; the
  * applications keep the highest revision they have seen, so an older file
  * can't be put back once a newer one is installed.
  */
@@ -14,18 +16,20 @@ import { editions, EVALUATIONS_PER_PRODUCT, type Edition } from '../data/licensi
 import { product as productInfo, type ProductId } from '../data/products';
 import { buildPayload, newLicenseId, normalizeInstallationId, type IssueRequest } from '../lib/licensing/issue';
 import {
+    keyAlgorithm,
     licenseFile,
     licenseState,
-    signToken,
+    signTokens,
     summaryLines,
-    verifyLicense,
+    verifyLicenseDetailed,
     type LicensePayload,
     type LicenseState,
+    type SignatureAlgorithm,
 } from '../lib/licensing/license';
 import { isAdmin, type Account } from './accounts';
 import { audit } from './audit';
 import { db, nowIso, transaction } from './db';
-import { signingKey, trustedKeys } from './keys';
+import { signingKeys, trustedKeys } from './keys';
 
 interface LicenseRow {
     id: string;
@@ -35,7 +39,9 @@ interface LicenseRow {
     label: string;
     revision: number;
     payload: string;
+    /** The signed tokens, one per line, Ed25519 first. */
     token: string;
+    /** The ids of the keys that signed them, comma-separated, in the same order. */
     key_id: string;
     issued_at: string;
     expires_at: string | null;
@@ -47,6 +53,8 @@ interface LicenseRow {
 
 export interface License extends Omit<LicenseRow, 'payload'> {
     payload: LicensePayload;
+    /** `token`, split: what goes in the file, one armored block each. */
+    tokens: string[];
     /** Revoked wins over whatever the dates say. */
     status: LicenseState | 'revoked';
     daysLeft: number | null;
@@ -62,7 +70,13 @@ export class LicenseActionError extends Error {
 function hydrate(row: LicenseRow, now = new Date()): License {
     const payload = JSON.parse(row.payload) as LicensePayload;
     const { state, daysLeft } = licenseState(payload, now);
-    return { ...row, payload, status: row.revoked_at ? 'revoked' : state, daysLeft: row.revoked_at ? null : daysLeft };
+    return {
+        ...row,
+        payload,
+        tokens: row.token.split('\n').filter(Boolean),
+        status: row.revoked_at ? 'revoked' : state,
+        daysLeft: row.revoked_at ? null : daysLeft,
+    };
 }
 
 export function licenseById(id: string): License | null {
@@ -95,9 +109,14 @@ export function allLicenses(filter: { search?: string; status?: string } = {}): 
     return filter.status ? licenses.filter((l) => l.status === filter.status) : licenses;
 }
 
+/** The payload signed with every current signing key, as the row stores it. */
+function signed(payload: LicensePayload): { token: string; keyIds: string } {
+    const tokens = signTokens(payload, signingKeys());
+    return { token: tokens.join('\n'), keyIds: tokens.map((t) => t.slice(0, t.indexOf('.'))).join(',') };
+}
+
 function store(payload: LicensePayload, fields: { accountId: string; label: string; orderReference: string; createdBy: string }): void {
-    const key = signingKey();
-    const token = signToken(payload, key);
+    const { token, keyIds } = signed(payload);
     db()
         .prepare(
             `INSERT INTO licenses (id, account_id, product, edition, label, revision, payload, token, key_id, issued_at, expires_at, order_reference, created_by)
@@ -112,7 +131,7 @@ function store(payload: LicensePayload, fields: { accountId: string; label: stri
             payload.revision,
             JSON.stringify(payload),
             token,
-            key.id,
+            keyIds,
             payload.issuedAt,
             payload.expiresAt,
             fields.orderReference,
@@ -122,11 +141,11 @@ function store(payload: LicensePayload, fields: { accountId: string; label: stri
 
 /** Signs a changed payload as the next revision of an existing license. */
 function resign(license: License, change: (p: LicensePayload) => LicensePayload): LicensePayload {
-    const key = signingKey();
     const next = change({ ...license.payload, revision: license.revision + 1, issuedAt: nowIso() });
+    const { token, keyIds } = signed(next);
     db()
         .prepare('UPDATE licenses SET revision = ?, payload = ?, token = ?, key_id = ?, expires_at = ? WHERE id = ? AND revision = ?')
-        .run(next.revision, JSON.stringify(next), signToken(next, key), key.id, next.expiresAt, license.id, license.revision);
+        .run(next.revision, JSON.stringify(next), token, keyIds, next.expiresAt, license.id, license.revision);
     return next;
 }
 
@@ -192,9 +211,15 @@ export function issueEvaluation(account: Account, product: ProductId, installati
 
 export function downloadLicense(actor: Account, license: License): { filename: string; content: string } {
     const name = productInfo(license.product).name;
+    const trusted = trustedKeys();
+    const algorithms = license.tokens.flatMap((t): SignatureAlgorithm[] => {
+        const key = trusted.get(t.slice(0, t.indexOf('.')));
+        const algorithm = key ? keyAlgorithm(key) : null;
+        return algorithm ? [algorithm] : [];
+    });
     const content = licenseFile(
-        license.token,
-        summaryLines(license.payload, { product: name, edition: editions[license.edition].name }),
+        license.tokens,
+        summaryLines(license.payload, { product: name, edition: editions[license.edition].name }, algorithms),
     );
     audit({
         actor: actor.id,
@@ -345,6 +370,31 @@ export function revokeLicense(actor: Account, license: License, reason: string):
     return licenseById(license.id)!;
 }
 
+/**
+ * Re-signs the license, unchanged, as the next revision with the current
+ * signing keys: how a license issued before LICENSE_SIGNING_KEY_P256 was set
+ * gets the ECDSA P-256 signature a Java runtime in FIPS mode needs.
+ */
+export function resignLicense(actor: Account, license: License): License {
+    requireAdmin(actor);
+    if (license.status === 'revoked') {
+        throw new LicenseActionError('Reinstate the license before re-signing it');
+    }
+    transaction(() => {
+        resign(license, (p) => p);
+        const keyIds = licenseById(license.id)!.key_id;
+        audit({
+            actor: actor.id,
+            account: license.account_id,
+            license: license.id,
+            action: 'license.resigned',
+            detail: `revision ${license.revision + 1}, keys ${keyIds}`,
+            details: { revision: license.revision + 1, keyIds },
+        });
+    });
+    return licenseById(license.id)!;
+}
+
 export function reinstateLicense(actor: Account, license: License): License {
     requireAdmin(actor);
     transaction(() => {
@@ -373,8 +423,19 @@ export function publicStatus(id: string): {
     return { id: l.id, product: l.product, edition: l.edition, status: l.status, revision: l.revision, expiresAt: l.payload.expiresAt };
 }
 
-/** Checks a license file a customer pastes or uploads: signature, then what we know about it. */
-export function inspectFile(text: string): { payload: LicensePayload; state: LicenseState; known: License | null } {
-    const payload = verifyLicense(text, trustedKeys());
-    return { payload, state: licenseState(payload).state, known: licenseById(payload.id) };
+/**
+ * Checks a license file a customer pastes or uploads: signature, then what we
+ * know about it. `fipsReady` says whether it also verifies without Ed25519,
+ * as a Java runtime in FIPS mode needs.
+ */
+export function inspectFile(text: string): { payload: LicensePayload; state: LicenseState; known: License | null; fipsReady: boolean } {
+    const trusted = trustedKeys();
+    const { payload } = verifyLicenseDetailed(text, trusted);
+    let fipsReady = true;
+    try {
+        verifyLicenseDetailed(text, trusted, { algorithms: ['ECDSA-P256'] });
+    } catch {
+        fipsReady = false;
+    }
+    return { payload, state: licenseState(payload).state, known: licenseById(payload.id), fipsReady };
 }

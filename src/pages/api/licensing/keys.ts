@@ -1,22 +1,24 @@
 /*
  * The public keys license files are signed with, for building them into the
  * applications. Rotation: add the new key to LICENSE_SIGNING_KEY, list the
- * old one in LICENSE_TRUSTED_KEYS, ship applications that embed both.
+ * old one in LICENSE_TRUSTED_KEYS, ship applications that embed both. With
+ * LICENSE_SIGNING_KEY_P256 set there are two current keys, Ed25519 and
+ * ECDSA P-256; applications embed both.
  */
 import type { APIRoute } from 'astro';
-import { keyIdFor, publicKeyBase64 } from '../../../lib/licensing/license';
-import { signingKey, trustedKeys } from '../../../server/keys';
+import { algorithmName, keyAlgorithm, keyIdFor, publicKeyBase64 } from '../../../lib/licensing/license';
+import { signingKeys, trustedKeys } from '../../../server/keys';
 
 export const prerender = false;
 
 export const GET: APIRoute = () => {
-    const current = signingKey().id;
+    const current = new Set(signingKeys().map((k) => k.id));
     const keys = [...trustedKeys().values()].map((k) => ({
         id: keyIdFor(k),
-        algorithm: 'Ed25519',
+        algorithm: algorithmName[keyAlgorithm(k)!],
         format: 'spki-der-base64',
         publicKey: publicKeyBase64(k),
-        current: keyIdFor(k) === current,
+        current: current.has(keyIdFor(k)),
     }));
     return Response.json({ keys });
 };

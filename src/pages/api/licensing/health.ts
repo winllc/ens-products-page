@@ -1,12 +1,12 @@
 import type { APIRoute } from 'astro';
 import { db } from '../../../server/db';
-import { signingKey } from '../../../server/keys';
+import { signingKeys } from '../../../server/keys';
 
 export const prerender = false;
 
-/** For the container health check: the database answers and the signing key loads. */
+/** For the container health check: the database answers and the signing keys load. */
 export const GET: APIRoute = () => {
     db().prepare('SELECT 1').get();
-    signingKey();
+    signingKeys();
     return new Response('ok\n', { headers: { 'Content-Type': 'text/plain' } });
 };

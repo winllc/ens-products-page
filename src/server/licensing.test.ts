@@ -1,13 +1,14 @@
-import { mkdtempSync } from 'node:fs';
+import { generateKeyPairSync } from 'node:crypto';
+import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { verifyLicense } from '../lib/licensing/license';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { extractTokens, publicKeyBase64, verifyLicense, verifyLicenseDetailed } from '../lib/licensing/license';
 import * as accounts from './accounts';
 import { auditFor } from './audit';
 import { closeDatabaseForTests, db } from './db';
 import { resetConfigForTests } from './config';
-import { asPem, generateSigningKeyPem, resetKeysForTests, trustedKeys } from './keys';
+import { asPem, generateSigningKeyPem, resetKeysForTests, signingKey, signingKeys, trustedKeys } from './keys';
 import { signingKeyFromPem } from '../lib/licensing/license';
 import * as licenses from './licenses';
 import { outbox } from './mail';
@@ -165,6 +166,85 @@ describe('signing keys', () => {
         const pem = generateSigningKeyPem();
         const oneLine = pem.replace(/-----[^-]+-----/g, '').replace(/\s+/g, '');
         expect(signingKeyFromPem(asPem(oneLine)).id).toBe(signingKeyFromPem(pem).id);
+    });
+});
+
+describe('ECDSA P-256 signing, for Java in FIPS mode', () => {
+    const p256Pem = () => generateKeyPairSync('ec', { namedCurve: 'P-256' }).privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
+    const configure = (env: Record<string, string | undefined>) => {
+        for (const [k, v] of Object.entries(env)) {
+            if (v === undefined) delete process.env[k];
+            else process.env[k] = v;
+        }
+        resetConfigForTests();
+        resetKeysForTests();
+    };
+    afterEach(() => configure({ LICENSE_SIGNING_KEY_P256: undefined, LICENSE_SIGNING_KEY_P256_FILE: undefined, LICENSE_TRUSTED_KEYS: undefined }));
+
+    it('signs with Ed25519 only until a P-256 key is configured', async () => {
+        const a = await verifiedAccount();
+        const l = licenses.issueEvaluation(a, 'certalert');
+        expect(l.tokens).toHaveLength(1);
+        expect(l.key_id).toBe(signingKey().id);
+        expect(licenses.inspectFile(licenses.downloadLicense(a, l).content).fipsReady).toBe(false);
+    });
+
+    it('signs every license with both keys once LICENSE_SIGNING_KEY_P256 is set, Ed25519 first', async () => {
+        configure({ LICENSE_SIGNING_KEY_P256: p256Pem() });
+        const [ed, ec] = signingKeys() as [ReturnType<typeof signingKey>, ReturnType<typeof signingKey>];
+        expect([ed.algorithm, ec.algorithm]).toEqual(['Ed25519', 'ECDSA-P256']);
+        const a = await verifiedAccount();
+        const l = licenses.issueEvaluation(a, 'readyroom');
+        expect(l.key_id).toBe(`${ed.id},${ec.id}`);
+        const file = licenses.downloadLicense(a, l).content;
+        expect(extractTokens(file).map((t) => t.split('.')[0])).toEqual([ed.id, ec.id]);
+        expect(file).toContain('# Signatures:   Ed25519, ECDSA P-256');
+        expect(verifyLicenseDetailed(file, trustedKeys()).algorithm).toBe('Ed25519');
+        expect(verifyLicenseDetailed(file, trustedKeys(), { algorithms: ['ECDSA-P256'] }).keyId).toBe(ec.id);
+        expect(licenses.inspectFile(file).fipsReady).toBe(true);
+        // Re-signing on binding keeps both.
+        const bound = licenses.bindInstallation(a, l, 'RR-7F3K-29QD');
+        expect(bound.tokens).toHaveLength(2);
+    });
+
+    it('takes the key from a file, as a Docker secret', async () => {
+        const path = join(process.env.DATA_DIR!, 'p256.pem');
+        writeFileSync(path, p256Pem());
+        configure({ LICENSE_SIGNING_KEY_P256_FILE: path });
+        expect(signingKeys().map((k) => k.algorithm)).toEqual(['Ed25519', 'ECDSA-P256']);
+    });
+
+    it('re-signs a license issued before the P-256 key, changing nothing else', async () => {
+        const customer = await verifiedAccount();
+        const admin = await verifiedAccount('boss@ens-solutions.com');
+        const before = licenses.issueEvaluation(customer, 'mfa-portal');
+        configure({ LICENSE_SIGNING_KEY_P256: p256Pem() });
+        expect(() => licenses.resignLicense(customer, licenses.licenseById(before.id)!)).toThrow(/Administrators only/);
+        const after = licenses.resignLicense(admin, licenses.licenseById(before.id)!);
+        expect(after.revision).toBe(before.revision + 1);
+        expect(after.tokens).toHaveLength(2);
+        expect({ ...after.payload, revision: 0, issuedAt: '' }).toEqual({ ...before.payload, revision: 0, issuedAt: '' });
+        expect(licenses.inspectFile(licenses.downloadLicense(customer, after).content).fipsReady).toBe(true);
+        expect(auditFor({ license: before.id }).map((e) => e.action)).toContain('license.resigned');
+    });
+
+    it('trusts retired keys of either algorithm, and refuses other keys', () => {
+        const retired = generateKeyPairSync('ec', { namedCurve: 'P-256' }).publicKey;
+        configure({ LICENSE_TRUSTED_KEYS: publicKeyBase64(retired) });
+        expect([...trustedKeys().values()].map((k) => k.asymmetricKeyType)).toEqual(['ed25519', 'ec']);
+        configure({ LICENSE_TRUSTED_KEYS: publicKeyBase64(generateKeyPairSync('rsa', { modulusLength: 2048 }).publicKey) });
+        expect(() => trustedKeys()).toThrow(/LICENSE_TRUSTED_KEYS: .*Ed25519 or ECDSA P-256/);
+    });
+
+    it('refuses a key of the wrong kind in each setting', () => {
+        configure({ LICENSE_SIGNING_KEY_P256: generateSigningKeyPem() });
+        expect(() => signingKeys()).toThrow(/LICENSE_SIGNING_KEY_P256: .*must be ECDSA P-256, not ed25519/);
+        configure({ LICENSE_SIGNING_KEY_P256: undefined, LICENSE_SIGNING_KEY: p256Pem() });
+        try {
+            expect(() => signingKey()).toThrow(/LICENSE_SIGNING_KEY: .*must be Ed25519/);
+        } finally {
+            configure({ LICENSE_SIGNING_KEY: undefined });
+        }
     });
 });
 
