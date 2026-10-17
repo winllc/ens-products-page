@@ -11,6 +11,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.FileTime;
 import java.time.Clock;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.Properties;
@@ -34,7 +35,8 @@ import java.util.regex.Pattern;
  *   <li>{@code ENS_LICENSE_STATE_DIR}: where the installation id and revisions are kept,
  *       default {@code /var/lib/ens/<product>}. Keep it on a persistent volume.</li>
  *   <li>{@code ENS_LICENSE}: optional, the license itself rather than a path. It takes the
- *       whole file, the token on one line, or the file base64-encoded. It is installed (written
+ *       whole file, the token on one line (or, for a file with several signatures, each block's
+ *       token on its own line), or the file base64-encoded. It is installed (written
  *       to the license file) the first time the license is checked, if no usable license is
  *       installed yet or if it is a newer revision of the installed one; a license installed any
  *       other way, such as an upload on the license screen, is otherwise left alone.</li>
@@ -168,6 +170,13 @@ public final class LicenseManager {
         String compact = v.replaceAll("\\s+", "");
         if (TOKEN.matcher(compact).matches()) {
             return "-----BEGIN ENS LICENSE-----\n" + compact + "\n-----END ENS LICENSE-----\n";
+        }
+        // Several tokens, one per line: the lines between each BEGIN and END of a dual-signed file.
+        String[] lines = v.split("\\s+");
+        if (lines.length > 1 && Arrays.stream(lines).allMatch(l -> TOKEN.matcher(l).matches())) {
+            StringBuilder file = new StringBuilder();
+            for (String l : lines) file.append("-----BEGIN ENS LICENSE-----\n").append(l).append("\n-----END ENS LICENSE-----\n");
+            return file.toString();
         }
         try {
             String decoded = new String(Base64.getMimeDecoder().decode(v), StandardCharsets.UTF_8);
