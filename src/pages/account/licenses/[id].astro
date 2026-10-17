@@ -36,7 +36,7 @@ if (Astro.request.method === 'POST') {
 }
 
 const info = product(license.product);
-const activity = auditFor({ license: license.id }, 25);
+const activity = auditFor({ license: license.id, customer: true }, 25);
 const usable = license.status !== 'revoked';
 ---
 <AccountLayout title={license.label || `${info.name} license`} section="licenses" error={error}>

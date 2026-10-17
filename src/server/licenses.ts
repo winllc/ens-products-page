@@ -176,7 +176,14 @@ export function issueEvaluation(account: Account, product: ProductId, installati
             installationId,
         });
         store(payload, { accountId: account.id, label: `${productInfo(product).name} evaluation`, orderReference: '', createdBy: account.id });
-        audit({ actor: account.id, account: account.id, license: payload.id, action: 'license.issued', detail: `${product} evaluation` });
+        audit({
+            actor: account.id,
+            account: account.id,
+            license: payload.id,
+            action: 'license.issued',
+            detail: `${product} evaluation`,
+            details: { product, edition: 'evaluation', quantity: payload.limit.quantity, expiresAt: payload.expiresAt },
+        });
         return licenseById(payload.id)!;
     });
 }
@@ -189,7 +196,14 @@ export function downloadLicense(actor: Account, license: License): { filename: s
         license.token,
         summaryLines(license.payload, { product: name, edition: editions[license.edition].name }),
     );
-    audit({ actor: actor.id, account: license.account_id, license: license.id, action: 'license.downloaded', detail: `revision ${license.revision}` });
+    audit({
+        actor: actor.id,
+        account: license.account_id,
+        license: license.id,
+        action: 'license.downloaded',
+        detail: `revision ${license.revision}`,
+        details: { product: license.product, revision: license.revision },
+    });
     return { filename: `${license.product}-${license.id}-r${license.revision}.lic`, content };
 }
 
@@ -214,6 +228,7 @@ export function bindInstallation(actor: Account, license: License, raw: string |
             license: license.id,
             action: 'license.bound',
             detail: installationId ? `bound to ${installationId}` : 'binding removed',
+            details: { 'installationId.old': license.payload.installationId ?? null, 'installationId.new': installationId, revision: license.revision + 1 },
         });
     });
     return licenseById(license.id)!;
@@ -221,8 +236,17 @@ export function bindInstallation(actor: Account, license: License, raw: string |
 
 export function renameLicense(actor: Account, license: License, label: string): License {
     const clean = label.trim().replace(/\s+/g, ' ').slice(0, 120);
-    db().prepare('UPDATE licenses SET label = ? WHERE id = ?').run(clean, license.id);
-    audit({ actor: actor.id, account: license.account_id, license: license.id, action: 'license.renamed', detail: clean });
+    transaction(() => {
+        db().prepare('UPDATE licenses SET label = ? WHERE id = ?').run(clean, license.id);
+        audit({
+            actor: actor.id,
+            account: license.account_id,
+            license: license.id,
+            action: 'license.renamed',
+            detail: clean,
+            details: { 'label.old': license.label, 'label.new': clean },
+        });
+    });
     return licenseById(license.id)!;
 }
 
@@ -264,6 +288,16 @@ export function issueLicense(
             license: payload.id,
             action: 'license.issued',
             detail: `${req.product} ${req.edition}, ${payload.limit.quantity} ${payload.limit.unit}${fields.orderReference ? `, order ${fields.orderReference}` : ''}`,
+            details: {
+                product: req.product,
+                edition: req.edition,
+                quantity: payload.limit.quantity,
+                unit: payload.limit.unit,
+                support: payload.support,
+                expiresAt: payload.expiresAt,
+                installationId: payload.installationId,
+                orderReference: fields.orderReference?.trim() || null,
+            },
         });
     });
     return licenseById(payload.id)!;
@@ -292,6 +326,10 @@ export function renewLicense(actor: Account, license: License, until: Date, orde
             license: license.id,
             action: 'license.renewed',
             detail: `${license.edition === 'perpetual' ? 'maintenance' : 'expiry'} to ${iso.slice(0, 10)}${orderReference ? `, order ${orderReference}` : ''}`,
+            details:
+                license.edition === 'perpetual'
+                    ? { 'maintenanceUntil.old': license.payload.maintenanceUntil ?? null, 'maintenanceUntil.new': iso, orderReference: orderReference.trim() || null }
+                    : { 'expiresAt.old': license.payload.expiresAt, 'expiresAt.new': iso, orderReference: orderReference.trim() || null },
         });
     });
     return licenseById(license.id)!;
@@ -300,15 +338,19 @@ export function renewLicense(actor: Account, license: License, until: Date, orde
 export function revokeLicense(actor: Account, license: License, reason: string): License {
     requireAdmin(actor);
     const why = reason.trim().slice(0, 300) || 'No reason given';
-    db().prepare('UPDATE licenses SET revoked_at = ?, revoked_reason = ? WHERE id = ?').run(nowIso(), why, license.id);
-    audit({ actor: actor.id, account: license.account_id, license: license.id, action: 'license.revoked', detail: why });
+    transaction(() => {
+        db().prepare('UPDATE licenses SET revoked_at = ?, revoked_reason = ? WHERE id = ?').run(nowIso(), why, license.id);
+        audit({ actor: actor.id, account: license.account_id, license: license.id, action: 'license.revoked', detail: why, details: { reason: why } });
+    });
     return licenseById(license.id)!;
 }
 
 export function reinstateLicense(actor: Account, license: License): License {
     requireAdmin(actor);
-    db().prepare('UPDATE licenses SET revoked_at = NULL, revoked_reason = NULL WHERE id = ?').run(license.id);
-    audit({ actor: actor.id, account: license.account_id, license: license.id, action: 'license.reinstated' });
+    transaction(() => {
+        db().prepare('UPDATE licenses SET revoked_at = NULL, revoked_reason = NULL WHERE id = ?').run(license.id);
+        audit({ actor: actor.id, account: license.account_id, license: license.id, action: 'license.reinstated' });
+    });
     return licenseById(license.id)!;
 }
 

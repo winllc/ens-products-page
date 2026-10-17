@@ -7,23 +7,6 @@ interface Props {
 }
 
 const { entries, showActor = true } = Astro.props;
-const verbs: Record<AuditEntry['action'], string> = {
-    'account.created': 'Account created',
-    'account.verified': 'Email confirmed',
-    'account.updated': 'Details updated',
-    'account.password-changed': 'Password changed',
-    'account.password-reset': 'Password reset',
-    'account.role-changed': 'Role changed',
-    'account.disabled': 'Account disabled',
-    'account.enabled': 'Account enabled',
-    'license.issued': 'License issued',
-    'license.downloaded': 'License downloaded',
-    'license.bound': 'Installation binding changed',
-    'license.renamed': 'License renamed',
-    'license.renewed': 'License renewed',
-    'license.revoked': 'License revoked',
-    'license.reinstated': 'License reinstated',
-};
 const when = (iso: string) => iso.replace('T', ' ').slice(0, 16) + ' UTC';
 ---
 <ol class="audit-list">
@@ -31,7 +14,7 @@ const when = (iso: string) => iso.replace('T', ' ').slice(0, 16) + ' UTC';
         <li>
             <time datetime={e.at}>{when(e.at)}</time>
             <span>
-                <strong>{verbs[e.action] ?? e.action}</strong>
+                <strong>{e.label}</strong>
                 {e.detail && <> &middot; {e.detail}</>}
                 {e.license_id && <> &middot; <span class="mono small">{e.license_id}</span></>}
                 {showActor && e.actor_email && <span class="muted"> by {e.actor_email}</span>}

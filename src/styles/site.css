@@ -1883,3 +1883,34 @@ img { max-width: 100%; height: auto; }
     align-items: center;
     gap: .35rem;
 }
+
+/* Audit log (/admin/audit) */
+.audit-filters .field { flex: 1 1 180px; }
+.audit-toolbar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .75rem; }
+.audit-toolbar .btn-row { margin: 0; }
+.audit-scroll { margin-top: .75rem; }
+.audit-table { font-size: .875rem; }
+.audit-table td { padding: .55rem .8rem; vertical-align: middle; }
+.audit-table tbody tr[data-href] { cursor: pointer; }
+.audit-table tbody tr[data-href]:hover { background: var(--surface-alt); }
+.audit-table .nowrap { white-space: nowrap; }
+.pill--sev-notice { background: var(--accent-soft); color: var(--accent); }
+.pill--sev-warning,
+.pill--out-failure { background: var(--pending-soft); color: var(--pending); }
+.pill--sev-alert,
+.pill--out-denied { background: var(--danger-soft); color: var(--danger); }
+.pill--out-success { background: var(--ok-soft); color: var(--ok); }
+.pager { display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; }
+.token-reveal { display: flex; flex-wrap: wrap; gap: .75rem; align-items: center; margin-top: .5rem; }
+.token-reveal code { overflow-wrap: anywhere; padding: .4rem .6rem; background: var(--surface-alt); border-radius: 6px; }
+.audit-json {
+    margin: 1rem 0 .5rem;
+    padding: 1rem;
+    overflow-x: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-family: var(--mono);
+    font-size: .8rem;
+    line-height: 1.5;
+}
