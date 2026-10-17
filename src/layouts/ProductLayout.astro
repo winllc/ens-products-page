@@ -1,0 +1,142 @@
+---
+/*
+ * The frame every product page shares. The page supplies what is its own (the
+ * headline, the lede, an optional logo and hero picture, and its sections);
+ * this supplies the rest, the same way on every product:
+ *
+ *   - the breadcrumb, eyebrow and status badge, from src/data/products.ts;
+ *   - the demo, documentation and tour buttons (DemoSwitch keeps the right
+ *     ones at container start);
+ *   - a menu of the page's own sections;
+ *   - documentation and resource links;
+ *   - the other products, as cards.
+ *
+ * Slots: "logo" (above the eyebrow), "lede" (under the headline), "aside"
+ * (beside the hero text: a screenshot or illustration; without it the hero is
+ * one column), and the default slot for the page's sections.
+ */
+import DemoLink from '../components/DemoLink.astro';
+import DemoSwitch from '../components/DemoSwitch.astro';
+import ProductCard from '../components/ProductCard.astro';
+import type { ProductId } from '../data/products';
+import { product, products } from '../data/products';
+import { docsUrl } from '../data/site';
+import BaseLayout from './BaseLayout.astro';
+
+interface Section {
+    /** The section heading's id. */
+    id: string;
+    label: string;
+}
+
+interface Props {
+    product: ProductId;
+    /** Meta description. */
+    description: string;
+    headline: string;
+    /** The page's sections, in order, for the in-page menu. */
+    sections: Section[];
+    /** Where "See how it works" (or similar) goes: the first section by default. */
+    tour?: Section;
+}
+
+const { description, headline, sections } = Astro.props;
+const p = product(Astro.props.product);
+const tour = Astro.props.tour ?? sections[0];
+const docs = (page = '') => docsUrl(`${p.docsPath}/${page}`);
+const guides = [
+    { href: docs(), label: 'Overview', note: 'What it does and how it is put together' },
+    { href: docs('install/'), label: 'Install guide', note: 'Deploying it for the first time' },
+    { href: docs('configuration/'), label: 'Configuration', note: 'Every setting, and what it changes' },
+    { href: docs('admin-guide/'), label: 'Admin guide', note: 'Running it day to day' },
+    { href: docs('user-guide/'), label: 'User guide', note: 'For the people who use it' },
+];
+const others = products.filter((o) => o.id !== p.id);
+const split = Astro.slots.has('aside');
+---
+<BaseLayout title={p.name} description={description}>
+<section class="hero product-hero">
+    <div class:list={['wrap', { 'hero-split': split }]}>
+        <div>
+            <nav class="crumbs" aria-label="Breadcrumb">
+                <a href="/#products-heading">Products</a>
+                <span aria-hidden="true">/</span>
+                <span aria-current="page">{p.name}</span>
+            </nav>
+            <slot name="logo" />
+            <div class="title-row">
+                <p class="eyebrow eyebrow--inline">{p.name} &middot; {p.tagline}</p>
+                {p.status === 'available'
+                    ? <span class="badge badge--live">Available</span>
+                    : <span class="badge badge--pending">Coming soon</span>}
+            </div>
+            <h1 set:html={headline} />
+            <slot name="lede" />
+
+            <div class="btn-row">
+                <DemoSwitch product={p.id}>
+                    <Fragment slot="demo">
+                        <DemoLink product={p.id} />
+                        <a class="btn btn--ghost" href={docs()}>Documentation</a>
+                        <a class="btn btn--link" href={`#${tour.id}`}>{tour.label} &darr;</a>
+                    </Fragment>
+                    <Fragment slot="nodemo">
+                        <a class="btn btn--primary" href={`/contact.html?product=${p.id}`}>Request a demo</a>
+                        <a class="btn btn--ghost" href={docs()}>Documentation</a>
+                        <a class="btn btn--link" href={`#${tour.id}`}>{tour.label} &darr;</a>
+                        <span class="btn-note">Demo unavailable online; we&rsquo;ll arrange one for you.</span>
+                    </Fragment>
+                </DemoSwitch>
+            </div>
+        </div>
+        {split && <slot name="aside" />}
+    </div>
+</section>
+
+<nav class="page-nav" aria-label={`${p.name} sections`}>
+    <div class="wrap">
+        <ul>
+            {sections.map((s) => <li><a href={`#${s.id}`}>{s.label}</a></li>)}
+            <li><a href="#resources-heading">Documentation</a></li>
+        </ul>
+    </div>
+</nav>
+
+<slot />
+
+<section class="section" aria-labelledby="resources-heading">
+    <div class="wrap">
+        <h2 id="resources-heading">Documentation and resources</h2>
+        <div class="resource-grid">
+            <div class="resource-panel">
+                <h3>{p.name} documentation</h3>
+                <ul class="resource-list">
+                    {guides.map((g) => (
+                        <li><a href={g.href}>{g.label}</a><span>{g.note}</span></li>
+                    ))}
+                </ul>
+            </div>
+            <div class="resource-panel">
+                <h3>Buying and running it</h3>
+                <ul class="resource-list">
+                    <li><a href="/pricing.html">Pricing</a><span>Tiers, bundles and support levels</span></li>
+                    <li><a href="/licensing.html">Licensing</a><span>Evaluations, license files and renewals</span></li>
+                    <li><a href={docsUrl('releases/')}>Releases and downloads</a><span>Verifying and installing a release</span></li>
+                    <li><a href={docsUrl('audit-logging/')}>Audit logging</a><span>The audit trail, and sending it to Splunk</span></li>
+                    <li><a href={`/contact.html?product=${p.id}`}>Contact us</a><span>Demos, pilots and questions</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="more-heading">
+    <div class="wrap">
+        <h2 id="more-heading">More from ENS Solutions</h2>
+        <p class="lede">Built on the same directory-first approach, and discounted together as a suite.</p>
+        <div class="product-grid product-grid--compact">
+            {others.map((o) => <ProductCard product={o.id} compact />)}
+        </div>
+    </div>
+</section>
+</BaseLayout>

@@ -40,6 +40,7 @@ jobs:
           grep -q 'Demo unavailable' dist-rendered/products/readyroom.html
           if grep -rq '<!--\(NO\)\?DEMO:' dist-rendered; then exit 1; fi
           if grep -rq '_DEMO_URL}' dist-rendered; then exit 1; fi
+          grep -q 'href="https://winllc.github.io/ens-apps-documentation/cert-alert/install/"' dist-rendered/products/certalert.html
 
       - name: Licensing service starts and answers
         run: |

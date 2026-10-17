@@ -77,11 +77,13 @@ COPY docker/docker-entrypoint.d/30-render-site.sh /docker-entrypoint.d/30-render
 RUN chmod +x /docker-entrypoint.d/30-render-site.sh
 
 # Demo targets. Empty means "no demo yet" and the page renders a coming-soon
-# state instead of a broken link.
+# state instead of a broken link. DOCS_URL points the documentation links at a
+# mirror; empty keeps the published documentation site.
 ENV READYROOM_DEMO_URL="" \
     CERTALERT_DEMO_URL="" \
     MFA_PORTAL_DEMO_URL="" \
     DIRECTORY_PORTAL_DEMO_URL="" \
+    DOCS_URL="" \
     LICENSING_UPSTREAM="licensing:4321" \
     DNS_RESOLVER="127.0.0.11"
 

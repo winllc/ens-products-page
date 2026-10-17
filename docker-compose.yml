@@ -11,6 +11,8 @@ services:
       CERTALERT_DEMO_URL: "${CERTALERT_DEMO_URL:-}"
       MFA_PORTAL_DEMO_URL: "${MFA_PORTAL_DEMO_URL:-}"
       DIRECTORY_PORTAL_DEMO_URL: "${DIRECTORY_PORTAL_DEMO_URL:-}"
+      # Documentation links: empty for the published site, or a mirror's URL.
+      DOCS_URL: "${DOCS_URL:-}"
       # Where nginx sends /account, /admin, /api/licensing and /api/audit.
       LICENSING_UPSTREAM: "licensing:4321"
     depends_on:
@@ -31,6 +33,7 @@ services:
       LICENSE_TRUSTED_KEYS: "${LICENSE_TRUSTED_KEYS:-}"
       SMTP_URL: "${SMTP_URL:-}"
       MAIL_FROM: "${MAIL_FROM:-ENS Solutions <licensing@ens-solutions.com>}"
+      DOCS_URL: "${DOCS_URL:-}"
       COOKIE_SECURE: "${COOKIE_SECURE:-}"
       # Audit trail outputs (README, "Audit logging"). The database always
       # has the full trail; these copy it to stdout, a file, Splunk or syslog.

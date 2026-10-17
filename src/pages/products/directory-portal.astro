@@ -1,45 +1,27 @@
 ---
 import ProductPricing from '../../components/ProductPricing.astro';
-import DemoLink from '../../components/DemoLink.astro';
-import DemoSwitch from '../../components/DemoSwitch.astro';
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProductLayout from '../../layouts/ProductLayout.astro';
 ---
-<BaseLayout
-    title="Directory Services Portal"
+<ProductLayout
+    product="directory-portal"
     description="Directory Services Portal is a web front end for LDAP directories with custom schemas: administrators build forms for any object class, publish them as scoped directories, and grant read and write access to users and groups. From ENS Solutions."
+    headline="Your directory&rsquo;s own schema, as forms people can use."
+    sections={[
+        { id: 'how-heading', label: 'How it works' },
+        { id: 'screens-heading', label: 'Screens' },
+        { id: 'users-heading', label: 'For users' },
+        { id: 'security-heading', label: 'Security' },
+        { id: 'tech-heading', label: 'Requirements' },
+        { id: 'pricing-heading', label: 'Pricing' },
+    ]}
 >
-<section class="hero">
-    <div class="wrap">
-        <a class="backlink" href="/">&larr; All products</a>
-        <div class="title-row">
-            <p class="eyebrow eyebrow--inline">Directory Services Portal &middot; Web front end for LDAP</p>
-            <span class="badge badge--live">Available</span>
-        </div>
-        <h1>Your directory&rsquo;s own schema, as forms people can use.</h1>
-        <p class="lede">
-            Directory Services Portal puts a web front end on LDAP directories, including those with
-            custom, non-standard schemas. Administrators build forms for any object class, publish them
-            as directories scoped to one part of the tree, and decide who can read or edit each one.
-            Every user gets a profile page showing where they appear and what they can update
-            themselves &mdash; without anyone needing an LDAP browser.
-        </p>
-
-        <div class="btn-row">
-            <DemoSwitch product="directory-portal">
-                <Fragment slot="demo">
-                    <DemoLink product="directory-portal" />
-                    <a class="btn btn--ghost" href="#how-heading">See how it works</a>
-                    <span class="btn-note">Opens the Directory Services Portal demo environment in a new tab.</span>
-                </Fragment>
-                <Fragment slot="nodemo">
-                    <span class="btn btn--disabled" aria-disabled="true">Demo unavailable</span>
-                    <a class="btn btn--ghost" href="#how-heading">See how it works</a>
-                    <span class="btn-note">No demo URL is configured for this deployment.</span>
-                </Fragment>
-            </DemoSwitch>
-        </div>
-    </div>
-</section>
+    <p class="lede" slot="lede">
+        Directory Services Portal puts a web front end on LDAP directories, including those with
+        custom, non-standard schemas. Administrators build forms for any object class, publish them
+        as directories scoped to one part of the tree, and decide who can read or edit each one.
+        Every user gets a profile page showing where they appear and what they can update
+        themselves &mdash; without anyone needing an LDAP browser.
+    </p>
 
 <section class="section" aria-labelledby="how-heading">
     <div class="wrap">
@@ -246,4 +228,4 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         time and materials. <a href="/pricing.html#services-heading">See services</a>.
     </p>
 </ProductPricing>
-</BaseLayout>
+</ProductLayout>

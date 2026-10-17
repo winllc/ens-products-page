@@ -1,72 +1,54 @@
 ---
 import ProductPricing from '../../components/ProductPricing.astro';
 import { formatUSD, startingPrice } from '../../lib/pricing';
-import DemoLink from '../../components/DemoLink.astro';
-import DemoSwitch from '../../components/DemoSwitch.astro';
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProductLayout from '../../layouts/ProductLayout.astro';
 ---
-<BaseLayout
-    title="ReadyRoom"
+<ProductLayout
+    product="readyroom"
     description="ReadyRoom turns the Windows sign-ins your people already make into daily attendance, accountability and absence alerts, organized by the LDAP or Active Directory you already run."
+    headline="Know who&rsquo;s in, without a sign-in sheet."
+    sections={[
+        { id: 'how-heading', label: 'How it works' },
+        { id: 'screens-heading', label: 'Screens' },
+        { id: 'status-heading', label: 'Statuses' },
+        { id: 'roles-heading', label: 'Roles' },
+        { id: 'alerts-heading', label: 'Absence alerts' },
+        { id: 'features-heading', label: 'More features' },
+        { id: 'security-heading', label: 'Security' },
+        { id: 'tech-heading', label: 'Requirements' },
+        { id: 'pricing-heading', label: 'Pricing' },
+    ]}
 >
-<section class="hero">
-    <div class="wrap hero-split">
-        <div>
-            <a class="backlink" href="/">&larr; All products</a>
-            <img class="product-logo product-logo--ink" src="/assets/img/brand/readyroom-logo.png" width="480" height="280"
-                 alt="ReadyRoom: Workforce Accountability">
-            <div class="title-row">
-                <p class="eyebrow eyebrow--inline">ReadyRoom &middot; Attendance and accountability</p>
-                <span class="badge badge--live">Available</span>
-            </div>
-            <h1>Know who&rsquo;s in, without a sign-in sheet.</h1>
-            <p class="lede">
-                ReadyRoom turns the Windows sign-ins your people already make into a daily picture of
-                who is in, who is away, and who hasn&rsquo;t been accounted for &mdash; organized by the
-                directory you already run, and escalated to the right manager when someone doesn&rsquo;t
-                show.
-            </p>
-
-            <div class="btn-row">
-                <DemoSwitch product="readyroom">
-                    <Fragment slot="demo">
-                        <DemoLink product="readyroom" />
-                        <a class="btn btn--ghost" href="#how-heading">See how it works</a>
-                        <span class="btn-note">Opens the ReadyRoom demo environment in a new tab.</span>
-                    </Fragment>
-                    <Fragment slot="nodemo">
-                        <span class="btn btn--disabled" aria-disabled="true">Demo unavailable</span>
-                        <a class="btn btn--ghost" href="#how-heading">See how it works</a>
-                        <span class="btn-note">No demo URL is configured for this deployment.</span>
-                    </Fragment>
-                </DemoSwitch>
-            </div>
+    <img slot="logo" class="product-logo product-logo--ink" src="/assets/img/brand/readyroom-logo.png" width="480" height="280"
+         alt="ReadyRoom: Workforce Accountability">
+    <p class="lede" slot="lede">
+        ReadyRoom turns the Windows sign-ins your people already make into a daily picture of
+        who is in, who is away, and who hasn&rsquo;t been accounted for &mdash; organized by the
+        directory you already run, and escalated to the right manager when someone doesn&rsquo;t
+        show.
+    </p>
+    <!-- Illustration of the manager's team view. Not live data. -->
+    <figure slot="aside" class="mock" aria-hidden="true">
+        <div class="mock-head">
+            <span class="mock-title">My team</span>
+            <span class="mock-sub">12 direct reports</span>
         </div>
-
-        <!-- Illustration of the manager's team view. Not live data. -->
-        <figure class="mock" aria-hidden="true">
-            <div class="mock-head">
-                <span class="mock-title">My team</span>
-                <span class="mock-sub">12 direct reports</span>
-            </div>
-            <div class="mock-label">Accounted for today</div>
-            <div class="mock-figure">92%</div>
-            <div class="mock-bar">
-                <span class="seg seg--in"></span><span class="seg seg--wfh"></span><span class="seg seg--tdy"></span><span class="seg seg--none"></span>
-            </div>
-            <ul class="mock-legend">
-                <li><span class="dot dot--in"></span>Checked in<b>8</b></li>
-                <li><span class="dot dot--wfh"></span>Work from home<b>2</b></li>
-                <li><span class="dot dot--tdy"></span>TDY<b>1</b></li>
-                <li><span class="dot dot--none"></span>Unaccounted for<b>1</b></li>
-            </ul>
-            <div class="mock-row">
-                <span>Not in yet &middot; expected 08:00</span>
-                <span class="status status--late">Late</span>
-            </div>
-        </figure>
-    </div>
-</section>
+        <div class="mock-label">Accounted for today</div>
+        <div class="mock-figure">92%</div>
+        <div class="mock-bar">
+            <span class="seg seg--in"></span><span class="seg seg--wfh"></span><span class="seg seg--tdy"></span><span class="seg seg--none"></span>
+        </div>
+        <ul class="mock-legend">
+            <li><span class="dot dot--in"></span>Checked in<b>8</b></li>
+            <li><span class="dot dot--wfh"></span>Work from home<b>2</b></li>
+            <li><span class="dot dot--tdy"></span>TDY<b>1</b></li>
+            <li><span class="dot dot--none"></span>Unaccounted for<b>1</b></li>
+        </ul>
+        <div class="mock-row">
+            <span>Not in yet &middot; expected 08:00</span>
+            <span class="status status--late">Late</span>
+        </div>
+    </figure>
 
 <section class="section" aria-labelledby="how-heading">
     <div class="wrap">
@@ -386,4 +368,4 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     product="readyroom"
     lede={`Annual subscriptions from ${formatUSD(startingPrice('readyroom'))} a year, sized by the people ReadyRoom tracks. Updates, security patches and business-hours support are included.`}
 />
-</BaseLayout>
+</ProductLayout>
