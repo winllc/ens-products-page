@@ -2,49 +2,32 @@
 import ProductPricing from '../../components/ProductPricing.astro';
 import { enterpriseCertificatePlatformRange } from '../../data/pricing';
 import { formatUSD } from '../../lib/pricing';
-import DemoLink from '../../components/DemoLink.astro';
-import DemoSwitch from '../../components/DemoSwitch.astro';
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProductLayout from '../../layouts/ProductLayout.astro';
 ---
-<BaseLayout
-    title="CertAlert"
+<ProductLayout
+    product="certalert"
     description="CertAlert indexes every certificate your LDAP directory publishes, alerts the points of contact before one expires, checks revocation and what servers actually serve, and reports on the whole directory. From ENS Solutions."
+    headline="Every certificate in your directory, and who answers for it."
+    sections={[
+        { id: 'how-heading', label: 'How it works' },
+        { id: 'screens-heading', label: 'Screens' },
+        { id: 'capabilities-heading', label: 'Features' },
+        { id: 'beyond-heading', label: 'Beyond expiry' },
+        { id: 'security-heading', label: 'Security' },
+        { id: 'tech-heading', label: 'Requirements' },
+        { id: 'pricing-heading', label: 'Pricing' },
+    ]}
 >
-<section class="hero">
-    <div class="wrap">
-        <a class="backlink" href="/">&larr; All products</a>
-        <picture>
-            <source srcset="/assets/img/brand/certalert-logo-white.png" media="(prefers-color-scheme: dark)" width="610" height="160">
-            <img class="product-logo product-logo--wide" src="/assets/img/brand/certalert-logo.png" width="610" height="160" alt="CertAlert">
-        </picture>
-        <div class="title-row">
-            <p class="eyebrow eyebrow--inline">CertAlert &middot; Certificate expiration visibility</p>
-            <span class="badge badge--live">Available</span>
-        </div>
-        <h1>Every certificate in your directory, and who answers for it.</h1>
-        <p class="lede">
-            CertAlert reads the people and servers out of your LDAP directory, parses every certificate
-            they publish, and puts the results in searchable tables. It knows the points of contact for
-            each server, alerts them before a certificate expires, and reports on the whole
-            directory &mdash; so an expiring certificate is a planned renewal, not a surprise.
-        </p>
-
-        <div class="btn-row">
-            <DemoSwitch product="certalert">
-                <Fragment slot="demo">
-                    <DemoLink product="certalert" />
-                    <a class="btn btn--ghost" href="#how-heading">See how it works</a>
-                    <span class="btn-note">Opens the CertAlert demo environment in a new tab.</span>
-                </Fragment>
-                <Fragment slot="nodemo">
-                    <span class="btn btn--disabled" aria-disabled="true">Demo unavailable</span>
-                    <a class="btn btn--ghost" href="#how-heading">See how it works</a>
-                    <span class="btn-note">No demo URL is configured for this deployment.</span>
-                </Fragment>
-            </DemoSwitch>
-        </div>
-    </div>
-</section>
+    <picture slot="logo">
+        <source srcset="/assets/img/brand/certalert-logo-white.png" media="(prefers-color-scheme: dark)" width="610" height="160">
+        <img class="product-logo product-logo--wide" src="/assets/img/brand/certalert-logo.png" width="610" height="160" alt="CertAlert">
+    </picture>
+    <p class="lede" slot="lede">
+        CertAlert reads the people and servers out of your LDAP directory, parses every certificate
+        they publish, and puts the results in searchable tables. It knows the points of contact for
+        each server, alerts them before a certificate expires, and reports on the whole
+        directory &mdash; so an expiring certificate is a planned renewal, not a surprise.
+    </p>
 
 <section class="section" aria-labelledby="how-heading">
     <div class="wrap">
@@ -312,4 +295,4 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         </p>
     </div>
 </ProductPricing>
-</BaseLayout>
+</ProductLayout>

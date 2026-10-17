@@ -53,6 +53,19 @@ fi
 # would also eat any other $NAME in the CSS or markup.
 vars='${READYROOM_DEMO_URL} ${CERTALERT_DEMO_URL} ${MFA_PORTAL_DEMO_URL} ${DIRECTORY_PORTAL_DEMO_URL}'
 
+# The documentation site. Pages are built linking to the published one; a
+# deployment that mirrors it sets DOCS_URL and the links are pointed there.
+DEFAULT_DOCS_URL="https://winllc.github.io/ens-apps-documentation"
+DOCS_URL="${DOCS_URL:-}"
+DOCS_URL="${DOCS_URL%/}"
+if [ -n "$DOCS_URL" ] && [ "$DOCS_URL" != "$DEFAULT_DOCS_URL" ]; then
+    echo "30-render-site.sh: documentation links point to $DOCS_URL"
+    # The default escaped as a sed pattern, DOCS_URL as its replacement.
+    docs_sed="s#$(printf '%s' "$DEFAULT_DOCS_URL" | sed 's/[].[*^$\\#]/\\&/g')#$(printf '%s' "$DOCS_URL" | sed 's/[&#\\]/\\&/g')#g"
+else
+    docs_sed=""
+fi
+
 rm -rf "$DST"
 mkdir -p "$DST"
 
@@ -78,6 +91,9 @@ find "$SRC" -type f | while IFS= read -r src; do
                 /<!--\/(NO)?DEMO:[A-Z_]+-->/ { skip = 0; next }
                 !skip { print }
             ' "$src" | envsubst "$vars" > "$dst"
+            if [ -n "$docs_sed" ]; then
+                sed -i "$docs_sed" "$dst"
+            fi
             ;;
         *)
             cp "$src" "$dst"

@@ -246,8 +246,41 @@ byte.
 
 To add another product, add it to `src/data/products.ts` with its `demoKey`,
 add its `NAME_DEMO_URL` to the `export` list, the `enabled` list and the `vars`
-list in the render script and to the Dockerfile and Compose files, then use
-`DemoSwitch` in its page.
+list in the render script and to the Dockerfile and Compose files, then build
+its page on `ProductLayout` (see [Product pages](#product-pages)), which places
+the demo buttons.
+
+## Documentation links
+
+The header, the footer, every product card and every product page link to the
+[documentation site](https://winllc.github.io/ens-apps-documentation/): each
+product's overview, install, configuration, admin and user guides, plus
+releases and audit logging. Set `DOCS_URL` to send those links to a mirror
+instead, for a network that cannot reach the published site. Like the demo
+URLs it is read at container start: the render script swaps the published
+address for it in the static pages, and the licensing service reads it when it
+renders its own. Empty (the default) keeps the published site.
+
+## Product pages
+
+Every product page is built on `src/layouts/ProductLayout.astro`, which gives
+them the same frame:
+
+- **the hero:** a breadcrumb, the eyebrow and status badge from
+  `products.ts`, the page's headline and lede, and the demo (or "Request a
+  demo"), Documentation and tour buttons;
+- **a menu of the page's sections**, kept under the header as you scroll;
+- **after the page's own sections:** its documentation guides and buying
+  links, then the other products as cards.
+
+A page supplies only what is its own: `headline`, `description`, its
+`sections` (heading ids and short labels, for the menu), and slots for the
+`lede`, an optional `logo`, an optional `aside` beside the hero text (a
+screenshot or illustration), and its sections.
+
+The homepage cards and the "more products" strip are `ProductCard`, fed from
+`products.ts` (summary, status, card screenshot, docs section). The header lists
+the products in one menu, so adding a product changes no navigation code.
 
 ### Cache busting
 
@@ -305,9 +338,12 @@ src/
     api/licensing/          Public keys, license status, health
   layouts/
     BaseLayout.astro        The page shell: <head>, header, footer
+    ProductLayout.astro     A product page's hero, section menu, docs and other products
     AccountLayout.astro     Licensing page shell: heading, account nav, notices
   components/
-    SiteHeader.astro, SiteFooter.astro
+    SiteHeader.astro        Header, with the products menu
+    SiteFooter.astro
+    ProductCard.astro       A product as a card: screenshot, summary, price, docs link
     DemoSwitch.astro        Demo / no-demo blocks for the render script
     DemoLink.astro          The "Open the demo" button
     PriceTable.astro        A product's size bands and prices
@@ -316,7 +352,8 @@ src/
     Estimator.astro         The quote estimator's form
     licensing/              License table, details, status pill, audit list
   data/
-    products.ts             The product line: names, paths, demo keys, contact topics
+    products.ts             The product line: names, paths, demo keys, cards, docs sections
+    site.ts                 The documentation site's address (DOCS_URL)
     pricing.ts              Every price and pricing rule
     licensing.ts            Features per product, editions, evaluation size
     examples.ts             Worked examples quoted on the site
@@ -335,7 +372,7 @@ licensing/                  The applications' side: Java verifier, Spring exampl
 scripts/license.mjs         keygen, public-key, inspect, verify
 nginx/default.conf.template Server config: port 8080, gzip, caching, licensing proxy
 docker/docker-entrypoint.d/
-  30-render-site.sh         Resolves demo URLs at container start
+  30-render-site.sh         Resolves demo URLs and DOCS_URL at container start
 astro.config.mjs            Build settings: Node adapter, .html file URLs, origin checks
 Dockerfile                  Build, then the `web` and `licensing` images
 docker-compose.yml          Both services and the licensing data volume

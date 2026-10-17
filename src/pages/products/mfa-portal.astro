@@ -1,59 +1,39 @@
 ---
 import ProductPricing from '../../components/ProductPricing.astro';
 import SavingsCalculator from '../../components/SavingsCalculator.astro';
-import DemoLink from '../../components/DemoLink.astro';
-import DemoSwitch from '../../components/DemoSwitch.astro';
-import BaseLayout from '../../layouts/BaseLayout.astro';
+import ProductLayout from '../../layouts/ProductLayout.astro';
 ---
-<BaseLayout
-    title="RSA Operations Portal"
+<ProductLayout
+    product="mfa-portal"
     description="RSA Operations Portal runs the day-to-day of an RSA SecurID program on top of RSA Authentication Manager: token assignment and self-service PIN resets, a Trusted Agent directory with appointments, multi-site token shipments, and help desk tools. Available now from ENS Solutions."
+    headline="Run your SecurID program from one portal."
+    sections={[
+        { id: 'capabilities-heading', label: 'Features' },
+        { id: 'screens-heading', label: 'Screens' },
+        { id: 'fit-heading', label: 'How it fits' },
+        { id: 'pricing-heading', label: 'Pricing' },
+        { id: 'why-heading', label: 'Why it helps' },
+    ]}
+    tour={{ id: 'screens-heading', label: 'See the screens' }}
 >
-<section class="hero">
-    <div class="wrap hero-split">
-        <div>
-            <a class="backlink" href="/">&larr; All products</a>
-            <div class="title-row">
-                <p class="eyebrow eyebrow--inline">RSA Operations Portal &middot; For RSA SecurID</p>
-                <span class="badge badge--live">Available</span>
-            </div>
-            <h1>Run your SecurID program from one portal.</h1>
-            <p class="lede">
-                RSA Operations Portal sits in front of RSA Authentication Manager and handles the work
-                around the tokens: users activate their token and reset their own PIN, Trusted Agents
-                assign tokens and book appointments, the help desk handles lost tokens and lockouts, and
-                the program office ships tokens to every site &mdash; all without handing out access to
-                the Authentication Manager console.
-            </p>
-
-            <div class="btn-row">
-                <DemoSwitch product="mfa-portal">
-                    <Fragment slot="demo">
-                        <DemoLink product="mfa-portal" />
-                        <a class="btn btn--ghost" href="#screens-heading">See the screens</a>
-                        <span class="btn-note">Opens the RSA Operations Portal demo environment in a new tab.</span>
-                    </Fragment>
-                    <Fragment slot="nodemo">
-                        <a class="btn btn--primary" href="/contact.html?product=mfa-portal">Request a demo</a>
-                        <a class="btn btn--ghost" href="#screens-heading">See the screens</a>
-                    </Fragment>
-                </DemoSwitch>
-            </div>
-        </div>
-
-        <figure class="shot">
-            <a href="/assets/img/screens/rsa-portal-user-details.jpg" class="shot-link" target="_blank" rel="noopener">
-                <picture>
-                    <source media="(max-width: 640px)" srcset="/assets/img/screens/rsa-portal-user-details-mobile.jpg" width="720" height="814">
-                    <img src="/assets/img/screens/rsa-portal-user-details.jpg" width="1440" height="900" decoding="async"
-                         alt="RSA Operations Portal user details page, showing a user's account, their assigned SecurID token with Reset Pin, Mark Lost and Generate Emergency Token Code buttons, and their enrollment history.">
-                </picture>
-                <span class="visually-hidden"> (opens full size in a new tab)</span>
-            </a>
-            <figcaption>Help desk view of a user: account status, token, and one-click PIN reset, lost-token and emergency-code actions.</figcaption>
-        </figure>
-    </div>
-</section>
+    <p class="lede" slot="lede">
+        RSA Operations Portal sits in front of RSA Authentication Manager and handles the work
+        around the tokens: users activate their token and reset their own PIN, Trusted Agents
+        assign tokens and book appointments, the help desk handles lost tokens and lockouts, and
+        the program office ships tokens to every site &mdash; all without handing out access to
+        the Authentication Manager console.
+    </p>
+    <figure slot="aside" class="shot">
+        <a href="/assets/img/screens/rsa-portal-user-details.jpg" class="shot-link" target="_blank" rel="noopener">
+            <picture>
+                <source media="(max-width: 640px)" srcset="/assets/img/screens/rsa-portal-user-details-mobile.jpg" width="720" height="814">
+                <img src="/assets/img/screens/rsa-portal-user-details.jpg" width="1440" height="900" decoding="async"
+                     alt="RSA Operations Portal user details page, showing a user's account, their assigned SecurID token with Reset Pin, Mark Lost and Generate Emergency Token Code buttons, and their enrollment history.">
+            </picture>
+            <span class="visually-hidden"> (opens full size in a new tab)</span>
+        </a>
+        <figcaption>Help desk view of a user: account status, token, and one-click PIN reset, lost-token and emergency-code actions.</figcaption>
+    </figure>
 
 <section class="section" aria-labelledby="capabilities-heading">
     <div class="wrap">
@@ -227,4 +207,4 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
         </div>
     </div>
 </section>
-</BaseLayout>
+</ProductLayout>

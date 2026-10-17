@@ -1,8 +1,14 @@
 ---
+/*
+ * The site header. Products sit in one menu, so the bar stays the same width
+ * however many there are; the menu lists each with its tagline. It is a
+ * <details> element, so it opens and closes without script; the small script
+ * below only closes it on Escape or a click elsewhere.
+ */
 import { products } from '../data/products';
+import { docsUrl } from '../data/site';
 
 const links = [
-    ...products.map((p) => ({ href: p.href, label: p.navLabel })),
     { href: '/pricing.html', label: 'Pricing' },
     { href: '/licensing.html', label: 'Licensing' },
     { href: '/contact.html', label: 'Contact' },
@@ -12,6 +18,7 @@ const links = [
 // without the extension.
 const here = Astro.url.pathname.replace(/\.html$/, '');
 const isCurrent = (href: string) => href.replace(/\.html$/, '') === here;
+const onProduct = products.some((p) => isCurrent(p.href));
 ---
 <header class="site-header">
     <div class="wrap">
@@ -20,10 +27,41 @@ const isCurrent = (href: string) => href.replace(/\.html$/, '') === here;
                  alt="ENS Solutions, LLC: Your Essential IT Partner. Service-Disabled Veteran-Owned Small Business">
         </a>
         <nav class="site-nav" aria-label="Site">
+            <details class="nav-menu" data-nav-menu>
+                <summary aria-current={onProduct ? 'page' : undefined}>Products</summary>
+                <div class="nav-menu-panel">
+                    <ul>
+                        {products.map((p) => (
+                            <li>
+                                <a href={p.href} aria-current={isCurrent(p.href) ? 'page' : undefined}>
+                                    <span class="nav-menu-name">{p.name}</span>
+                                    <span class="nav-menu-tagline">{p.tagline}</span>
+                                </a>
+                            </li>
+                        ))}
+                    </ul>
+                    <a class="nav-menu-all" href="/#products-heading">All products &rarr;</a>
+                </div>
+            </details>
             {links.map((l) => (
                 <a href={l.href} aria-current={isCurrent(l.href) ? 'page' : undefined}>{l.label}</a>
             ))}
+            <a href={docsUrl()}>Docs</a>
             <a class="nav-account" href="/account">Account</a>
         </nav>
     </div>
 </header>
+
+<script>
+    for (const menu of document.querySelectorAll<HTMLDetailsElement>('[data-nav-menu]')) {
+        document.addEventListener('click', (e) => {
+            if (menu.open && !menu.contains(e.target as Node)) menu.open = false;
+        });
+        menu.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && menu.open) {
+                menu.open = false;
+                menu.querySelector('summary')?.focus();
+            }
+        });
+    }
+</script>

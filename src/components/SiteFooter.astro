@@ -1,19 +1,34 @@
+---
+import { products } from '../data/products';
+import { docsUrl } from '../data/site';
+---
 <footer class="site-footer">
     <div class="wrap">
         <div class="footer-brand">
             <img class="footer-logo" src="/assets/img/brand/ens-solutions-logo.jpg" width="548" height="100" loading="lazy" alt="ENS Solutions, LLC">
             <span>&copy; ENS Solutions, LLC &middot; Service-Disabled Veteran-Owned Small Business</span>
         </div>
-        <nav class="footer-links" aria-label="Elsewhere">
-            <a href="/pricing.html">Pricing</a>
-            <a href="/licensing.html">Licensing</a>
-            <a href="/account">Account</a>
-            <a href="/contact.html">Contact</a>
-            <a href="https://ens-solutions.com/">ens-solutions.com</a>
-            <a href="https://www.linkedin.com/company/ens-solutions-llc/">
-                <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9h4v12H3V9Zm7 0h3.8v1.65h.05A4.17 4.17 0 0 1 17.6 8.7c4 0 4.4 2.5 4.4 5.9V21h-4v-5.6c0-1.34-.03-3.06-1.9-3.06-1.9 0-2.2 1.46-2.2 2.96V21h-4V9Z"/></svg>
-                LinkedIn
-            </a>
-        </nav>
+        <div class="footer-columns">
+            <nav class="footer-col" aria-label="Products">
+                <h2>Products</h2>
+                {products.map((p) => <a href={p.href}>{p.name}</a>)}
+            </nav>
+            <nav class="footer-col" aria-label="Resources">
+                <h2>Resources</h2>
+                <a href={docsUrl()}>Documentation</a>
+                <a href="/pricing.html">Pricing</a>
+                <a href="/licensing.html">Licensing</a>
+                <a href="/account">Account</a>
+            </nav>
+            <nav class="footer-col" aria-label="Company">
+                <h2>Company</h2>
+                <a href="/contact.html">Contact</a>
+                <a href="https://ens-solutions.com/">ens-solutions.com</a>
+                <a href="https://www.linkedin.com/company/ens-solutions-llc/">
+                    <svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" focusable="false"><path d="M4.98 3.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5ZM3 9h4v12H3V9Zm7 0h3.8v1.65h.05A4.17 4.17 0 0 1 17.6 8.7c4 0 4.4 2.5 4.4 5.9V21h-4v-5.6c0-1.34-.03-3.06-1.9-3.06-1.9 0-2.2 1.46-2.2 2.96V21h-4V9Z"/></svg>
+                    LinkedIn
+                </a>
+            </nav>
+        </div>
     </div>
 </footer>

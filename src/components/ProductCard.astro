@@ -1,0 +1,49 @@
+---
+/*
+ * One product as a card: screenshot, name and status, tagline, summary,
+ * starting price, and links to the product page and its documentation. The
+ * homepage lists every product this way, and each product page lists the
+ * others. The whole card goes to the product page; the docs link sits above
+ * that stretched link so it stays its own target.
+ */
+import type { ProductId } from '../data/products';
+import { product } from '../data/products';
+import { docsUrl } from '../data/site';
+import { formatUSD, startingPrice } from '../lib/pricing';
+
+interface Props {
+    product: ProductId;
+    /** Smaller, without the summary: for the "more products" strip. */
+    compact?: boolean;
+    /** Heading level, so the card fits the outline of the page it is on. */
+    level?: 'h2' | 'h3';
+}
+
+const { compact = false, level = 'h3' } = Astro.props;
+const p = product(Astro.props.product);
+const Heading = level;
+const shot = p.cardShot;
+---
+<article class:list={['product-card', { 'product-card--compact': compact }]}>
+    <picture class="product-card-shot">
+        <source media="(max-width: 640px)" srcset={shot.mobileSrc} width={shot.mobileWidth} height={shot.mobileHeight}>
+        <img src={shot.src} width={shot.width} height={shot.height} loading="lazy" decoding="async" alt={shot.alt}>
+    </picture>
+    <div class="product-card-body">
+        <p class="product-card-tagline">{p.tagline}</p>
+        <Heading class="product-card-name">
+            <a href={p.href}>{p.name}</a>
+            {p.status === 'available'
+                ? <span class="badge badge--live">Available</span>
+                : <span class="badge badge--pending">Coming soon</span>}
+        </Heading>
+        {!compact && <p class="product-card-summary" set:html={p.summary} />}
+        <div class="product-card-foot">
+            <span class="product-card-price">From {formatUSD(startingPrice(p.id))} a year</span>
+            <span class="product-card-links">
+                <a class="product-card-docs" href={docsUrl(`${p.docsPath}/`)}>Docs</a>
+                <span class="product-card-cta" aria-hidden="true">View &rarr;</span>
+            </span>
+        </div>
+    </div>
+</article>
