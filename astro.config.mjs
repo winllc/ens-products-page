@@ -1,6 +1,43 @@
 // @ts-check
 import node from '@astrojs/node';
 import { defineConfig } from 'astro/config';
+import { fileURLToPath } from 'node:url';
+
+/**
+ * Starts the audit trail's outputs (and records system.started) when the
+ * built server starts, by importing src/server/audit-startup.ts from the
+ * Node adapter's server entry. Build only: `astro dev` starts them from the
+ * middleware on the first request instead.
+ */
+/** @returns {import('astro').AstroIntegration} */
+function auditStartup() {
+    const startup = fileURLToPath(new URL('./src/server/audit-startup.ts', import.meta.url));
+    return {
+        name: 'ens-audit-startup',
+        hooks: {
+            'astro:config:setup': ({ command, updateConfig }) => {
+                if (command !== 'build') return;
+                updateConfig({
+                    vite: {
+                        plugins: [
+                            {
+                                name: 'ens-audit-startup',
+                                enforce: 'post',
+                                /** @param {string} code @param {string} id */
+                                transform(code, id) {
+                                    if (/@astrojs[\\/]node[\\/]dist[\\/]server\.js$/.test(id)) {
+                                        return { code: `import ${JSON.stringify(startup)};\n${code}`, map: null };
+                                    }
+                                    return null;
+                                },
+                            },
+                        ],
+                    },
+                });
+            },
+        },
+    };
+}
 
 export default defineConfig({
     site: 'https://products.ens-solutions.com',
@@ -9,6 +46,7 @@ export default defineConfig({
     // `export const prerender = false` and are served by the Node server this
     // adapter builds into dist/server/.
     adapter: node({ mode: 'standalone', bodySizeLimit: 256 * 1024 }),
+    integrations: [auditStartup()],
     // Emit /products/certalert.html rather than /products/certalert/index.html,
     // so every URL the hand-written site had keeps working unchanged.
     build: { format: 'file' },

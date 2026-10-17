@@ -18,7 +18,7 @@ if (account instanceof Response) return account;
 const licenses = licensesOf(account.id);
 const verified = account.email_verified_at !== null;
 const evaluation = editions.evaluation;
-const activity = auditFor({ account: account.id }, 15);
+const activity = auditFor({ account: account.id, customer: true }, 15);
 ---
 <AccountLayout title="Your licenses" section="licenses">
     <p slot="lede" class="lede">

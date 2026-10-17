@@ -1,0 +1,64 @@
+---
+export const prerender = false;
+
+import AccountLayout from '../../../layouts/AccountLayout.astro';
+import { auditBySeq } from '../../../server/audit';
+import { requireAdmin } from '../../../server/http';
+
+const admin = requireAdmin(Astro);
+if (admin instanceof Response) return admin;
+
+const seq = /^\d{1,15}$/.test(Astro.params.seq ?? '') ? Number(Astro.params.seq) : NaN;
+const row = Number.isSafeInteger(seq) ? auditBySeq(seq) : null;
+if (!row) return new Response('Not found', { status: 404 });
+
+const e = row.event;
+const short = (iso: string) => iso.replace('T', ' ').slice(0, 23) + ' UTC';
+const pretty = JSON.stringify(e, null, 2);
+const details = Object.entries(e.details);
+---
+<AccountLayout title={`Event ${e.seq}`} eyebrow="Administration · Audit log" section="admin-audit">
+    <p slot="lede" class="lede"><a href="/admin/audit">&larr; Audit log</a></p>
+
+    <dl class="data-list">
+        <div><dt>Seq</dt><dd class="mono">{e.seq}</dd></div>
+        <div><dt>Time</dt><dd><time class="local-time" datetime={e.time} title={short(e.time)}>{short(e.time)}</time><span class="th-note mono">{e.time}</span></dd></div>
+        <div><dt>Action</dt><dd class="mono">{e.action}</dd></div>
+        <div><dt>Category</dt><dd>{e.category}</dd></div>
+        <div><dt>Outcome</dt><dd><span class:list={['pill', `pill--out-${e.outcome}`]}>{e.outcome}</span></dd></div>
+        <div><dt>Severity</dt><dd><span class:list={['pill', `pill--sev-${e.severity}`]}>{e.severity}</span></dd></div>
+        <div><dt>Actor</dt><dd>{e.actor.id ?? '—'}{e.actor.name && <> ({e.actor.name})</>}<span class="th-note">{e.actor.type}{e.actor.roles.length > 0 && <>, {e.actor.roles.join(', ')}</>}</span></dd></div>
+        <div><dt>Target</dt><dd>{e.target ? <>{e.target.name ?? e.target.id}<span class="th-note">{e.target.type} <span class="mono">{e.target.id}</span></span></> : '—'}</dd></div>
+        <div><dt>Source IP</dt><dd class="mono">{e.source?.ip ?? '—'}</dd></div>
+        <div><dt>User agent</dt><dd class="small">{e.source?.userAgent ?? '—'}</dd></div>
+        <div><dt>Reason</dt><dd>{e.reason ?? '—'}</dd></div>
+        <div><dt>Request</dt><dd class="mono small">{e.requestId ?? '—'}</dd></div>
+        <div><dt>Session</dt><dd class="mono small">{e.session ?? '—'}</dd></div>
+        <div><dt>Event id</dt><dd class="mono small">{e.id}</dd></div>
+        <div><dt>Product</dt><dd>{e.product} {e.version} <span class="muted small">on {e.host}</span></dd></div>
+        <div><dt>Previous hash</dt><dd class="mono small">{e.prevHash}</dd></div>
+        <div><dt>Hash</dt><dd class="mono small">{e.hash}</dd></div>
+    </dl>
+
+    {details.length > 0 && (
+        <>
+            <h2 class="section-gap">Details</h2>
+            <dl class="data-list">
+                {details.map(([k, v]) => (
+                    <div><dt>{k}</dt><dd>{v === null ? '—' : String(v)}</dd></div>
+                ))}
+            </dl>
+        </>
+    )}
+
+    <h2 class="section-gap">As stored</h2>
+    <pre class="audit-json"><code>{pretty}</code></pre>
+    <p class="muted small">The hash covers the line exactly as stored: <code class="mono">sha256(prevHash + "\n" + line without "hash")</code>.</p>
+</AccountLayout>
+
+<script is:inline>
+    for (const t of document.querySelectorAll('time.local-time')) {
+        const d = new Date(t.getAttribute('datetime'));
+        if (!Number.isNaN(d.getTime())) t.textContent = d.toLocaleString();
+    }
+</script>

@@ -1,0 +1,320 @@
+---
+export const prerender = false;
+
+import { CATEGORIES, OUTCOMES, SEVERITIES, describeVerify, type VerifyResult } from '../../../server/audit-format';
+import AccountLayout from '../../../layouts/AccountLayout.astro';
+import {
+    FILTER_KEYS,
+    actorOf,
+    createAuditToken,
+    filterFrom,
+    knownActions,
+    listAuditTokens,
+    queryAudit,
+    record,
+    revokeAuditToken,
+    verifyAudit,
+} from '../../../server/audit';
+import { outputStatus } from '../../../server/audit-outputs';
+import { config } from '../../../server/config';
+import { form, requireAdmin } from '../../../server/http';
+
+const admin = requireAdmin(Astro);
+if (admin instanceof Response) return admin;
+
+const PAGE_SIZE = 50;
+let error: string | null = null;
+let verified: VerifyResult | null = null;
+let newToken: { name: string; token: string } | null = null;
+let notice: string | null = null;
+
+if (Astro.request.method === 'POST') {
+    const get = await form(Astro);
+    switch (get('action')) {
+        case 'verify': {
+            verified = verifyAudit();
+            record({
+                action: 'audit.verified',
+                actor: actorOf(admin),
+                outcome: verified.intact ? 'success' : 'failure',
+                severity: verified.intact ? 'info' : 'alert',
+                reason: verified.intact ? null : verified.problem,
+                details: {
+                    result: verified.intact ? 'intact' : 'broken',
+                    brokenSeq: verified.brokenSeq,
+                    anchorSeq: verified.anchorSeq,
+                    anchorAccepted: verified.anchorAccepted,
+                    lastSeq: verified.lastSeq,
+                    checked: verified.checked,
+                },
+            });
+            break;
+        }
+        case 'token-create':
+            try {
+                const { token, record: t } = createAuditToken(admin, get('name'));
+                newToken = { name: t.name, token };
+            } catch (err) {
+                error = (err as Error).message;
+            }
+            break;
+        case 'token-revoke':
+            notice = revokeAuditToken(admin, get('id')) ? 'The token is revoked.' : null;
+            break;
+    }
+}
+
+const filter = filterFrom(Astro.url.searchParams);
+const page = Number(Astro.url.searchParams.get('page') ?? '1');
+const result = queryAudit(filter, page, PAGE_SIZE);
+const actions = knownActions();
+const outputs = outputStatus();
+const tokens = listAuditTokens();
+const retention = config().audit.retentionDays;
+
+const qs = (extra: Record<string, string | number>) => {
+    const p = new URLSearchParams();
+    for (const k of FILTER_KEYS) if (filter[k]) p.set(k, filter[k]!);
+    for (const [k, v] of Object.entries(extra)) p.set(k, String(v));
+    const s = p.toString();
+    return s ? `?${s}` : '';
+};
+const exportHref = (format: string) => `/admin/audit/export${qs({ format })}`;
+const short = (iso: string) => iso.replace('T', ' ').slice(0, 19) + ' UTC';
+const filtered = FILTER_KEYS.some((k) => filter[k]);
+---
+<AccountLayout title="Audit log" eyebrow="Administration" section="admin-audit" error={error}>
+    <p slot="lede" class="lede">Every sign-in, change and download, newest first. Events are hash-chained, so a changed or missing one shows up when you verify.</p>
+
+    {notice && <p class="notice" role="status">{notice}</p>}
+    {verified && (
+        <p class:list={['notice', { 'notice--error': !verified.intact }]} role="status">{describeVerify(verified)}</p>
+    )}
+    {newToken && (
+        <div class="callout callout--ok">
+            <p><strong>Token &ldquo;{newToken.name}&rdquo; created.</strong> Copy it now: it isn&rsquo;t shown again, and only its hash is kept.</p>
+            <p class="token-reveal">
+                <code class="mono" id="new-token">{newToken.token}</code>
+                <button class="btn btn--ghost" type="button" data-copy="new-token">Copy</button>
+            </p>
+        </div>
+    )}
+
+    <form class="filter-bar audit-filters" method="get">
+        <div class="field">
+            <label for="from">From <span class="optional">UTC</span></label>
+            <input id="from" name="from" type="datetime-local" value={filter.from ?? ''}>
+        </div>
+        <div class="field">
+            <label for="to">To <span class="optional">UTC</span></label>
+            <input id="to" name="to" type="datetime-local" value={filter.to ?? ''}>
+        </div>
+        <div class="field">
+            <label for="category">Category</label>
+            <select id="category" name="category">
+                <option value="">Any</option>
+                {CATEGORIES.map((c) => <option value={c} selected={c === filter.category}>{c}</option>)}
+            </select>
+        </div>
+        <div class="field">
+            <label for="action">Action</label>
+            <select id="action" name="action">
+                <option value="">Any</option>
+                {actions.map((a) => <option value={a} selected={a === filter.action}>{a}</option>)}
+            </select>
+        </div>
+        <div class="field">
+            <label for="outcome">Outcome</label>
+            <select id="outcome" name="outcome">
+                <option value="">Any</option>
+                {OUTCOMES.map((o) => <option value={o} selected={o === filter.outcome}>{o}</option>)}
+            </select>
+        </div>
+        <div class="field">
+            <label for="severity">Severity</label>
+            <select id="severity" name="severity">
+                <option value="">Any</option>
+                {SEVERITIES.map((s) => <option value={s} selected={s === filter.severity}>{s}</option>)}
+            </select>
+        </div>
+        <div class="field">
+            <label for="actor">Actor contains</label>
+            <input id="actor" name="actor" value={filter.actor ?? ''} placeholder="email or name">
+        </div>
+        <div class="field">
+            <label for="target">Target contains</label>
+            <input id="target" name="target" value={filter.target ?? ''} placeholder="account, license or email">
+        </div>
+        <div class="field">
+            <label for="ip">Source IP</label>
+            <input id="ip" name="ip" value={filter.ip ?? ''} class="mono">
+        </div>
+        <div class="field">
+            <label for="q">Text</label>
+            <input id="q" name="q" type="search" value={filter.q ?? ''} placeholder="anywhere in the event">
+        </div>
+        <button class="btn btn--primary" type="submit">Filter</button>
+        {filtered && <a class="btn btn--ghost" href="/admin/audit">Clear</a>}
+    </form>
+
+    <div class="audit-toolbar">
+        <p class="muted small">
+            {result.total.toLocaleString('en-US')} {result.total === 1 ? 'event' : 'events'}{filtered ? ' match' : ''}
+            {result.total > 0 && <> &middot; page {result.page} of {result.pages}</>}
+        </p>
+        <div class="btn-row">
+            <a class="btn btn--ghost" href={exportHref('csv')}>Export CSV</a>
+            <a class="btn btn--ghost" href={exportHref('ndjson')}>Export NDJSON</a>
+            <form method="post">
+                <input type="hidden" name="action" value="verify">
+                <button class="btn btn--ghost" type="submit">Verify integrity</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="table-scroll audit-scroll">
+        <table class="audit-table">
+            <caption class="visually-hidden">Audit events</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Time</th>
+                    <th scope="col">Severity</th>
+                    <th scope="col">Action</th>
+                    <th scope="col">Outcome</th>
+                    <th scope="col">Actor</th>
+                    <th scope="col">Target</th>
+                    <th scope="col">Source IP</th>
+                </tr>
+            </thead>
+            <tbody>
+                {result.rows.map(({ event: e }) => (
+                    <tr data-href={`/admin/audit/${e.seq}`}>
+                        <td class="nowrap"><a href={`/admin/audit/${e.seq}`}><time class="local-time" datetime={e.time} title={short(e.time)}>{short(e.time)}</time></a></td>
+                        <td><span class:list={['pill', `pill--sev-${e.severity}`]}>{e.severity}</span></td>
+                        <td class="mono small">{e.action}</td>
+                        <td><span class:list={['pill', `pill--out-${e.outcome}`]}>{e.outcome}</span></td>
+                        <td>{e.actor.id ?? e.actor.type}{e.actor.type !== 'user' && e.actor.id && <span class="muted small"> ({e.actor.type})</span>}</td>
+                        <td>{e.target ? <>{e.target.name ?? e.target.id} <span class="muted small">{e.target.type}</span></> : <span class="muted">&mdash;</span>}</td>
+                        <td class="mono small">{e.source?.ip ?? '—'}</td>
+                    </tr>
+                ))}
+                {result.rows.length === 0 && (
+                    <tr><td colspan="7" class="muted">No events{filtered ? ' match these filters' : ''}.</td></tr>
+                )}
+            </tbody>
+        </table>
+    </div>
+
+    {result.pages > 1 && (
+        <nav class="pager" aria-label="Pages">
+            {result.page > 1 ? <a class="btn btn--ghost" href={qs({ page: result.page - 1 })} rel="prev">Newer</a> : <span />}
+            <span class="muted small">Page {result.page} of {result.pages}</span>
+            {result.page < result.pages ? <a class="btn btn--ghost" href={qs({ page: result.page + 1 })} rel="next">Older</a> : <span />}
+        </nav>
+    )}
+
+    <h2 class="section-gap">Delivery</h2>
+    <p class="muted small">
+        The database is the record; these outputs copy it. Retention: {retention > 0 ? `${retention} days (ENS_AUDIT_RETENTION_DAYS), and only once every enabled forwarder has delivered an event` : 'events are kept forever (ENS_AUDIT_RETENTION_DAYS=0)'}.
+    </p>
+    <div class="table-scroll">
+        <table>
+            <caption class="visually-hidden">Audit outputs</caption>
+            <thead>
+                <tr>
+                    <th scope="col">Output</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Last delivered</th>
+                    <th scope="col">Backlog</th>
+                    <th scope="col">Last error</th>
+                </tr>
+            </thead>
+            <tbody>
+                {outputs.map((o) => (
+                    <tr>
+                        <th scope="row">{o.output}<span class="th-note">{o.detail}</span></th>
+                        <td><span class:list={['pill', o.enabled ? (o.lastError && o.lastErrorAt && (!o.lastAt || o.lastErrorAt > o.lastAt) ? 'pill--revoked' : 'pill--valid') : '']}>{o.enabled ? (o.lastError && o.lastErrorAt && (!o.lastAt || o.lastErrorAt > o.lastAt) ? 'Failing' : 'Enabled') : 'Off'}</span></td>
+                        <td>{o.lastSeq ? <>seq {o.lastSeq}{o.lastAt && <span class="th-note"><time class="local-time" datetime={o.lastAt} title={short(o.lastAt)}>{short(o.lastAt)}</time></span>}</> : <span class="muted">&mdash;</span>}</td>
+                        <td>{o.backlog ?? <span class="muted">&mdash;</span>}</td>
+                        <td>{o.lastError ? <>{o.lastError}{o.lastErrorAt && <span class="th-note"><time class="local-time" datetime={o.lastErrorAt} title={short(o.lastErrorAt)}>{short(o.lastErrorAt)}</time></span>}</> : <span class="muted">&mdash;</span>}</td>
+                    </tr>
+                ))}
+            </tbody>
+        </table>
+    </div>
+
+    <h2 class="section-gap">API tokens</h2>
+    <p class="muted small">
+        For a SIEM to pull events: <code class="mono">GET /api/audit/events?after=&lt;seq&gt;&amp;limit=500</code> with
+        <code class="mono">Authorization: Bearer &lt;token&gt;</code>. Tokens can only read the audit log.
+    </p>
+    <form method="post" class="filter-bar">
+        <input type="hidden" name="action" value="token-create">
+        <div class="field">
+            <label for="token-name">Name</label>
+            <input id="token-name" name="name" required maxlength="80" placeholder="e.g. Splunk production">
+        </div>
+        <button class="btn btn--primary" type="submit">Create token</button>
+    </form>
+    {tokens.length ? (
+        <div class="table-scroll">
+            <table>
+                <caption class="visually-hidden">Audit API tokens</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Name</th>
+                        <th scope="col">Created</th>
+                        <th scope="col">Last used</th>
+                        <th scope="col">Status</th>
+                        <th scope="col"><span class="visually-hidden">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {tokens.map((t) => (
+                        <tr>
+                            <th scope="row">{t.name}<span class="th-note mono">{t.id}</span></th>
+                            <td><time class="local-time" datetime={t.created_at} title={short(t.created_at)}>{short(t.created_at)}</time><span class="th-note">by {t.created_by}</span></td>
+                            <td>{t.last_used_at ? <time class="local-time" datetime={t.last_used_at} title={short(t.last_used_at)}>{short(t.last_used_at)}</time> : <span class="muted">Never</span>}</td>
+                            <td>{t.revoked_at ? <span class="pill pill--revoked">Revoked</span> : <span class="pill pill--valid">Active</span>}</td>
+                            <td class="num">
+                                {!t.revoked_at && (
+                                    <form method="post">
+                                        <input type="hidden" name="action" value="token-revoke">
+                                        <input type="hidden" name="id" value={t.id}>
+                                        <button class="link-button" type="submit">Revoke</button>
+                                    </form>
+                                )}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    ) : (
+        <p class="muted">No tokens yet.</p>
+    )}
+</AccountLayout>
+
+<script is:inline>
+    // Times are rendered in UTC; show them in the browser's time zone, UTC on hover.
+    for (const t of document.querySelectorAll('time.local-time')) {
+        const d = new Date(t.getAttribute('datetime'));
+        if (!Number.isNaN(d.getTime())) t.textContent = d.toLocaleString();
+    }
+    for (const row of document.querySelectorAll('tr[data-href]')) {
+        row.addEventListener('click', (e) => {
+            if (!e.target.closest('a, button')) location.href = row.dataset.href;
+        });
+    }
+    for (const b of document.querySelectorAll('[data-copy]')) {
+        b.addEventListener('click', async () => {
+            const text = document.getElementById(b.dataset.copy).textContent;
+            try {
+                await navigator.clipboard.writeText(text);
+                b.textContent = 'Copied';
+            } catch {
+                getSelection().selectAllChildren(document.getElementById(b.dataset.copy));
+            }
+        });
+    }
+</script>

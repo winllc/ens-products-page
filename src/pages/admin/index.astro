@@ -39,4 +39,5 @@ const unverified = accounts.filter((a) => !a.email_verified_at).length;
 
     <h2 class="section-gap">Recent activity</h2>
     <AuditList entries={auditFor({}, 30)} />
+    <p class="small"><a href="/admin/audit">The full audit log</a>: search, export, verify and SIEM delivery.</p>
 </AccountLayout>

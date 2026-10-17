@@ -4,6 +4,7 @@
  */
 
 import type { AstroGlobal, APIContext } from 'astro';
+import { accountTarget, actorOf, record, recordDenied, recordLockout } from './audit';
 import { config } from './config';
 import { allow } from './rate-limit';
 import { createSession, destroySession, SESSION_COOKIE, SESSION_HOURS } from './sessions';
@@ -23,6 +24,10 @@ export function startSession(ctx: Ctx, accountId: string): void {
 }
 
 export function endSession(ctx: Ctx): void {
+    const account = ctx.locals.account;
+    if (account) {
+        record({ action: 'auth.logout', actor: actorOf(account), target: accountTarget(account), account: account.id });
+    }
     destroySession(ctx.cookies.get(SESSION_COOKIE)?.value);
     ctx.cookies.delete(SESSION_COOKIE, { path: '/' });
 }
@@ -81,14 +86,25 @@ export function requireAccount(ctx: Ctx): Account | Response {
 export function requireAdmin(ctx: Ctx): Account | Response {
     const account = requireAccount(ctx);
     if (account instanceof Response) return account;
-    if (!isAdmin(account)) return new Response('Administrators only', { status: 403 });
+    if (!isAdmin(account)) {
+        recordDenied({ method: ctx.request.method, path: ctx.url.pathname, reason: 'admin_required' });
+        return new Response('Administrators only', { status: 403 });
+    }
     return account;
 }
 
-/** Rate limit by client address and an extra key (the email being tried, say). */
+/**
+ * Rate limit by client address and an extra key (the email being tried, say).
+ * A hit is recorded as auth.lockout (collapsed, so a script hammering the
+ * form makes a couple of events a minute, not one per try).
+ */
 export function limited(ctx: Ctx, bucket: string, extra: string, limit: number, minutes: number): boolean {
     const ip = ctx.clientAddress ?? 'unknown';
-    return !allow(`${bucket}:${ip}`, limit * 4, minutes * 60_000) || !allow(`${bucket}:${ip}:${extra}`, limit, minutes * 60_000);
+    const hit = !allow(`${bucket}:${ip}`, limit * 4, minutes * 60_000) || !allow(`${bucket}:${ip}:${extra}`, limit, minutes * 60_000);
+    if (hit) {
+        recordLockout({ bucket, attempted: extra || null, reason: `rate limited: more than ${limit} ${bucket} attempts in ${minutes} minutes` });
+    }
+    return hit;
 }
 
 export function dateOnly(iso: string | null): string {

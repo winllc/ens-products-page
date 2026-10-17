@@ -11,7 +11,7 @@ services:
       CERTALERT_DEMO_URL: "${CERTALERT_DEMO_URL:-}"
       MFA_PORTAL_DEMO_URL: "${MFA_PORTAL_DEMO_URL:-}"
       DIRECTORY_PORTAL_DEMO_URL: "${DIRECTORY_PORTAL_DEMO_URL:-}"
-      # Where nginx sends /account, /admin and /api/licensing.
+      # Where nginx sends /account, /admin, /api/licensing and /api/audit.
       LICENSING_UPSTREAM: "licensing:4321"
     depends_on:
       - licensing
@@ -32,10 +32,30 @@ services:
       SMTP_URL: "${SMTP_URL:-}"
       MAIL_FROM: "${MAIL_FROM:-ENS Solutions <licensing@ens-solutions.com>}"
       COOKIE_SECURE: "${COOKIE_SECURE:-}"
+      # Audit trail outputs (README, "Audit logging"). The database always
+      # has the full trail; these copy it to stdout, a file, Splunk or syslog.
+      ENS_AUDIT_STDOUT: "${ENS_AUDIT_STDOUT:-true}"
+      ENS_AUDIT_FILE: "${ENS_AUDIT_FILE:-}"
+      ENS_AUDIT_FILE_KEEP: "${ENS_AUDIT_FILE_KEEP:-30}"
+      ENS_AUDIT_SPLUNK_URL: "${ENS_AUDIT_SPLUNK_URL:-}"
+      ENS_AUDIT_SPLUNK_TOKEN: "${ENS_AUDIT_SPLUNK_TOKEN:-}"
+      ENS_AUDIT_SPLUNK_TOKEN_FILE: "${ENS_AUDIT_SPLUNK_TOKEN_FILE:-}"
+      ENS_AUDIT_SPLUNK_INDEX: "${ENS_AUDIT_SPLUNK_INDEX:-}"
+      ENS_AUDIT_SPLUNK_SOURCETYPE: "${ENS_AUDIT_SPLUNK_SOURCETYPE:-ens:audit}"
+      ENS_AUDIT_SPLUNK_INSECURE: "${ENS_AUDIT_SPLUNK_INSECURE:-false}"
+      ENS_AUDIT_SYSLOG_HOST: "${ENS_AUDIT_SYSLOG_HOST:-}"
+      ENS_AUDIT_SYSLOG_PORT: "${ENS_AUDIT_SYSLOG_PORT:-}"
+      ENS_AUDIT_SYSLOG_PROTOCOL: "${ENS_AUDIT_SYSLOG_PROTOCOL:-tcp}"
+      ENS_AUDIT_SYSLOG_FACILITY: "${ENS_AUDIT_SYSLOG_FACILITY:-local0}"
+      ENS_AUDIT_RETENTION_DAYS: "${ENS_AUDIT_RETENTION_DAYS:-0}"
     volumes:
       - licensing-data:/data
+      # For ENS_AUDIT_FILE, e.g. /var/log/ens/licensing-portal/audit.jsonl.
+      - ens-audit:/var/log/ens
     restart: unless-stopped
 
 volumes:
   # The licensing database, and the signing key if none is passed in. Back it up.
   licensing-data:
+  # The audit file (ENS_AUDIT_FILE), if used, for a forwarder to tail.
+  ens-audit:

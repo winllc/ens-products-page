@@ -35,7 +35,8 @@ server {
     resolver ${DNS_RESOLVER} valid=30s ipv6=off;
     set $licensing http://${LICENSING_UPSTREAM};
 
-    location ~ ^/(account|admin|api/licensing)(/|$) {
+    # /api/audit is the audit trail's pull API for SIEMs (bearer token).
+    location ~ ^/(account|admin|api/licensing|api/audit)(/|$) {
         proxy_pass $licensing;
         proxy_http_version 1.1;
         proxy_set_header Host              $host;
