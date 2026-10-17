@@ -17,8 +17,9 @@ licensing/
 
 1. A customer downloads a `.lic` file from their account (an evaluation, or
    a license ENS issued against their order).
-2. An administrator copies it to the server and sets `ENS_LICENSE_FILE`, or
-   uploads it on the application's *Administration → License* screen.
+2. An administrator copies it to the server and sets `ENS_LICENSE_FILE`,
+   passes it in `ENS_LICENSE`, or uploads it on the application's
+   *Administration → License* screen.
 3. The application checks the Ed25519 signature against the ENS public keys
    **built into it**, then decides what is unlocked. No network is involved,
    so this works the same on an air-gapped enclave.
@@ -103,6 +104,7 @@ licenses.install(uploadedText);                          // license screen uploa
 |---|---|---|
 | `ENS_LICENSE_FILE` | `/etc/ens/<product>.lic` | The license file. |
 | `ENS_LICENSE_STATE_DIR` | `/var/lib/ens/<product>` | Installation id and highest revisions. Put it on a persistent volume. If it is lost, the installation gets a new id and bound licenses must be re-bound. |
+| `ENS_LICENSE` | (unset) | The license itself rather than a path: the token between the file's `BEGIN` and `END` lines (line breaks allowed), the whole file, or the file base64-encoded (`base64 -w0 license.lic`). The first `current()` call installs it into `ENS_LICENSE_FILE` if no usable license is installed, or if it is a newer revision of the installed license. A different license installed another way, such as an upload, is kept. A license for another product or installation is refused. `environmentLicenseStatus()` says what happened, and the same line is logged through `System.Logger`. |
 
 ### Spring Boot
 
