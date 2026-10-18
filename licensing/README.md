@@ -55,7 +55,9 @@ and an algorithm its runtime has, trying Ed25519 first; blocks for different
 payloads make the file invalid. Libraries before 1.1.0, which the
 applications in the field run, read only the first block, so they accept a
 dual-signed file through its Ed25519 signature (CI checks this against the
-1.0.0 code). The payload is JSON (`src/lib/licensing/license.ts` has every
+1.0.0 code). From 1.1.0 the Java library refuses text longer than 64 KiB
+(`LicenseVerifier.MAX_FILE_CHARS`; a dual-signed file is about 3 kB) and finds
+the blocks in one pass, so a crafted upload can't make parsing slow. The payload is JSON (`src/lib/licensing/license.ts` has every
 field):
 
 | Field | Meaning in the application |
