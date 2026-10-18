@@ -163,6 +163,11 @@ public final class LicenseManager {
 
     /** The file text for a license given as the file, the bare token, or the file in base64. */
     static String licenseText(String value) throws LicenseException {
+        // The file in base64 is a third longer than the file; anything well past that is not a license.
+        if (value.length() > 2 * LicenseVerifier.MAX_FILE_CHARS) {
+            throw new LicenseException(LicenseException.Reason.MALFORMED, "ENS_LICENSE is not a license: longer than "
+                    + 2 * LicenseVerifier.MAX_FILE_CHARS + " characters");
+        }
         String v = value.trim();
         if (v.contains("-----BEGIN ENS LICENSE-----")) {
             return v.endsWith("\n") ? v : v + "\n";
@@ -256,6 +261,11 @@ public final class LicenseManager {
         }
         loadedModified = modified;
         try {
+            // Bytes, not characters: a license is ASCII apart from a name or two in its summary lines.
+            if (Files.size(licenseFile) > 4L * LicenseVerifier.MAX_FILE_CHARS) {
+                throw new LicenseException(LicenseException.Reason.MALFORMED,
+                        "Not an ENS license: larger than " + 4 * LicenseVerifier.MAX_FILE_CHARS + " bytes");
+            }
             loaded = verifier.verify(Files.readString(licenseFile, StandardCharsets.UTF_8));
             loadError = null;
         } catch (LicenseException e) {

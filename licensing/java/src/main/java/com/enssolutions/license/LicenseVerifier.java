@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -56,8 +55,13 @@ import java.util.regex.Pattern;
 public final class LicenseVerifier {
     public static final String FORMAT = "ens-license/1";
 
-    private static final Pattern ARMOR =
-            Pattern.compile("-----BEGIN ENS LICENSE-----(.*?)-----END ENS LICENSE-----", Pattern.DOTALL);
+    private static final String BEGIN = "-----BEGIN ENS LICENSE-----";
+    private static final String END = "-----END ENS LICENSE-----";
+    /**
+     * The longest file text read, in characters. A license is about 1.5 kB, or 3 kB signed twice; anything
+     * much longer is not one, and is refused before it is parsed.
+     */
+    public static final int MAX_FILE_CHARS = 64 * 1024;
     private static final Pattern PART = Pattern.compile("[A-Za-z0-9_-]+");
 
     /** The algorithms a license may be signed with, most preferred first. */
@@ -269,11 +273,25 @@ public final class LicenseVerifier {
                         + "; ask ENS Solutions for a license file with an ECDSA P-256 signature (" + unavailableBecause + ")");
     }
 
-    /** One token per armored block, or the whole text as one bare token. */
+    /**
+     * One token per armored block, or the whole text as one bare token. Blocks are found by scanning once,
+     * left to right, so the time taken grows with the text's length and no worse.
+     */
     private static List<Token> tokens(String fileText) throws LicenseException {
+        if (fileText.length() > MAX_FILE_CHARS) {
+            throw new LicenseException(LicenseException.Reason.MALFORMED,
+                    "Not an ENS license: longer than " + MAX_FILE_CHARS + " characters");
+        }
         List<String> raw = new ArrayList<>();
-        Matcher m = ARMOR.matcher(fileText);
-        while (m.find()) raw.add(m.group(1));
+        int from = 0;
+        while (true) {
+            int begin = fileText.indexOf(BEGIN, from);
+            if (begin < 0) break;
+            int end = fileText.indexOf(END, begin + BEGIN.length());
+            if (end < 0) break;
+            raw.add(fileText.substring(begin + BEGIN.length(), end));
+            from = end + END.length();
+        }
         if (raw.isEmpty()) raw.add(fileText);
         List<Token> tokens = new ArrayList<>();
         for (String r : raw) {
