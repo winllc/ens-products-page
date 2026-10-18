@@ -99,7 +99,7 @@ cd licensing/java && mvn install
 <dependency>
     <groupId>com.enssolutions</groupId>
     <artifactId>ens-license</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 
@@ -124,9 +124,127 @@ licenses.install(uploadedText);                          // license screen uploa
 
 | Environment | Default | |
 |---|---|---|
-| `ENS_LICENSE_FILE` | `/etc/ens/<product>.lic` | The license file. |
-| `ENS_LICENSE_STATE_DIR` | `/var/lib/ens/<product>` | Installation id and highest revisions. Put it on a persistent volume. If it is lost, the installation gets a new id and bound licenses must be re-bound. |
+| `ENS_LICENSE_FILE` | `/etc/ens/<product>.lic` | The license file. With the license state in the database (below), read once, to import an existing installation. |
+| `ENS_LICENSE_STATE_DIR` | `/var/lib/ens/<product>` | Installation id and highest revisions. Put it on a persistent volume. If it is lost, the installation gets a new id and bound licenses must be re-bound. With the license state in the database (below), likewise read once for the import. |
 | `ENS_LICENSE` | (unset) | The license itself rather than a path: the token between the file's `BEGIN` and `END` lines (line breaks allowed; for a file with two blocks, each block's token on its own line), the whole file, or the file base64-encoded (`base64 -w0 license.lic`, the safest choice). The first `current()` call installs it into `ENS_LICENSE_FILE` if no usable license is installed, or if it is a newer revision of the installed license. A different license installed another way, such as an upload, is kept. A license for another product or installation is refused. `environmentLicenseStatus()` says what happened, and the same line is logged through `System.Logger`. |
+
+### Several replicas: license state in the database
+
+`fromEnvironment(product, verifier, releaseDate)` keeps the license file and
+the state directory on a local volume, which ties an application to one
+replica: two replicas with their own volumes would show two installation ids
+and could disagree about revisions. From 1.2.0 the state can live in the
+application's own database instead, shared by every replica:
+
+```java
+LicenseManager licenses = LicenseManager.fromEnvironment(
+        "certalert",
+        LicenseVerifier.trusting(EnsKeys.PUBLIC_KEYS),
+        Optional.of(buildDate),
+        dataSource);                                     // the application's pooled DataSource
+```
+
+That is `new LicenseManager(product, verifier, store, releaseDate, clock,
+environmentLicense)` with
+`new JdbcLicenseStore(dataSource, product).importingFileStateOnFirstUse(licenseFile, stateDir)`,
+for an application that wants to put it together itself. Everything else
+(`current()`, `install(...)`, `installationId()`, `ENS_LICENSE`) works as
+before. `licenseLocation()` says where the license is kept (a path, or "the
+database"); `licenseFile()` is null in database mode.
+
+- **One installation id.** It is inserted only if there is none, so replicas
+  starting together all get the same one.
+- **Revisions only go up.** A revision is raised with
+  `UPDATE ... SET revision = ? WHERE ... AND revision < ?` (inserted if
+  absent), so concurrent raises end at the highest and nothing lowers it. An
+  older revision uploaded on any replica is refused as `SUPERSEDED`.
+- **Changes on another replica.** Each `LicenseManager` asks the database
+  whether the license changed (one indexed `SELECT` of a version number) at
+  most every 5 seconds (`JdbcLicenseStore.DEFAULT_RECHECK_INTERVAL`; the
+  three-argument constructor takes another interval), so an upload on one
+  replica is in force everywhere within that time, without a query per
+  request. The replica that took the upload has it at once.
+- **A database outage** for a moment (a fail-over) keeps the license read last
+  in force and logs a warning; an upload then fails with an error, and works
+  again once the database is back.
+- **Plain JDBC**, no Spring and no new dependency (`java.sql` only). Each call
+  borrows a connection in auto-commit mode and returns it: give it the pooled
+  `DataSource` itself (what Spring Boot's `DataSource` bean is), not a
+  transaction-bound proxy.
+- The 64 KiB cap applies as before; the database store refuses to write a
+  longer text, and the FIPS P-256 co-signature behaviour is unchanged.
+
+#### Tables
+
+The library never creates tables: add them with the application's
+migrations (Flyway, e.g. `V<n>__ens_license_state.sql`). The same statements
+are in the jar (`com/enssolutions/license/schema/{postgresql,mysql,h2}.sql`,
+or `JdbcLicenseStore.Dialect.POSTGRESQL.ddl()` and so on), and the tests
+create their tables from those files. PostgreSQL:
+
+```sql
+CREATE TABLE ens_license_installation (
+    product          VARCHAR(64)  NOT NULL PRIMARY KEY,
+    installation_id  VARCHAR(32)  NOT NULL,
+    created_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE TABLE ens_license_file (
+    product          VARCHAR(64)  NOT NULL PRIMARY KEY,
+    license_text     TEXT         NOT NULL,
+    license_version  BIGINT       NOT NULL,
+    updated_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE TABLE ens_license_revision (
+    product          VARCHAR(64)  NOT NULL,
+    license_id       VARCHAR(128) NOT NULL,
+    revision         INTEGER      NOT NULL,
+    updated_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    PRIMARY KEY (product, license_id)
+);
+```
+
+MySQL 8.4: the same, with `license_text MEDIUMTEXT`, `DATETIME` for the
+timestamps, and `ENGINE=InnoDB DEFAULT CHARSET=utf8mb4` after each table.
+H2 2.x: the same, with `license_text CLOB`.
+
+| Table | Rows |
+|---|---|
+| `ens_license_installation` | One per product: the installation id. |
+| `ens_license_file` | One per product: the installed license file's text, and a version raised on every write. |
+| `ens_license_revision` | One per product and license id: the highest revision accepted. |
+
+Back these tables up with the rest of the database; losing
+`ens_license_installation` means a new installation id, as losing the state
+directory did.
+
+#### Upgrading an existing installation
+
+No manual step. On its first use against tables with no installation id for
+the product, the manager imports the file state it finds at
+`ENS_LICENSE_STATE_DIR` and `ENS_LICENSE_FILE`: the highest revisions, the
+license file (unless the database already has one), and last the
+installation id, so a license bound to that id keeps working. Each step only
+inserts what is absent or raises a revision, so replicas starting together
+agree, and an interrupted import finishes on the next start. Once the database
+has an installation id, the files are never read again; the volume can be
+removed after the first start (keep a copy until then). An application that
+builds its own store can call `JdbcLicenseStore.importFileState(licenseFile,
+stateDir)` directly; it returns whether an installation id was imported and
+logs what it copied.
+
+So for an upgrade: release the application with the migration above and the
+four-argument `fromEnvironment`, keep the license volume mounted for that
+first start, then scale out. A license given in `ENS_LICENSE` is installed
+into the database as it was into the file.
+
+Tested with Testcontainers on PostgreSQL 17 and MySQL 8.4, and on H2 in its
+own, PostgreSQL and MySQL modes, each with the DDL for that database: one
+installation id from 16 concurrent replicas, concurrent revision raises that
+never go back, two managers on one database, the import, and an outage. Those
+two Testcontainers suites need Docker; without it they are skipped on a
+developer machine and fail on CI (when `CI` is set).
 
 ### Spring Boot
 
@@ -134,7 +252,8 @@ licenses.install(uploadedText);                          // license screen uploa
 compiles against Spring Boot 3.5 and 4.1):
 
 - `LicensingConfiguration`: the `LicenseManager` bean, with the release date
-  from `build-info`, and the interceptor registration.
+  from `build-info` and the license state in the application's `DataSource`
+  (add the migration above), and the interceptor registration.
 - `LicenseInterceptor`: unlicensed → redirect to the license screen;
   read-only → refuse anything but GET/HEAD; `@RequiresFeature` → 403 unless
   unlocked. Puts the check in the `license` request attribute for views.
