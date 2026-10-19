@@ -18,7 +18,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 
-COPY astro.config.mjs tsconfig.json ./
+COPY astro.config.mjs tsconfig.json vitest.config.ts ./
 COPY public/ public/
 COPY src/ src/
 COPY licensing/fixtures/ licensing/fixtures/
