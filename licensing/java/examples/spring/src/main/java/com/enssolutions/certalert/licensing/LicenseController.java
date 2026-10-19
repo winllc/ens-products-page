@@ -33,7 +33,7 @@ public class LicenseController {
     String show(Model model) {
         model.addAttribute("check", licenses.current());
         model.addAttribute("installationId", licenses.installationId());
-        model.addAttribute("licenseFile", licenses.licenseFile());
+        model.addAttribute("licenseFile", licenses.licenseLocation()); // a path, or "the database"
         return "admin/license";
     }
 
