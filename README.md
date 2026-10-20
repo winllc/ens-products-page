@@ -157,6 +157,7 @@ All in the `licensing` service's environment (see `.env.example`):
 | `LICENSE_SIGNING_KEY_P256` | Optional ECDSA P-256 private key, from `npm run license -- keygen --alg p256`. **A secret.** Set, every license is also signed with it, so it verifies on Java in FIPS mode, which has no Ed25519 (`licensing/README.md`, "FIPS 140-3"). Never generated. |
 | `LICENSE_SIGNING_KEY_P256_FILE` | Or a path to it. |
 | `LICENSE_TRUSTED_KEYS` | Retired public keys (Ed25519 or ECDSA P-256) still accepted by *Check a file*, after a key rotation. |
+| `MAILJET_API_KEY`, `MAILJET_API_SECRET`, `MAILJET_API_URL` | Send mail through the Mailjet HTTP API (Send API v3.1) instead of SMTP; takes precedence over `SMTP_URL`. |
 | `SMTP_URL`, `MAIL_FROM` | Outgoing mail for confirmations and password resets. Unset, messages are written to the service's log. |
 | `DATA_DIR` | `/data` in the image: `licensing.sqlite` and, if generated, the signing key. |
 

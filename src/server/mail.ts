@@ -6,6 +6,7 @@
 
 import nodemailer, { type Transporter } from 'nodemailer';
 import { config } from './config';
+import { sendViaMailjet } from './mailjet';
 
 let transport: Transporter | null = null;
 
@@ -24,8 +25,12 @@ export async function sendMail(mail: Mail): Promise<void> {
         outbox.shift();
     }
     const c = config();
+    if (c.mailjet) {
+        await sendViaMailjet(c.mailjet, c.mailFrom, mail);
+        return;
+    }
     if (!c.smtpUrl) {
-        console.info(`licensing: email to ${mail.to} (no SMTP_URL configured)\nSubject: ${mail.subject}\n\n${mail.text}\n`);
+        console.info(`licensing: email to ${mail.to} (no SMTP_URL or MAILJET_API_KEY configured)\nSubject: ${mail.subject}\n\n${mail.text}\n`);
         return;
     }
     transport ??= nodemailer.createTransport(c.smtpUrl);

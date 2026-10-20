@@ -20,6 +20,9 @@
  *                               administrators once their email is verified
  *   SMTP_URL                    e.g. smtps://user:pass@mail.example.com:465.
  *                               Unset: emails are written to the log instead
+ *   MAILJET_API_KEY,            Send through the Mailjet HTTP API instead of SMTP
+ *   MAILJET_API_SECRET          (takes precedence over SMTP_URL when both set)
+ *   MAILJET_API_URL             default https://api.mailjet.com
  *   MAIL_FROM                   default "ENS Solutions <licensing@ens-solutions.com>"
  *   COOKIE_SECURE               "false" to allow sessions over plain HTTP
  *                               (local development only)
@@ -75,6 +78,7 @@ export interface Config {
     trustedKeys: string[];
     adminEmails: Set<string>;
     smtpUrl: string | null;
+    mailjet: { apiKey: string; apiSecret: string; apiUrl: string } | null;
     mailFrom: string;
     cookieSecure: boolean;
     audit: AuditConfig;
@@ -106,6 +110,14 @@ export function config(): Config {
         trustedKeys: list(env.LICENSE_TRUSTED_KEYS),
         adminEmails: new Set(list(env.ADMIN_EMAILS).map((e) => e.toLowerCase())),
         smtpUrl: env.SMTP_URL?.trim() || null,
+        mailjet:
+            env.MAILJET_API_KEY?.trim() && env.MAILJET_API_SECRET?.trim()
+                ? {
+                      apiKey: env.MAILJET_API_KEY.trim(),
+                      apiSecret: env.MAILJET_API_SECRET.trim(),
+                      apiUrl: (env.MAILJET_API_URL?.trim() || 'https://api.mailjet.com').replace(/\/+$/, ''),
+                  }
+                : null,
         mailFrom: env.MAIL_FROM ?? 'ENS Solutions <licensing@ens-solutions.com>',
         cookieSecure: env.COOKIE_SECURE ? env.COOKIE_SECURE !== 'false' : publicUrl.startsWith('https:'),
         audit: auditConfig(env),
