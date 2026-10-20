@@ -16,7 +16,7 @@
  */
 
 const PREFIXES = ['LICENSE_', 'ENS_', 'SMTP_', 'MAIL_'];
-const NAMES = ['PUBLIC_URL', 'ADMIN_EMAILS', 'COOKIE_SECURE', 'DATA_DIR', 'LICENSING_DB', 'DOCS_URL'];
+const NAMES = ['PUBLIC_URL', 'ADMIN_EMAILS', 'REQUIRE_EMAIL_VERIFICATION', 'COOKIE_SECURE', 'DATA_DIR', 'LICENSING_DB', 'DOCS_URL'];
 
 for (const name of Object.keys(process.env)) {
     if (NAMES.includes(name) || PREFIXES.some((p) => name.startsWith(p))) {

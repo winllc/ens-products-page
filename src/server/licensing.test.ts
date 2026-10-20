@@ -92,6 +92,19 @@ describe('evaluation licenses', () => {
         expect(() => licenses.issueEvaluation(a!, 'certalert')).toThrow(/Confirm your email/);
     });
 
+    it('can allow unverified accounts to take licenses when configured', async () => {
+        process.env.REQUIRE_EMAIL_VERIFICATION = 'false';
+        resetConfigForTests();
+        try {
+            const a = await accounts.signUp({ email: 'new@example.gov', password, name: 'New' });
+            expect(a!.email_verified_at).toBeNull();
+            expect(licenses.issueEvaluation(a!, 'certalert').status).toBe('valid');
+        } finally {
+            delete process.env.REQUIRE_EMAIL_VERIFICATION;
+            resetConfigForTests();
+        }
+    });
+
     it('issues one per product, as a file the applications accept', async () => {
         const a = await verifiedAccount();
         const l = licenses.issueEvaluation(a, 'certalert');

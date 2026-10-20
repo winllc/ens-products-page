@@ -152,6 +152,7 @@ All in the `licensing` service's environment (see `.env.example`):
 |---|---|
 | `PUBLIC_URL` | The address customers use, e.g. `https://products.ens-solutions.com`. Links in emails start with it; `https:` also makes session cookies Secure. **Set it.** |
 | `ADMIN_EMAILS` | Comma-separated. These accounts become administrators once they confirm their email. This is how the first administrator is made; others can then be promoted at `/admin/accounts`. |
+| `REQUIRE_EMAIL_VERIFICATION` | `true` by default. Set to `false` to let unverified accounts take licenses. |
 | `LICENSE_SIGNING_KEY` | The Ed25519 private key, from `npm run license -- keygen` (PEM, or the one-line form it prints). **A secret.** Unset, a key is generated in the data volume on first start, with a warning in the log. |
 | `LICENSE_SIGNING_KEY_FILE` | Or a path to it, e.g. a Docker secret. |
 | `LICENSE_SIGNING_KEY_P256` | Optional ECDSA P-256 private key, from `npm run license -- keygen --alg p256`. **A secret.** Set, every license is also signed with it, so it verifies on Java in FIPS mode, which has no Ed25519 (`licensing/README.md`, "FIPS 140-3"). Never generated. |
