@@ -28,6 +28,7 @@ import {
 } from '../lib/licensing/license';
 import { isAdmin, type Account } from './accounts';
 import { audit } from './audit';
+import { config } from './config';
 import { db, nowIso, transaction } from './db';
 import { signingKeys, trustedKeys } from './keys';
 
@@ -159,7 +160,7 @@ function payloadFor(req: IssueRequest): LicensePayload {
 }
 
 function requireVerified(owner: Account): void {
-    if (!owner.email_verified_at) {
+    if (config().requireEmailVerification && !owner.email_verified_at) {
         throw new LicenseActionError('Confirm your email address before taking a license');
     }
     if (owner.disabled_at) {

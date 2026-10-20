@@ -8,6 +8,7 @@ import { products } from '../../data/products';
 import AccountLayout from '../../layouts/AccountLayout.astro';
 import { formatCount } from '../../lib/pricing';
 import { auditFor } from '../../server/audit';
+import { config } from '../../server/config';
 import { requireAccount } from '../../server/http';
 import { canTakeEvaluation, licensesOf } from '../../server/licenses';
 import AuditList from '../../components/licensing/AuditList.astro';
@@ -17,6 +18,7 @@ if (account instanceof Response) return account;
 
 const licenses = licensesOf(account.id);
 const verified = account.email_verified_at !== null;
+const requireEmailVerification = config().requireEmailVerification;
 const evaluation = editions.evaluation;
 const activity = auditFor({ account: account.id, customer: true }, 15);
 ---
@@ -25,7 +27,7 @@ const activity = auditFor({ account: account.id, customer: true }, 15);
         {account.name}{account.organization && <>, {account.organization}</>}
     </p>
 
-    {!verified && (
+    {!verified && requireEmailVerification && (
         <div class="callout callout--warn">
             <p>
                 <strong>Confirm your email address to take licenses.</strong> We sent a link to
@@ -51,7 +53,7 @@ const activity = auditFor({ account: account.id, customer: true }, 15);
     </p>
     <div class="card-grid card-grid--pairs">
         {products.map((p) => {
-            const available = verified && canTakeEvaluation(account, p.id);
+            const available = (!requireEmailVerification || verified) && canTakeEvaluation(account, p.id);
             const taken = !canTakeEvaluation(account, p.id);
             return (
                 <article class="card">

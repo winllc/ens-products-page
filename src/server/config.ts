@@ -18,6 +18,7 @@
  *                               (Ed25519 or ECDSA P-256)
  *   ADMIN_EMAILS                Comma-separated; these accounts are
  *                               administrators once their email is verified
+ *   REQUIRE_EMAIL_VERIFICATION  "false" to let unverified accounts take licenses
  *   SMTP_URL                    e.g. smtps://user:pass@mail.example.com:465.
  *                               Unset: emails are written to the log instead
  *   MAIL_FROM                   default "ENS Solutions <licensing@ens-solutions.com>"
@@ -74,6 +75,7 @@ export interface Config {
     signingKeyP256File: string | null;
     trustedKeys: string[];
     adminEmails: Set<string>;
+    requireEmailVerification: boolean;
     smtpUrl: string | null;
     mailFrom: string;
     cookieSecure: boolean;
@@ -105,6 +107,7 @@ export function config(): Config {
         signingKeyP256File: env.LICENSE_SIGNING_KEY_P256_FILE?.trim() || null,
         trustedKeys: list(env.LICENSE_TRUSTED_KEYS),
         adminEmails: new Set(list(env.ADMIN_EMAILS).map((e) => e.toLowerCase())),
+        requireEmailVerification: flag(env.REQUIRE_EMAIL_VERIFICATION, true),
         smtpUrl: env.SMTP_URL?.trim() || null,
         mailFrom: env.MAIL_FROM ?? 'ENS Solutions <licensing@ens-solutions.com>',
         cookieSecure: env.COOKIE_SECURE ? env.COOKIE_SECURE !== 'false' : publicUrl.startsWith('https:'),
