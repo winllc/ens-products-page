@@ -118,7 +118,7 @@ export function config(): Config {
                       apiUrl: (env.MAILJET_API_URL?.trim() || 'https://api.mailjet.com').replace(/\/+$/, ''),
                   }
                 : null,
-        mailFrom: env.MAIL_FROM ?? 'ENS Solutions <licensing@ens-solutions.com>',
+        mailFrom: env.MAIL_FROM?.trim() || 'ENS Solutions <licensing@ens-solutions.com>',
         cookieSecure: env.COOKIE_SECURE ? env.COOKIE_SECURE !== 'false' : publicUrl.startsWith('https:'),
         audit: auditConfig(env),
     };
