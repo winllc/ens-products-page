@@ -13,6 +13,7 @@
     "check": "astro check",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:releases": "bash scripts/releases-minio-test.sh",
     "verify": "npm run check && npm test && npm run build",
     "license": "node scripts/license.mjs",
     "start": "node dist/server/entry.mjs"
@@ -26,6 +27,8 @@
   },
   "dependencies": {
     "@astrojs/node": "^11.1.7",
+    "@aws-sdk/client-s3": "3.1146.0",
+    "@aws-sdk/s3-request-presigner": "3.1146.0",
     "astro": "^7.3.8",
     "nodemailer": "^10.1.1"
   }

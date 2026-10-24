@@ -207,6 +207,25 @@ export function issueEvaluation(account: Account, product: ProductId, installati
     });
 }
 
+/* ---- Customer: release downloads ---------------------------------------- */
+
+/**
+ * Whether an account may download a product's releases (the downloads page,
+ * and every download link): administrators always; anyone else while they
+ * hold at least one license for that product that isn't revoked.
+ * Evaluations count, and so do expired licenses: the applications enforce
+ * expiry and maintenance themselves. A disabled account gets nothing (and
+ * can't sign in; nor can an unverified one, which holds no licenses anyway).
+ */
+export function canDownload(account: Account | null | undefined, product: ProductId): boolean {
+    if (!account || account.disabled_at) return false;
+    if (isAdmin(account)) return true;
+    return (
+        db().prepare('SELECT 1 FROM licenses WHERE account_id = ? AND product = ? AND revoked_at IS NULL LIMIT 1').get(account.id, product) !==
+        undefined
+    );
+}
+
 /* ---- Customer: managing their licenses ---------------------------------- */
 
 export function downloadLicense(actor: Account, license: License): { filename: string; content: string } {

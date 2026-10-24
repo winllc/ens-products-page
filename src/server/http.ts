@@ -56,6 +56,7 @@ export const notices = {
     'password-changed': 'Your password is changed, and every other session is signed out.',
     'profile-saved': 'Your details are saved. Licenses you take from now on use them.',
     'evaluation-issued': 'Your evaluation license is ready to download.',
+    'evaluation-downloads': 'Your evaluation license is issued: its releases are below, and the license file is on the Licenses page.',
     'license-updated': 'The license is updated. Download the new file and install it in place of the old one.',
     'license-issued': 'The license is issued.',
     'license-revoked': 'The license is revoked.',

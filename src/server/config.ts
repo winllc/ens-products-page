@@ -39,6 +39,21 @@
  *   ENS_AUDIT_SYSLOG_PROTOCOL   udp, tcp or tls (default tcp)
  *   ENS_AUDIT_SYSLOG_FACILITY   default local0
  *   ENS_AUDIT_RETENTION_DAYS    0 (default) keeps events forever
+ *
+ * Release downloads (see README, "Release downloads"). Credentials come from
+ * the AWS SDK's standard chain (AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY,
+ * or an instance or task role), never from here:
+ *
+ *   RELEASES_S3_BUCKET          The private bucket CI publishes releases to.
+ *                               Unset: downloads are off
+ *   RELEASES_S3_REGION          default us-east-1 (auto for R2)
+ *   RELEASES_S3_ENDPOINT        For S3-compatible stores (R2, MinIO), e.g.
+ *                               https://<account>.r2.cloudflarestorage.com
+ *   RELEASES_S3_FORCE_PATH_STYLE "true" for path-style URLs (MinIO)
+ *   RELEASES_URL_TTL            Seconds a download link works (default 300)
+ *   RELEASES_LISTING_TTL        Seconds a bucket listing is cached (default 300)
+ *   RELEASES_GPG_PUBLIC_KEY_URL Where customers get the key SHA256SUMS.asc is
+ *                               signed with; linked from the downloads page
  */
 
 import { readFileSync } from 'node:fs';
@@ -64,6 +79,18 @@ export interface AuditConfig {
     retentionDays: number;
 }
 
+export interface ReleasesConfig {
+    bucket: string;
+    region: string;
+    endpoint: string | null;
+    forcePathStyle: boolean;
+    /** Seconds. */
+    urlTtl: number;
+    /** Seconds. */
+    listingTtl: number;
+    gpgPublicKeyUrl: string | null;
+}
+
 export interface Config {
     publicUrl: string;
     dataDir: string;
@@ -78,6 +105,8 @@ export interface Config {
     mailFrom: string;
     cookieSecure: boolean;
     audit: AuditConfig;
+    /** Null when RELEASES_S3_BUCKET is unset: no downloads. */
+    releases: ReleasesConfig | null;
 }
 
 const list = (v: string | undefined) =>
@@ -109,6 +138,7 @@ export function config(): Config {
         mailFrom: env.MAIL_FROM ?? 'ENS Solutions <licensing@ens-solutions.com>',
         cookieSecure: env.COOKIE_SECURE ? env.COOKIE_SECURE !== 'false' : publicUrl.startsWith('https:'),
         audit: auditConfig(env),
+        releases: releasesConfig(env),
     };
     return cached;
 }
@@ -153,6 +183,27 @@ function auditConfig(env: NodeJS.ProcessEnv): AuditConfig {
               }
             : null,
         retentionDays: int(env.ENS_AUDIT_RETENTION_DAYS, 0),
+    };
+}
+
+/** A presigned URL can't outlive seven days (SigV4). */
+const MAX_URL_TTL = 7 * 24 * 60 * 60;
+
+function releasesConfig(env: NodeJS.ProcessEnv): ReleasesConfig | null {
+    const bucket = env.RELEASES_S3_BUCKET?.trim();
+    if (!bucket) return null;
+    const seconds = (v: string | undefined, fallback: number) => {
+        const n = int(v, fallback);
+        return n > 0 ? n : fallback;
+    };
+    return {
+        bucket,
+        region: env.RELEASES_S3_REGION?.trim() || 'us-east-1',
+        endpoint: env.RELEASES_S3_ENDPOINT?.trim().replace(/\/+$/, '') || null,
+        forcePathStyle: flag(env.RELEASES_S3_FORCE_PATH_STYLE, false),
+        urlTtl: Math.min(seconds(env.RELEASES_URL_TTL, 300), MAX_URL_TTL),
+        listingTtl: seconds(env.RELEASES_LISTING_TTL, 300),
+        gpgPublicKeyUrl: env.RELEASES_GPG_PUBLIC_KEY_URL?.trim() || null,
     };
 }
 

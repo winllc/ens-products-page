@@ -12,10 +12,11 @@
  * dual-signed. Each broke the image build.
  *
  * Prefixes catch settings added later; WRITE_FIXTURES is a test switch and
- * stays.
+ * stays. AWS_ goes too, so no test can reach a real release bucket with the
+ * shell's credentials.
  */
 
-const PREFIXES = ['LICENSE_', 'ENS_', 'SMTP_', 'MAIL_'];
+const PREFIXES = ['LICENSE_', 'ENS_', 'SMTP_', 'MAIL_', 'RELEASES_', 'AWS_'];
 const NAMES = ['PUBLIC_URL', 'ADMIN_EMAILS', 'COOKIE_SECURE', 'DATA_DIR', 'LICENSING_DB', 'DOCS_URL'];
 
 for (const name of Object.keys(process.env)) {

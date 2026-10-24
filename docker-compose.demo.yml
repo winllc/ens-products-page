@@ -54,6 +54,17 @@ services:
       SMTP_URL: "${SMTP_URL:-}"
       MAIL_FROM: "${MAIL_FROM:-ENS Solutions <licensing@ens-solutions.com>}"
       DOCS_URL: "${DOCS_URL:-}"
+      # Release downloads (README, "Release downloads"). Read-only credentials;
+      # leave the keys empty to use an instance or task role.
+      RELEASES_S3_BUCKET: "${RELEASES_S3_BUCKET:-}"
+      RELEASES_S3_REGION: "${RELEASES_S3_REGION:-us-east-1}"
+      RELEASES_S3_ENDPOINT: "${RELEASES_S3_ENDPOINT:-}"
+      RELEASES_S3_FORCE_PATH_STYLE: "${RELEASES_S3_FORCE_PATH_STYLE:-false}"
+      RELEASES_URL_TTL: "${RELEASES_URL_TTL:-300}"
+      RELEASES_LISTING_TTL: "${RELEASES_LISTING_TTL:-300}"
+      RELEASES_GPG_PUBLIC_KEY_URL: "${RELEASES_GPG_PUBLIC_KEY_URL:-}"
+      AWS_ACCESS_KEY_ID: "${AWS_ACCESS_KEY_ID:-}"
+      AWS_SECRET_ACCESS_KEY: "${AWS_SECRET_ACCESS_KEY:-}"
       # Audit trail outputs (README, "Audit logging"). The database always
       # has the full trail; these copy it to stdout, a file, Splunk or syslog.
       ENS_AUDIT_STDOUT: "${ENS_AUDIT_STDOUT:-true}"

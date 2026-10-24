@@ -63,7 +63,8 @@ export type AuditAction =
     | 'license.renewed'
     | 'license.revoked'
     | 'license.reinstated'
-    | 'license.resigned';
+    | 'license.resigned'
+    | 'release.downloaded';
 
 /* ---- Request context ------------------------------------------------------ */
 
@@ -410,9 +411,9 @@ interface Row {
     hash: string;
 }
 
-/** What a customer sees in their own history: their account and licenses, sign-ins. */
+/** What a customer sees in their own history: their account, licenses and downloads, sign-ins. */
 const CUSTOMER_VISIBLE = (Object.keys(ACTIONS) as string[]).filter(
-    (a) => a.startsWith('account.') || a.startsWith('license.') || a.startsWith('auth.'),
+    (a) => a.startsWith('account.') || a.startsWith('license.') || a.startsWith('release.') || a.startsWith('auth.'),
 );
 
 export function labelFor(action: string, outcome: Outcome): string {
