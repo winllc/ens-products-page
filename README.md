@@ -44,6 +44,7 @@ npm run check      # TypeScript and Astro type check
 npm run build      # static pages into dist/client/, the licensing server into dist/server/
 npm run verify     # all three
 npm start          # run the built licensing server (it serves the static pages too)
+npm run test:releases  # release downloads end to end against MinIO (needs Docker)
 ```
 
 `npm run dev` runs the licensing pages as well, with a database and a
@@ -60,8 +61,9 @@ markers are only resolved by the container (see [Demo links](#demo-links)).
 The Java license verifier has its own build: `cd licensing/java && mvn test`.
 
 CI (`.github/workflows/ci.yml`) runs the type check, the tests, the build, the
-container's render step, a start-up check of the licensing service, both
-Docker images and the Java verifier's tests on every pull request.
+container's render step, a start-up check of the licensing service, the
+release downloads test against MinIO, both Docker images and the Java
+verifier's tests on every pull request.
 
 ---
 
@@ -136,6 +138,7 @@ service, and every change is in an audit log customers and staff can read.
 | Sign up, confirm email, reset password | Find accounts and licenses; renewals due in 60 days |
 | Download evaluation licenses | Issue subscription, perpetual, pilot or evaluation licenses with order reference |
 | Download any license they hold | Renew (new expiry, or new end of maintenance) |
+| Download releases of the products they're licensed for | Download releases of every product |
 | Bind a license to an installation id | Revoke and reinstate |
 | Name licenses; check a license file | Make administrators; disable accounts |
 | Their own activity history | Full audit log: search, export, verify, SIEM delivery |
@@ -159,6 +162,14 @@ All in the `licensing` service's environment (see `.env.example`):
 | `LICENSE_TRUSTED_KEYS` | Retired public keys (Ed25519 or ECDSA P-256) still accepted by *Check a file*, after a key rotation. |
 | `SMTP_URL`, `MAIL_FROM` | Outgoing mail for confirmations and password resets. Unset, messages are written to the service's log. |
 | `DATA_DIR` | `/data` in the image: `licensing.sqlite` and, if generated, the signing key. |
+| `RELEASES_S3_BUCKET` | The private bucket the applications' CI publishes releases to. Unset, downloads are off and the downloads page says they aren't available yet. See [Release downloads](#release-downloads). |
+| `RELEASES_S3_REGION` | Default `us-east-1`; `auto` for Cloudflare R2. |
+| `RELEASES_S3_ENDPOINT` | Only for S3-compatible stores: R2 (`https://<account-id>.r2.cloudflarestorage.com`) or MinIO (`http://minio:9000`). |
+| `RELEASES_S3_FORCE_PATH_STYLE` | `true` for MinIO. Default `false`. |
+| `RELEASES_URL_TTL` | Seconds a download link works. Default `300`. |
+| `RELEASES_LISTING_TTL` | Seconds a bucket listing is cached in memory. Default `300`: a new release shows within five minutes. |
+| `RELEASES_GPG_PUBLIC_KEY_URL` | Where customers get the key `SHA256SUMS.asc` is signed with; linked from the downloads page. |
+| `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` | The bucket's read-only credentials. **A secret.** Leave both empty to use an instance or task role: they come from the AWS SDK's standard chain, never from the database. |
 
 Back up the `licensing-data` volume, and above all the signing keys: if one
 is lost, existing files still verify but no new license can be signed for
@@ -176,10 +187,87 @@ applications that only trust it.
 - nginx overwrites `X-Forwarded-For` with the real client address; the
   service trusts forwarded headers because only nginx can reach it. Don't
   publish its port.
+- Release files never pass through the service. A download is a `302` to a
+  presigned S3 URL that works for `RELEASES_URL_TTL` seconds; entitlement is
+  checked again on every download.
 - The signing key never leaves the service. `GET /api/licensing/keys` serves
   the public keys; `GET /api/licensing/licenses/<id>/status` tells an
   application with a network route whether a license is revoked, and nothing
   about the customer.
+
+### Release downloads
+
+Customers download releases at **`/account/downloads`**: every version of
+each product they hold a license for, with each file's size and SHA-256.
+Any license that isn't revoked counts, evaluations and expired ones
+included (the applications enforce expiry and maintenance themselves), so
+an evaluation is enough. Administrators can download every product.
+Products an account has no license for show the free evaluation button,
+which comes back to the page.
+
+The releases are in a private bucket that each application's CI writes;
+the portal only reads it:
+
+```
+s3://<bucket>/<prefix>/<version>/<file>       X.Y.Z, or X.Y.Z-suffix for a pre-release
+s3://<bucket>/<prefix>/latest.txt             the newest final version
+```
+
+| Product | Prefix | Package |
+|---|---|---|
+| CertAlert | `cert-alert` | `cert-alert-<v>.tar.gz` |
+| Directory Services Portal | `directory-services-portal` | `directory-services-portal-<v>.tar.gz`, `…-<v>-native.tar.gz` |
+| ReadyRoom | `readyroom` | `readyroom-<v>.tar.gz` |
+| RSA Operations Portal | `rsa-operations-portal` | `rsa-operations-portal-<v>.tar.gz` |
+
+Each version also holds its Helm chart (`*.tgz`), SBOMs
+(`sbom-*.spdx.json`), `SHA256SUMS` and, when signed, `SHA256SUMS.asc`. The
+page lists them in that order, the package first; the latest version is
+open at the top, and the others follow newest first, pre-releases marked.
+The prefixes are in `src/lib/releases.ts`.
+
+`GET /account/downloads/<product>/<version>/<file>` answers a `302` to a
+presigned GET (with `response-content-disposition=attachment`), so
+packages of a gigabyte or more come straight from S3. Anything but a known
+product, a version name and a plain file name in that version's listing is
+a `404`; no license for the product is a `403`, recorded as
+`access.denied`. Each download is recorded as `release.downloaded`, which
+customers see in their own history. More than 120 links in an hour from
+one account is a `429`.
+
+**Setting it up**
+
+1. Give the portal its own read-only credentials, separate from the
+   write credentials CI publishes with. This is all it needs (replace
+   `RELEASE-BUCKET`):
+
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       { "Effect": "Allow", "Action": "s3:ListBucket", "Resource": "arn:aws:s3:::RELEASE-BUCKET" },
+       { "Effect": "Allow", "Action": "s3:GetObject", "Resource": "arn:aws:s3:::RELEASE-BUCKET/*/*" }
+     ]
+   }
+   ```
+
+   On R2, an API token with *Object Read* on the bucket.
+2. Set `RELEASES_S3_BUCKET` and `RELEASES_S3_REGION`, and either
+   `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` or an instance or task
+   role. For R2 also `RELEASES_S3_ENDPOINT` and region `auto`; for MinIO,
+   the endpoint and `RELEASES_S3_FORCE_PATH_STYLE=true`.
+3. Optionally, `RELEASES_GPG_PUBLIC_KEY_URL`.
+4. Restart the licensing service. The bucket needs no CORS rule and the
+   page's CSP no change: a download is a plain navigation.
+
+**Testing against MinIO.** `npm run test:releases` (needs Docker) starts a
+MinIO container, uploads a fake release tree for two products, builds and
+starts the portal, then signs up, takes an evaluation, and checks the
+page, the download (byte for byte) and the refusals. It removes only its
+own container and volume afterwards; CI runs it too. MinIO's own images
+are no longer public (the community edition is archived), so it uses
+Chainguard's MinIO build, pinned by digest; set `MINIO_IMAGE` to use
+another.
 
 ### Audit logging
 
@@ -194,10 +282,10 @@ and how to bring it into a SIEM, is on the docs site:
 
 | Category | Actions |
 |---|---|
-| authentication | `auth.login` (success and failure; on failure the address tried is the actor and `reason` says why), `auth.logout`, `auth.lockout` (rate limit hit on sign-in, sign-up, reset or resend), `account.password-changed`, `account.password-reset`, `account.password-reset-requested` |
-| authorization | `access.denied`: every 403 from the service (a non-administrator on `/admin`), with method, path and reason; repeats within 60 seconds are collapsed into one event with `details.count` |
+| authentication | `auth.login` (success and failure; on failure the address tried is the actor and `reason` says why), `auth.logout`, `auth.lockout` (rate limit hit on sign-in, sign-up, reset, resend or release downloads), `account.password-changed`, `account.password-reset`, `account.password-reset-requested` |
+| authorization | `access.denied`: every 403 from the service (a non-administrator on `/admin`, a release download without a license for the product), with method, path and reason; repeats within 60 seconds are collapsed into one event with `details.count` |
 | account | `account.created`, `account.verified` (and failed confirmation links), `account.updated` (old and new values), `account.role-changed`, `account.disabled`, `account.enabled` |
-| data | `license.issued`, `license.downloaded`, `license.bound`, `license.renamed`, `license.renewed`, `license.revoked`, `license.reinstated`, `license.resigned` |
+| data | `license.issued`, `license.downloaded`, `license.bound`, `license.renamed`, `license.renewed`, `license.revoked`, `license.reinstated`, `license.resigned`, `release.downloaded` (product, version and file) |
 | audit | `audit.exported`, `audit.verified`, `audit.token-created`, `audit.token-revoked`, `audit.pruned`, `audit.delivery-failed`, `audit.delivery-recovered` |
 | system | `system.started`, `system.stopped`, `job.failed` (retention) |
 
@@ -421,7 +509,7 @@ src/
     ProductPricing.astro    The "Pricing" section of a product page
     SavingsCalculator.astro RSA Operations Portal help-desk savings
     Estimator.astro         The quote estimator's form
-    licensing/              License table, details, status pill, audit list
+    licensing/              License table, details, status pill, audit list, release files
   data/
     products.ts             The product line: names, paths, demo keys, cards, docs sections
     site.ts                 The documentation site's address (DOCS_URL)
@@ -432,9 +520,11 @@ src/
     pricing.ts              Pricing arithmetic (pure functions)
     licensing/license.ts    The license file: format, signing, verification, state
     licensing/issue.ts      Building a license from what was sold
+    releases.ts             Release versions, SHA256SUMS, file names (pure functions)
   server/                   The licensing service: config, database and migrations,
                             accounts, sessions, licenses, audit trail (audit*.ts:
-                            format and chain, store, outputs, pull API), mail, keys
+                            format and chain, store, outputs, pull API), mail, keys,
+                            release bucket (releases.ts)
   middleware.ts             Loads the signed-in account on licensing pages
   scripts/                  Browser code: contact form, estimator, savings calculator
   styles/site.css           The whole stylesheet
@@ -442,6 +532,7 @@ public/assets/img/          Brand images and product screenshots, served as-is
 licensing/                  The applications' side: Java verifier, Spring example,
                             cross-language fixtures (see licensing/README.md)
 scripts/license.mjs         keygen, public-key, inspect, verify
+scripts/releases-minio-test.sh  Release downloads end to end, against MinIO in Docker
 nginx/default.conf.template Server config: port 8080, gzip, caching, licensing proxy
 docker/docker-entrypoint.d/
   30-render-site.sh         Resolves demo URLs and DOCS_URL at container start
