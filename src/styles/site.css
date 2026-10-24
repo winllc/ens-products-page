@@ -1446,6 +1446,54 @@ img { max-width: 100%; height: auto; }
 .license-table th[scope="row"] a { font-weight: 620; }
 .license-table td { vertical-align: middle; }
 
+/* Downloads: a product's versions, each a <details> with its files. */
+.release-product { margin-top: 2.5rem; }
+.release-product:first-of-type { margin-top: 0; }
+.release-product h2 { margin-bottom: .75rem; }
+
+.release-get {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem 1rem;
+}
+.release-get p { margin: 0; }
+
+.release-version {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: .7rem 1.1rem;
+    margin-top: .6rem;
+}
+.release-version--latest { border-left: 3px solid var(--ok); box-shadow: var(--shadow); }
+.release-version summary {
+    cursor: pointer;
+    font-weight: 620;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+}
+.release-version summary { list-style: none; }
+.release-version summary::-webkit-details-marker { display: none; }
+.release-version summary::before {
+    content: "";
+    width: .45rem;
+    height: .45rem;
+    border: solid var(--text-muted);
+    border-width: 0 2px 2px 0;
+    transform: rotate(-45deg);
+    margin-right: .2rem;
+    transition: transform .15s;
+}
+.release-version[open] summary::before { transform: rotate(45deg); }
+.release-version[open] summary { margin-bottom: .6rem; }
+.release-version .table-scroll { margin-top: 0; }
+.release-files th[scope="row"] { white-space: normal; overflow-wrap: anywhere; }
+.release-files .num { white-space: nowrap; }
+.release-sha { overflow-wrap: anywhere; min-width: 16ch; }
+
 .data-list {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr));

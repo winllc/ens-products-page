@@ -1,0 +1,42 @@
+---
+/*
+ * One release version's files: name (a download link), size and SHA-256,
+ * in the order releases.ts sorts them (package, chart, SBOMs, sums).
+ */
+import type { ProductId } from '../../data/products';
+import { formatBytes } from '../../lib/releases';
+import type { ReleaseFile } from '../../server/releases';
+
+interface Props {
+    product: ProductId;
+    version: string;
+    files: ReleaseFile[];
+}
+
+const { product, version, files } = Astro.props;
+---
+{files.length ? (
+    <div class="table-scroll">
+        <table class="release-files">
+            <caption class="visually-hidden">Files in {version}</caption>
+            <thead>
+            <tr>
+                <th scope="col">File</th>
+                <th scope="col" class="num">Size</th>
+                <th scope="col">SHA-256</th>
+            </tr>
+            </thead>
+            <tbody>
+            {files.map((f) => (
+                <tr>
+                    <th scope="row"><a href={`/account/downloads/${product}/${version}/${f.name}`}>{f.name}</a></th>
+                    <td class="num">{formatBytes(f.size)}</td>
+                    <td class="mono small release-sha">{f.sha256 ?? '—'}</td>
+                </tr>
+            ))}
+            </tbody>
+        </table>
+    </div>
+) : (
+    <p class="muted small">No files in this version.</p>
+)}

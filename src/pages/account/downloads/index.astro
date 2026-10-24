@@ -1,0 +1,130 @@
+---
+export const prerender = false;
+
+/*
+ * Release downloads: every version of each product the account holds a
+ * license for (evaluations and expired licenses count), with each version's
+ * files, sizes and SHA-256 sums. Products it can't download yet get the
+ * evaluation button, which comes straight back here.
+ *
+ * The listings come from the release bucket (src/server/releases.ts). With
+ * no bucket configured, or the store unreachable, the page says so and still
+ * renders.
+ */
+
+import ReleaseFiles from '../../../components/licensing/ReleaseFiles.astro';
+import { products, type Product } from '../../../data/products';
+import AccountLayout from '../../../layouts/AccountLayout.astro';
+import type { Account } from '../../../server/accounts';
+import { requireAccount } from '../../../server/http';
+import { canDownload, canTakeEvaluation } from '../../../server/licenses';
+import {
+    mapLimit,
+    productReleases,
+    releasesConfig,
+    versionFiles,
+    type ProductReleases,
+    type ReleaseFile,
+    type ReleaseVersion,
+} from '../../../server/releases';
+
+const account = requireAccount(Astro);
+if (account instanceof Response) return account;
+
+const cfg = releasesConfig();
+const verified = account.email_verified_at !== null;
+
+type Shown =
+    | { product: Product; entitled: false; canEvaluate: boolean }
+    | { product: Product; entitled: true; releases: ProductReleases | null; files: Map<string, ReleaseFile[]> };
+
+const me: Account = account;
+
+async function load(product: Product): Promise<Shown> {
+    if (!canDownload(me, product.id)) {
+        return { product, entitled: false, canEvaluate: verified && canTakeEvaluation(me, product.id) };
+    }
+    try {
+        const releases = await productReleases(product.id);
+        const lists = await mapLimit(releases.versions, 6, (v) => versionFiles(product.id, v.version));
+        return { product, entitled: true, releases, files: new Map(releases.versions.map((v, i) => [v.version, lists[i]!])) };
+    } catch (err) {
+        console.error(`releases: listing ${product.id}: ${(err as Error).message}`);
+        return { product, entitled: true, releases: null, files: new Map() };
+    }
+}
+
+const shown = cfg ? await Promise.all(products.map(load)) : [];
+const entitledAny = shown.some((s) => s.entitled);
+const ordered = (r: ProductReleases): ReleaseVersion[] => [...r.versions.filter((v) => v.latest), ...r.versions.filter((v) => !v.latest)];
+---
+<AccountLayout title="Downloads" section="downloads">
+    <p slot="lede" class="lede">Release packages, Helm charts and SBOMs for the products you hold a license for, every version.</p>
+
+    {!cfg && (
+        <div class="callout">
+            <p>
+                Downloads aren&rsquo;t available here yet. <a href="/contact.html?product=pricing">Ask us</a> for the
+                release you need, and we&rsquo;ll send it.
+            </p>
+        </div>
+    )}
+
+    {shown.map((s) => (
+        <section class="release-product" id={s.product.id} aria-labelledby={`${s.product.id}-heading`}>
+            <h2 id={`${s.product.id}-heading`}>{s.product.name}</h2>
+            {!s.entitled ? (
+                <div class="release-get">
+                    <p class="muted">
+                        Downloads come with a license for {s.product.name}, a free evaluation included.
+                    </p>
+                    {s.canEvaluate ? (
+                        <form method="post" action="/account/evaluation">
+                            <input type="hidden" name="product" value={s.product.id}>
+                            <input type="hidden" name="next" value="/account/downloads">
+                            <button class="btn btn--ghost" type="submit">Get a free evaluation</button>
+                        </form>
+                    ) : verified ? (
+                        <a class="small" href={`/contact.html?product=${s.product.id}`}>Ask us about a license</a>
+                    ) : (
+                        <span class="small muted">Confirm your email address first.</span>
+                    )}
+                </div>
+            ) : !s.releases ? (
+                <p class="notice notice--error">We couldn&rsquo;t reach the release store just now. Try again in a few minutes.</p>
+            ) : !s.releases.versions.length ? (
+                <p class="muted">No releases published yet.</p>
+            ) : (
+                ordered(s.releases).map((v) => (
+                    <details class:list={['release-version', { 'release-version--latest': v.latest }]} open={v.latest}>
+                        <summary>
+                            <span class="mono">{v.version}</span>
+                            {v.latest && <span class="pill pill--valid">Latest</span>}
+                            {v.prerelease && <span class="pill pill--soon">Pre-release</span>}
+                        </summary>
+                        <ReleaseFiles product={s.product.id} version={v.version} files={s.files.get(v.version) ?? []} />
+                    </details>
+                ))
+            )}
+        </section>
+    ))}
+
+    {cfg && entitledAny && (
+        <section class="section-gap">
+            <h2>Verify the download</h2>
+            <p>
+                Each version&rsquo;s <code>SHA256SUMS</code> lists the SHA-256 of its files, and
+                <code>SHA256SUMS.asc</code>, when there is one, is its signature. In the folder you downloaded to:
+            </p>
+            <pre><code>sha256sum -c SHA256SUMS
+gpg --verify SHA256SUMS.asc SHA256SUMS</code></pre>
+            <p class="muted small">
+                Add <code>--ignore-missing</code> to <code>sha256sum</code> if you downloaded only some of the files.
+                {cfg.gpgPublicKeyUrl && (
+                    <>Import <a href={cfg.gpgPublicKeyUrl}>the ENS Solutions release signing key</a> into
+                    <code>gpg</code> before the second check.</>
+                )}
+            </p>
+        </section>
+    )}
+</AccountLayout>

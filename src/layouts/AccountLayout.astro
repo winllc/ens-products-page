@@ -12,7 +12,7 @@ interface Props {
     title: string;
     heading?: string;
     eyebrow?: string;
-    section?: 'licenses' | 'settings' | 'check' | 'admin' | 'admin-accounts' | 'admin-licenses' | 'admin-audit';
+    section?: 'licenses' | 'downloads' | 'settings' | 'check' | 'admin' | 'admin-accounts' | 'admin-licenses' | 'admin-audit';
     /** Narrow single-column layout, for sign-in and sign-up forms. */
     narrow?: boolean;
     error?: string | null;
@@ -43,6 +43,7 @@ const inAdmin = section?.startsWith('admin');
                     ) : (
                         <>
                             <a href="/account" aria-current={section === 'licenses' ? 'page' : undefined}>Licenses</a>
+                            <a href="/account/downloads" aria-current={section === 'downloads' ? 'page' : undefined}>Downloads</a>
                             <a href="/account/check" aria-current={section === 'check' ? 'page' : undefined}>Check a file</a>
                             <a href="/account/settings" aria-current={section === 'settings' ? 'page' : undefined}>Settings</a>
                             {admin && <a href="/admin">Administration</a>}
