@@ -13,6 +13,7 @@
     "check": "astro check",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:releases": "bash scripts/releases-minio-test.sh",
     "verify": "npm run check && npm test && npm run build",
     "license": "node scripts/license.mjs",
     "start": "node dist/server/entry.mjs"

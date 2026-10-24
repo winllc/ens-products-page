@@ -48,8 +48,19 @@ jobs:
           for _ in $(seq 1 20); do curl -fsS http://127.0.0.1:4321/api/licensing/health && break; sleep 1; done
           curl -fsS http://127.0.0.1:4321/api/licensing/keys | grep -q Ed25519
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4321/account)" = 303
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4321/account/downloads)" = 303
           # The audit pull API wants a bearer token; the service records its own start.
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4321/api/audit/events)" = 401
+
+      # Release downloads end to end against MinIO in Docker: a fake release
+      # tree, sign-up, evaluation, the downloads page, a download compared byte
+      # for byte, and the refusals (scripts/releases-minio-test.sh). A step,
+      # not a service container: MinIO needs its `server` command, which
+      # service containers can't pass.
+      - name: Release downloads against MinIO
+        env:
+          SKIP_BUILD: "1"
+        run: npm run test:releases
 
       - name: Docker images
         run: |
