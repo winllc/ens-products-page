@@ -1,0 +1,85 @@
+---
+export const prerender = false;
+
+import AccountLayout from '../../../layouts/AccountLayout.astro';
+import { form, requireAdmin, withNotice } from '../../../server/http';
+import { LEAD_STATUSES, LeadError, leadById, leadStatusLabel, listLeads, setLeadStatus } from '../../../server/leads';
+
+const admin = requireAdmin(Astro);
+if (admin instanceof Response) return admin;
+
+const status = Astro.url.searchParams.get('status') ?? '';
+const here = `/admin/leads${status ? `?status=${encodeURIComponent(status)}` : ''}`;
+let error: string | null = null;
+
+if (Astro.request.method === 'POST') {
+    const get = await form(Astro);
+    const lead = leadById(get('id'));
+    if (!lead) return new Response('Not found', { status: 404 });
+    try {
+        setLeadStatus(admin, lead, get('status'));
+        return Astro.redirect(withNotice(here, 'lead-updated'), 303);
+    } catch (err) {
+        if (!(err instanceof LeadError)) throw err;
+        error = err.message;
+    }
+}
+
+const leads = listLeads({ status });
+const when = (iso: string) => iso.replace('T', ' ').slice(0, 16) + ' UTC';
+---
+<AccountLayout title="Leads" eyebrow="Administration" section="admin-leads" error={error}>
+    <p slot="lede" class="lede">
+        Messages from the contact form, newest first. Each was emailed to us and acknowledged to the sender
+        when it arrived; mark it contacted or closed as you work it.
+    </p>
+    <form class="filter-bar" method="get">
+        <div class="field">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                <option value="" selected={status === ''}>Any status</option>
+                {LEAD_STATUSES.map((s) => <option value={s} selected={s === status}>{leadStatusLabel[s]}</option>)}
+            </select>
+        </div>
+        <button class="btn btn--ghost" type="submit">Filter</button>
+    </form>
+    <p class="muted small">{leads.length} {leads.length === 1 ? 'lead' : 'leads'}</p>
+    {leads.length === 0 ? (
+        <p class="muted">Nothing here yet.</p>
+    ) : (
+        <div class="table-scroll">
+            <table class="license-table">
+                <caption class="visually-hidden">Leads</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Received</th>
+                    <th scope="col">From</th>
+                    <th scope="col">Organization</th>
+                    <th scope="col">Topic</th>
+                    <th scope="col">Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                {leads.map((l) => (
+                    <tr>
+                        <td><time datetime={l.created_at}>{when(l.created_at)}</time></td>
+                        <th scope="row"><a href={`/admin/leads/${l.id}`}>{l.name}</a><span class="th-note">{l.email}</span></th>
+                        <td>{l.organization || <span class="muted">—</span>}</td>
+                        <td>{l.topic}</td>
+                        <td>
+                            <form method="post" class="inline-form">
+                                <input type="hidden" name="id" value={l.id}>
+                                <label class="visually-hidden" for={`status-${l.id}`}>Status of the lead from {l.name}</label>
+                                <select id={`status-${l.id}`} name="status">
+                                    {LEAD_STATUSES.map((s) => <option value={s} selected={s === l.status}>{leadStatusLabel[s]}</option>)}
+                                </select>
+                                <button class="btn btn--ghost btn--small" type="submit">Save</button>
+                            </form>
+                        </td>
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+        </div>
+    )}
+</AccountLayout>

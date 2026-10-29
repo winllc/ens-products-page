@@ -138,6 +138,10 @@ perpetual licenses, pilots) are issued into the same account by ENS staff at
 creates or changes a license goes through this service, and every change is
 in an audit log customers and staff can read.
 
+The service also takes the public site's contact form: each message is
+stored as a lead, emailed to `CONTACT_TO` and acknowledged to the sender,
+and worked at `/admin/leads` (see [Contact form](#contact-form)).
+
 | Customers (`/account`) | ENS staff (`/admin`) |
 |---|---|
 | Sign up, confirm email, reset password | Find accounts and licenses; renewals due in 60 days |
@@ -147,6 +151,7 @@ in an audit log customers and staff can read.
 | Bind a license to an installation id | Revoke and reinstate |
 | Name licenses; check a license file | Make administrators; disable accounts |
 | Their own activity history | Full audit log: search, export, verify, SIEM delivery |
+| | Leads from the contact form: list, detail, status (new, contacted, closed) |
 
 How a license file unlocks features in the applications, the file format,
 and the Java library the applications use are in
@@ -165,7 +170,8 @@ All in the `licensing` service's environment (see `.env.example`):
 | `LICENSE_SIGNING_KEY_P256` | Optional ECDSA P-256 private key, from `npm run license -- keygen --alg p256`. **A secret.** Set, every license is also signed with it, so it verifies on Java in FIPS mode, which has no Ed25519 (`licensing/README.md`, "FIPS 140-3"). Never generated. |
 | `LICENSE_SIGNING_KEY_P256_FILE` | Or a path to it. |
 | `LICENSE_TRUSTED_KEYS` | Retired public keys (Ed25519 or ECDSA P-256) still accepted by *Check a file*, after a key rotation. |
-| `SMTP_URL`, `MAIL_FROM` | Outgoing mail for confirmations and password resets. Unset, messages are written to the service's log. |
+| `SMTP_URL`, `MAIL_FROM` | Outgoing mail for confirmations, password resets and the contact form. Unset, messages are written to the service's log. |
+| `CONTACT_TO` | Where the contact form's messages are sent, with the visitor as Reply-To. Default `info@ens-solutions.com`. |
 | `DATA_DIR` | `/data` in the image: `licensing.sqlite` and, if generated, the signing key. |
 | `RELEASES_S3_BUCKET` | The private bucket the applications' CI publishes releases to. Unset, downloads are off and the downloads page says they aren't available yet. See [Release downloads](#release-downloads). |
 | `RELEASES_S3_REGION` | Default `us-east-1`; `auto` for Cloudflare R2. |
@@ -493,12 +499,12 @@ src/
     index.astro             Homepage: company intro, product cards, pricing teaser
     pricing.astro           Price list, support, services, buying terms, estimator
     licensing.astro         How licensing works, for buyers and installers
-    contact.astro           Contact form (opens the visitor's email app)
+    contact.astro           Contact form (posts to the licensing service; mailto: fallback)
     404.astro, licensing-unavailable.astro
     products/               One page per product, each ending in its pricing
     account/                Customer licensing pages (rendered on demand)
     admin/                  ENS staff licensing pages (rendered on demand)
-    api/licensing/          Public keys, license status, health
+    api/licensing/          Public keys, license status, health, the contact form's endpoint
     api/audit/              Audit pull API for SIEMs (bearer token)
   layouts/
     BaseLayout.astro        The page shell: <head>, header, footer
@@ -520,6 +526,7 @@ src/
     site.ts                 The documentation site's address (DOCS_URL)
     pricing.ts              Every price and pricing rule
     licensing.ts            Features per product (and which are still planned), editions, evaluation size
+    contact.ts              The contact form's topics, field limits, honeypot and endpoint
     examples.ts             Worked examples quoted on the site
   lib/
     pricing.ts              Pricing arithmetic (pure functions)
@@ -527,9 +534,9 @@ src/
     licensing/issue.ts      Building a license from what was sold
     releases.ts             Release versions, SHA256SUMS, file names (pure functions)
   server/                   The licensing service: config, database and migrations,
-                            accounts, sessions, licenses, audit trail (audit*.ts:
-                            format and chain, store, outputs, pull API), mail, keys,
-                            release bucket (releases.ts)
+                            accounts, sessions, licenses, leads from the contact form,
+                            audit trail (audit*.ts: format and chain, store, outputs,
+                            pull API), mail, keys, release bucket (releases.ts)
   middleware.ts             Loads the signed-in account on licensing pages
   scripts/                  Browser code: contact form, estimator, savings calculator
   styles/site.css           The whole stylesheet
