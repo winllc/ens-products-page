@@ -41,6 +41,18 @@ jobs:
           if grep -rq '<!--\(NO\)\?DEMO:' dist-rendered; then exit 1; fi
           if grep -rq '_DEMO_URL}' dist-rendered; then exit 1; fi
           grep -q 'href="https://winllc.github.io/ens-apps-documentation/cert-alert/install/"' dist-rendered/products/certalert.html
+          # The trust and support pages, security.txt, robots.txt and the sitemap are there,
+          # and the sitemap lists the pages by the address their canonical link gives.
+          grep -q 'id="disclosure"' dist-rendered/trust.html
+          grep -q 'id="versions"' dist-rendered/support.html
+          grep -q '^Contact: mailto:' dist-rendered/.well-known/security.txt
+          grep -q '^Sitemap: https://products.ens-solutions.com/sitemap-index.xml' dist-rendered/robots.txt
+          grep -q '<loc>https://products.ens-solutions.com/trust.html</loc>' dist-rendered/sitemap-0.xml
+          if grep -q '<loc>https://products.ens-solutions.com/account' dist-rendered/sitemap-0.xml; then exit 1; fi
+          # nginx sends the static pages with script-src 'self' and style-src 'self'
+          # (nginx/default.conf.template): no page may carry an inline script or style.
+          if grep -rqE '<script( type="module")?>' dist-rendered --include='*.html'; then exit 1; fi
+          if grep -rqE '<style[ >]| style="' dist-rendered --include='*.html'; then exit 1; fi
 
       - name: Licensing service starts and answers
         run: |

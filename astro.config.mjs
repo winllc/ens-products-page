@@ -1,5 +1,6 @@
 // @ts-check
 import node from '@astrojs/node';
+import sitemap from '@astrojs/sitemap';
 import { defineConfig } from 'astro/config';
 import { fileURLToPath } from 'node:url';
 
@@ -46,7 +47,19 @@ export default defineConfig({
     // `export const prerender = false` and are served by the Node server this
     // adapter builds into dist/server/.
     adapter: node({ mode: 'standalone', bodySizeLimit: 256 * 1024 }),
-    integrations: [auditStartup()],
+    integrations: [
+        auditStartup(),
+        // /sitemap-index.xml and /sitemap-0.xml, for the marketing pages only:
+        // the licensing pages are behind a sign-in (robots.txt keeps crawlers
+        // out of them too), and the 404 and "licensing unavailable" pages are
+        // not destinations. Astro lists a page as /pricing; the file is
+        // /pricing.html (build.format 'file'), which is what the page's
+        // canonical link says, so the extension is put back.
+        sitemap({
+            filter: (page) => !/\/(account|admin|api|404|licensing-unavailable)(\/|$)/.test(page),
+            serialize: (item) => (item.url.endsWith('/') ? item : { ...item, url: `${item.url}.html` }),
+        }),
+    ],
     // Emit /products/certalert.html rather than /products/certalert/index.html,
     // so every URL the hand-written site had keeps working unchanged.
     build: { format: 'file' },
@@ -55,6 +68,14 @@ export default defineConfig({
     // its line breaks. The pages are small and nginx gzips them anyway.
     compressHTML: false,
     trailingSlash: 'never',
+    vite: {
+        // Never inline a page's scripts or styles into the HTML, however small:
+        // nginx sends the static pages with a Content-Security-Policy of
+        // script-src 'self' and style-src 'self' (nginx/default.conf.template),
+        // which an inline <script> or <style> would fall foul of. Everything
+        // goes to /_astro/ as a hashed file instead.
+        build: { assetsInlineLimit: 0 },
+    },
     security: {
         // Rejects cross-site form posts to the licensing pages.
         checkOrigin: true,

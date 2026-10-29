@@ -1,0 +1,287 @@
+---
+/*
+ * The support policy: what each support tier means in practice. The tiers,
+ * their rates, response targets, hours and features come from
+ * src/data/pricing.ts and are never typed here; this page adds the terms
+ * around them (severities, hours, channels, escalation, supported versions).
+ * Prerendered like the other marketing pages.
+ */
+import { evaluation, pilot, supportTiers, type SupportTier } from '../data/pricing';
+import { docsUrl } from '../data/site';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { formatPercent } from '../lib/pricing';
+
+const sections = [
+    { id: 'tiers', label: 'Tiers' },
+    { id: 'severity', label: 'Severity levels' },
+    { id: 'hours', label: 'Hours and channels' },
+    { id: 'escalation', label: 'Escalation' },
+    { id: 'included', label: 'What is included' },
+    { id: 'versions', label: 'Supported versions' },
+];
+
+const standard = supportTiers.find((t) => t.id === 'standard')!;
+const premium = supportTiers.find((t) => t.id === 'premium')!;
+const mission = supportTiers.find((t) => t.id === 'mission')!;
+
+/** The tier's hours, spelled out. Business hours are US Eastern, Monday to Friday. */
+const hoursOf = (t: SupportTier) =>
+    t.hours === '24/7'
+        ? 'Around the clock, every day of the year'
+        : `${t.hours}: US Eastern time, Monday to Friday, excluding US federal holidays`;
+
+const severities = [
+    { level: 'P1', name: 'Service down', meaning: 'The application is unavailable to all users, or data is being lost or corrupted.' },
+    { level: 'P2', name: 'Major function unavailable', meaning: 'A major function is unavailable to many users and there is no workaround.' },
+    { level: 'P3', name: 'Degraded', meaning: 'A function is impaired or behaves wrongly, but a workaround exists.' },
+    { level: 'P4', name: 'Question or request', meaning: 'A how-to question, a configuration request, documentation feedback or an enhancement request.' },
+];
+
+const email = 'info@ens-solutions.com';
+const phone = { display: '301-925-4008', href: 'tel:+13019254008' };
+---
+<BaseLayout
+    title="Support policy"
+    description="ENS Solutions support policy for ReadyRoom, CertAlert, RSA Operations Portal and Directory Services Portal: the Standard, Premium and Mission tiers, severity definitions, hours, channels, escalation, what is included, and supported versions."
+>
+<section class="hero">
+    <div class="wrap">
+        <p class="eyebrow">Support policy</p>
+        <h1>What support means, tier by tier.</h1>
+        <p class="lede">
+            {standard.name} support is included in every subscription and in every perpetual
+            license&rsquo;s maintenance. {premium.name} and {mission.name} add faster response, a named
+            engineer and, for {mission.name}, around-the-clock coverage. This page defines the terms the
+            <a href="/pricing.html#support-heading">price list</a> uses: severities, hours, channels,
+            escalation and which versions are supported.
+        </p>
+        <div class="btn-row">
+            <a class="btn btn--primary" href="/contact.html">Contact support</a>
+            <a class="btn btn--ghost" href="/pricing.html#support-heading">Support pricing</a>
+        </div>
+    </div>
+</section>
+
+<nav class="page-nav" aria-label="Support policy sections">
+    <div class="wrap">
+        <ul>
+            {sections.map((s) => <li><a href={`#${s.id}`}>{s.label}</a></li>)}
+        </ul>
+    </div>
+</nav>
+
+<section class="section" id="tiers" aria-labelledby="tiers-heading">
+    <div class="wrap">
+        <h2 id="tiers-heading">The three tiers</h2>
+        <div class="card-grid support-cards">
+            {supportTiers.map((t) => (
+                <article class={t.id === 'mission' ? 'card support-card is-featured' : 'card support-card'}>
+                    <p class="card-kicker">{t.hours} &middot; {t.response} response</p>
+                    <h3>{t.name}</h3>
+                    <p>{t.summary}</p>
+                    <ul class="ticks">
+                        {t.features.map((f) => <li>{f}</li>)}
+                    </ul>
+                    <dl class="support-price">
+                        <div>
+                            <dt>Subscription</dt>
+                            <dd>{t.subscriptionRate === 0 ? 'Included' : `+${formatPercent(t.subscriptionRate)} a year`}</dd>
+                        </div>
+                        <div>
+                            <dt>Perpetual</dt>
+                            <dd>{formatPercent(t.perpetualRate)} of license a year</dd>
+                        </div>
+                    </dl>
+                </article>
+            ))}
+        </div>
+        <p class="small muted">
+            Subscription add-ons are a share of the subscription after any suite discount. A paid pilot
+            ({pilot.days} days) is supported at the {standard.name} level; the free {evaluation.days}-day
+            evaluation is not a supported deployment, though we answer questions about it through the
+            contact page.
+        </p>
+    </div>
+</section>
+
+<section class="section" id="severity" aria-labelledby="severity-heading">
+    <div class="wrap">
+        <h2 id="severity-heading">Severity levels</h2>
+        <p class="lede">
+            You set the severity when you report a problem; we may ask to change it once we understand
+            the impact, and we tell you if we do.
+        </p>
+        <div class="table-scroll">
+            <table>
+                <caption class="visually-hidden">Severity levels and their definitions</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Severity</th>
+                    <th scope="col">Meaning</th>
+                </tr>
+                </thead>
+                <tbody>
+                {severities.map((s) => (
+                    <tr>
+                        <th scope="row">{s.level} &middot; {s.name}</th>
+                        <td>{s.meaning}</td>
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+        </div>
+        <h3>First response</h3>
+        <div class="table-scroll">
+            <table>
+                <caption class="visually-hidden">First response target by tier</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Tier</th>
+                    <th scope="col">First response</th>
+                    <th scope="col">Measured during</th>
+                </tr>
+                </thead>
+                <tbody>
+                {supportTiers.map((t) => (
+                    <tr>
+                        <th scope="row">{t.name}</th>
+                        <td>{t.response}</td>
+                        <td>{hoursOf(t)}</td>
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+        </div>
+        <p class="small muted">
+            The first response is a reply from an engineer who has read the report, within the tier&rsquo;s
+            hours. {mission.name}&rsquo;s one-hour target applies to P1; its other severities are answered
+            within {premium.name}&rsquo;s {premium.response}. On {standard.name} and {premium.name} every
+            severity carries the tier&rsquo;s first-response time. Resolution times depend on the problem
+            and are not guaranteed; a P1 is worked
+            continuously within the tier&rsquo;s hours until the service is restored or a workaround is in
+            place.
+        </p>
+    </div>
+</section>
+
+<section class="section" id="hours" aria-labelledby="hours-heading">
+    <div class="wrap">
+        <h2 id="hours-heading">Hours and channels</h2>
+        <div class="feature-grid">
+            {supportTiers.map((t) => (
+                <div class="feature">
+                    <h3>{t.name}: {t.hours}</h3>
+                    <p>{hoursOf(t)}.</p>
+                </div>
+            ))}
+        </div>
+        <h3>How to reach us</h3>
+        <dl class="contact-list">
+            <div>
+                <dt>Email</dt>
+                <dd><a href={`mailto:${email}`}>{email}</a>. Put the product, the severity and your organization in the subject line.</dd>
+            </div>
+            <div>
+                <dt>Phone</dt>
+                <dd><a href={phone.href}>{phone.display}</a>. For a P1, call after you email so it is seen at once.</dd>
+            </div>
+            <div>
+                <dt>Web</dt>
+                <dd>The <a href="/contact.html">contact form</a>, for questions and requests.</dd>
+            </div>
+        </dl>
+        <p class="small muted">
+            {premium.name} and {mission.name} customers also reach their named support engineer directly;
+            the engineer&rsquo;s details, and the {mission.name} around-the-clock contact, are given when
+            the subscription starts.
+        </p>
+    </div>
+</section>
+
+<section class="section" id="escalation" aria-labelledby="escalation-heading">
+    <div class="wrap">
+        <h2 id="escalation-heading">Escalation</h2>
+        <ol class="flow-steps">
+            <li><strong>Report it with the right severity,</strong> by email, and by phone as well for a P1. Include the product and version, what happened, when, and what you have tried.</li>
+            <li><strong>If the first response is late,</strong> reply to your own report with &ldquo;escalation&rdquo; in the subject and call the phone number. {premium.name} and {mission.name} customers contact their named engineer.</li>
+            <li><strong>If a P1 is not progressing,</strong> ask for the escalation manager; we give you a name and a direct number, and a management contact is kept informed until the service is restored.</li>
+            <li><strong>Afterwards,</strong> every P1 gets a written summary of the cause and what we changed, within five business days of resolution.</li>
+        </ol>
+    </div>
+</section>
+
+<section class="section" id="included" aria-labelledby="included-heading">
+    <div class="wrap">
+        <h2 id="included-heading">What is included</h2>
+        <div class="feature-grid">
+            {supportTiers.map((t) => (
+                <div class="feature">
+                    <h3>{t.name}</h3>
+                    <ul class="ticks">
+                        {t.features.map((f) => <li>{f}</li>)}
+                    </ul>
+                </div>
+            ))}
+        </div>
+        <div class="split">
+            <div>
+                <h3>Covered</h3>
+                <ul class="ticks">
+                    <li>Problems in the software, on a supported version, installed as the documentation describes</li>
+                    <li>Updates and security patches for supported versions, downloaded from your account</li>
+                    <li>Questions about configuration, upgrades and the documented integrations (your directory, identity provider, SIEM, mail server; for the RSA Operations Portal, Authentication Manager)</li>
+                    <li>Help reproducing and diagnosing a problem, including reading your audit trail and logs with you</li>
+                </ul>
+            </div>
+            <div>
+                <h3>Not covered</h3>
+                <ul class="ticks">
+                    <li>Running your infrastructure: the host, Kubernetes or OpenShift, the database server, the directory, the network and the identity provider themselves</li>
+                    <li>Changes to the software, custom schema and form work, and installation or training, which are <a href="/pricing.html#services-heading">priced services</a></li>
+                    <li>Versions past their support date, or installations changed outside the documented settings</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="versions" aria-labelledby="versions-heading">
+    <div class="wrap">
+        <h2 id="versions-heading">Supported versions and end of life</h2>
+        <div class="split">
+            <div>
+                <p class="lede">
+                    The current release of each product and the release before it are supported.
+                </p>
+                <p>
+                    A release receives security fixes for twelve months from the day it is published. Other
+                    fixes go into the
+                    current release; if a problem on the previous release is not fixed there, the fix is the
+                    upgrade. We announce a release&rsquo;s end of support on its product&rsquo;s documentation
+                    pages and by email to the account holders who hold a license for it.
+                </p>
+                <p>
+                    Releases are downloaded from the licensing portal&rsquo;s <strong>Downloads</strong> page,
+                    which lists every version of each product you hold a license for, with its checksums,
+                    SBOMs and signature. A subscription covers every release during its term; a perpetual
+                    license covers the releases published while its maintenance is current.
+                </p>
+            </div>
+            <div>
+                <h3>Upgrading</h3>
+                <p>
+                    A release package upgrades with its <code>upgrade.sh</code>, which carries your settings
+                    and license across; a Helm installation with <code>helm upgrade</code>. Each product&rsquo;s
+                    operator guide covers backups and rollback. Verify the download first: the
+                    <a href="/trust.html#releases">trust page</a> shows how.
+                </p>
+                <ul class="resource-list">
+                    <li><a href={docsUrl('releases/')}>Releases and downloads</a><span>Files, verification, installing and upgrading</span></li>
+                    <li><a href={docsUrl('availability-and-sizing/')}>Sizing, availability and recovery</a><span>Backups, disaster recovery and rollback</span></li>
+                    <li><a href="/licensing.html">Licensing</a><span>What a license covers and when it runs out</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+</BaseLayout>
