@@ -160,10 +160,10 @@ describe('administration', () => {
         const l = licenses.issueLicense(
             admin,
             customer,
-            { product: 'certalert', edition: 'subscription', quantity: 10_000, support: 'mission', years: 3, start: new Date('2026-10-14T00:00:00Z') },
+            { product: 'certalert', edition: 'subscription', quantity: 10_000, support: 'premium', years: 3, start: new Date('2026-10-14T00:00:00Z') },
             { orderReference: 'PO-2026-0042' },
         );
-        expect(l.payload.support).toBe('mission');
+        expect(l.payload.support).toBe('premium');
         expect(l.payload.expiresAt).toBe('2029-10-14T00:00:00.000Z');
         expect(licenses.licensesOf(customer.id)).toHaveLength(1);
         expect(licenses.licenseFor(customer, l.id)).not.toBeNull();

@@ -6,14 +6,14 @@
 
 import type { QuoteInput } from '../lib/pricing';
 
-/** A 10,000-user DoD component taking CertAlert and RSA Operations Portal with Mission support. */
+/** A 10,000-user DoD component taking CertAlert and RSA Operations Portal with Premium support. */
 export const dodComponentExample: QuoteInput = {
     model: 'subscription',
     lines: [
         { product: 'certalert', quantity: 10_000 },
         { product: 'mfa-portal', quantity: 10_000 },
     ],
-    support: 'mission',
+    support: 'premium',
     install: true,
     atoPackage: true,
 };

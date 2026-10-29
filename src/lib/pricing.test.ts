@@ -99,13 +99,13 @@ describe('quote', () => {
         expect(q.softwareOrder).toBe(39_600);
     });
 
-    it('comes to roughly $55K a year for the worked DoD example', () => {
+    it('comes to roughly $53K a year for the worked DoD example', () => {
         const q = quote(dodComponentExample);
         expect(q.listSubtotal).toBe(55_000);
         expect(q.bundleRate).toBe(0.25);
         expect(q.netLicense).toBe(41_250);
-        expect(q.support.amount).toBe(14_438);
-        expect(q.annual).toBe(55_688);
+        expect(q.support.amount).toBe(11_550);
+        expect(q.annual).toBe(52_800);
         expect(q.servicesTotal.low).toBe(20_000);
         expect(q.acquisition).toBe('simplified');
         expect(q.softwareOrder).toBeLessThanOrEqual(thresholds.simplifiedAcquisition);

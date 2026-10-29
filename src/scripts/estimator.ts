@@ -81,7 +81,7 @@ function readForm({ form, input, radios }: FormRefs): QuoteInput {
     };
 }
 
-/** Compact query string: ?model=perpetual&p=certalert:10000,readyroom:500&support=mission&... */
+/** Compact query string: ?model=perpetual&p=certalert:10000,readyroom:500&support=premium&... */
 function toQuery(q: QuoteInput): string {
     const params = new URLSearchParams();
     if (q.model !== 'subscription') params.set('model', q.model);

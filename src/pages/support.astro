@@ -22,13 +22,9 @@ const sections = [
 
 const standard = supportTiers.find((t) => t.id === 'standard')!;
 const premium = supportTiers.find((t) => t.id === 'premium')!;
-const mission = supportTiers.find((t) => t.id === 'mission')!;
 
 /** The tier's hours, spelled out. Business hours are US Eastern, Monday to Friday. */
-const hoursOf = (t: SupportTier) =>
-    t.hours === '24/7'
-        ? 'Around the clock, every day of the year'
-        : `${t.hours}: US Eastern time, Monday to Friday, excluding US federal holidays`;
+const hoursOf = (t: SupportTier) => `${t.hours}: US Eastern time, Monday to Friday, excluding US federal holidays`;
 
 const severities = [
     { level: 'P1', name: 'Service down', meaning: 'The application is unavailable to all users, or data is being lost or corrupted.' },
@@ -42,7 +38,7 @@ const phone = { display: '301-925-4008', href: 'tel:+13019254008' };
 ---
 <BaseLayout
     title="Support policy"
-    description="ENS Solutions support policy for ReadyRoom, CertAlert, RSA Operations Portal and Directory Services Portal: the Standard, Premium and Mission tiers, severity definitions, hours, channels, escalation, what is included, and supported versions."
+    description="ENS Solutions support policy for ReadyRoom, CertAlert, RSA Operations Portal and Directory Services Portal: the Standard and Premium tiers, severity definitions, hours, channels, escalation, what is included, and supported versions."
 >
 <section class="hero">
     <div class="wrap">
@@ -50,8 +46,8 @@ const phone = { display: '301-925-4008', href: 'tel:+13019254008' };
         <h1>What support means, tier by tier.</h1>
         <p class="lede">
             {standard.name} support is included in every subscription and in every perpetual
-            license&rsquo;s maintenance. {premium.name} and {mission.name} add faster response, a named
-            engineer and, for {mission.name}, around-the-clock coverage. This page defines the terms the
+            license&rsquo;s maintenance. {premium.name} adds faster response and a named engineer. This page
+            defines the terms the
             <a href="/pricing.html#support-heading">price list</a> uses: severities, hours, channels,
             escalation and which versions are supported.
         </p>
@@ -72,10 +68,10 @@ const phone = { display: '301-925-4008', href: 'tel:+13019254008' };
 
 <section class="section" id="tiers" aria-labelledby="tiers-heading">
     <div class="wrap">
-        <h2 id="tiers-heading">The three tiers</h2>
+        <h2 id="tiers-heading">The two tiers</h2>
         <div class="card-grid support-cards">
             {supportTiers.map((t) => (
-                <article class={t.id === 'mission' ? 'card support-card is-featured' : 'card support-card'}>
+                <article class={t.id === 'premium' ? 'card support-card is-featured' : 'card support-card'}>
                     <p class="card-kicker">{t.hours} &middot; {t.response} response</p>
                     <h3>{t.name}</h3>
                     <p>{t.summary}</p>
@@ -154,9 +150,8 @@ const phone = { display: '301-925-4008', href: 'tel:+13019254008' };
         </div>
         <p class="small muted">
             The first response is a reply from an engineer who has read the report, within the tier&rsquo;s
-            hours. {mission.name}&rsquo;s one-hour target applies to P1; its other severities are answered
-            within {premium.name}&rsquo;s {premium.response}. On {standard.name} and {premium.name} every
-            severity carries the tier&rsquo;s first-response time. Resolution times depend on the problem
+            hours. On {standard.name} and {premium.name} every severity carries the tier&rsquo;s
+            first-response time. Resolution times depend on the problem
             and are not guaranteed; a P1 is worked
             continuously within the tier&rsquo;s hours until the service is restored or a workaround is in
             place.
@@ -191,9 +186,8 @@ const phone = { display: '301-925-4008', href: 'tel:+13019254008' };
             </div>
         </dl>
         <p class="small muted">
-            {premium.name} and {mission.name} customers also reach their named support engineer directly;
-            the engineer&rsquo;s details, and the {mission.name} around-the-clock contact, are given when
-            the subscription starts.
+            {premium.name} customers also reach their named support engineer directly; the engineer&rsquo;s
+            details are given when the subscription starts.
         </p>
     </div>
 </section>
@@ -203,7 +197,7 @@ const phone = { display: '301-925-4008', href: 'tel:+13019254008' };
         <h2 id="escalation-heading">Escalation</h2>
         <ol class="flow-steps">
             <li><strong>Report it with the right severity,</strong> by email, and by phone as well for a P1. Include the product and version, what happened, when, and what you have tried.</li>
-            <li><strong>If the first response is late,</strong> reply to your own report with &ldquo;escalation&rdquo; in the subject and call the phone number. {premium.name} and {mission.name} customers contact their named engineer.</li>
+            <li><strong>If the first response is late,</strong> reply to your own report with &ldquo;escalation&rdquo; in the subject and call the phone number. {premium.name} customers contact their named engineer.</li>
             <li><strong>If a P1 is not progressing,</strong> ask for the escalation manager; we give you a name and a direct number, and a management contact is kept informed until the service is restored.</li>
             <li><strong>Afterwards,</strong> every P1 gets a written summary of the cause and what we changed, within five business days of resolution.</li>
         </ol>

@@ -63,7 +63,7 @@ const now = new Date('2026-10-14T00:00:00Z');
 
 const cases: Record<string, { req: IssueRequest; id: string; revision: number; keys: SigningKey[] }> = {
     'subscription.lic': {
-        req: { product: 'certalert', edition: 'subscription', licensee, quantity: 10_000, support: 'mission', start: now, years: 1 },
+        req: { product: 'certalert', edition: 'subscription', licensee, quantity: 10_000, support: 'premium', start: now, years: 1 },
         id: 'lic_00000000000000000001',
         revision: 3,
         keys: [key],
@@ -82,7 +82,7 @@ const cases: Record<string, { req: IssueRequest; id: string; revision: number; k
     },
     // What the portal issues once LICENSE_SIGNING_KEY_P256 is set.
     'dual-signed.lic': {
-        req: { product: 'certalert', edition: 'subscription', licensee, quantity: 10_000, support: 'mission', start: now, years: 1 },
+        req: { product: 'certalert', edition: 'subscription', licensee, quantity: 10_000, support: 'premium', start: now, years: 1 },
         id: 'lic_00000000000000000004',
         revision: 1,
         keys: [key, p256],
