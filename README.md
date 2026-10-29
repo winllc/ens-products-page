@@ -14,8 +14,11 @@ evaluation licenses and manage the licenses they buy.
 
 Plus `/pricing.html` (the price list, support tiers, services, buying terms
 and a quote estimator), `/licensing.html` (how licensing works),
-`/contact.html`, and the licensing pages: `/account` for customers and
-`/admin` for ENS staff.
+`/support.html` (the support policy: severities, hours, escalation,
+supported versions), `/trust.html` (for security reviewers: supply chain,
+release verification, audit trail, sign-in controls, data handling, FIPS and
+STIG, accessibility, vulnerability disclosure), `/contact.html`, and the
+licensing pages: `/account` for customers and `/admin` for ENS staff.
 
 The site is built with [Astro](https://astro.build) and TypeScript. The
 marketing pages are prerendered to plain static files and served by nginx,
@@ -408,6 +411,56 @@ list in the render script and to the Dockerfile and Compose files, then build
 its page on `ProductLayout` (see [Product pages](#product-pages)), which places
 the demo buttons.
 
+## Trust, support and search engines
+
+`/trust.html` is written for a security reviewer and `/support.html` for a
+buyer reading the support tiers. Every product statement on them comes from
+the [documentation site](https://winllc.github.io/ens-apps-documentation/)
+(its FIPS and STIG, releases, audit logging, licensing, security and
+accessibility pages) or from this repository; change the source first, then
+the page. The support page's numbers come from `supportTiers` in
+`src/data/pricing.ts`; the policy around them (severities, hours, escalation,
+supported versions) is the page's own text.
+
+`public/.well-known/security.txt` (RFC 9116) names the security contact and
+points at `/trust.html#disclosure`. **Its `Expires:` line must be renewed
+every year**, or validators flag it; nothing renews it automatically.
+
+For search engines and link previews:
+
+- `@astrojs/sitemap` writes `/sitemap-index.xml` and `/sitemap-0.xml` at
+  build time, for the marketing pages only, with the `.html` addresses the
+  pages' canonical links use (`astro.config.mjs`).
+- `public/robots.txt` allows everything but `/account`, `/admin` and `/api/`,
+  and names the sitemap.
+- `BaseLayout.astro` gives every page a canonical link, Open Graph and
+  Twitter card tags from its title and description, with the company logo as
+  the preview image, and a `noindex` prop for pages that should stay out of
+  search.
+- `src/lib/structured-data.ts` builds JSON-LD (schema.org) from the data
+  files: `organization()` and `productList()` are on the homepage;
+  `softwareApplication(id)` carries a product's `Offers` from `pricing.ts`
+  and is ready for the pricing and product pages. A page embeds one through
+  BaseLayout's `head` slot. `jsonLd()` escapes `<`, so the output can never
+  look like a `<!--DEMO:` marker to the render script.
+
+### Response headers
+
+`nginx/default.conf.template` sends every static response with
+`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`,
+`Permissions-Policy` and a `Content-Security-Policy` of
+`script-src 'self'; style-src 'self'` (plus `form-action 'self' mailto:` for
+the contact form). That policy holds because the built pages carry no inline
+script or style: `astro.config.mjs` sets `vite.build.assetsInlineLimit` to
+`0` so Astro never inlines a small script, and CI's render step fails if a
+rendered page contains one. Keep styles in `site.css` or in a component's
+`<style>` block (Astro extracts those into the stylesheet), never in a
+`style=""` attribute. The headers are declared once, at server level, with
+per-path values from `map` blocks: nginx drops every inherited `add_header`
+in a location that declares its own, so none does. The licensing service's
+responses keep their own, stricter CSP and `Cache-Control: no-store`; nginx
+sends neither on the proxied paths.
+
 ## Documentation links
 
 The header, the footer, every product card and every product page link to the
@@ -489,6 +542,8 @@ src/
     pricing.astro           Price list, support, services, buying terms, estimator
     licensing.astro         How licensing works, for buyers and installers
     contact.astro           Contact form (opens the visitor's email app)
+    support.astro           Support policy: tiers, severities, hours, escalation, supported versions
+    trust.astro             For security reviewers: supply chain, releases, audit, FIPS/STIG, disclosure
     404.astro, licensing-unavailable.astro
     products/               One page per product, each ending in its pricing
     account/                Customer licensing pages (rendered on demand)
@@ -521,6 +576,7 @@ src/
     licensing/license.ts    The license file: format, signing, verification, state
     licensing/issue.ts      Building a license from what was sold
     releases.ts             Release versions, SHA256SUMS, file names (pure functions)
+    structured-data.ts      JSON-LD for the pages' <head>, from the data files
   server/                   The licensing service: config, database and migrations,
                             accounts, sessions, licenses, audit trail (audit*.ts:
                             format and chain, store, outputs, pull API), mail, keys,
@@ -529,11 +585,13 @@ src/
   scripts/                  Browser code: contact form, estimator, savings calculator
   styles/site.css           The whole stylesheet
 public/assets/img/          Brand images and product screenshots, served as-is
+public/robots.txt           Crawler rules; names the sitemap
+public/.well-known/security.txt  Security contact (RFC 9116); renew Expires yearly
 licensing/                  The applications' side: Java verifier, Spring example,
                             cross-language fixtures (see licensing/README.md)
 scripts/license.mjs         keygen, public-key, inspect, verify
 scripts/releases-minio-test.sh  Release downloads end to end, against MinIO in Docker
-nginx/default.conf.template Server config: port 8080, gzip, caching, licensing proxy
+nginx/default.conf.template Server config: port 8080, gzip, caching, security headers and CSP, licensing proxy
 docker/docker-entrypoint.d/
   30-render-site.sh         Resolves demo URLs and DOCS_URL at container start
 astro.config.mjs            Build settings: Node adapter, .html file URLs, origin checks
