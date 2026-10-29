@@ -7,6 +7,40 @@
 # This is a template: the nginx entrypoint replaces ${LICENSING_UPSTREAM} and
 # ${DNS_RESOLVER} from the environment before nginx starts.
 
+# Which paths the licensing service answers. Its responses carry their own
+# headers (set in src/middleware.ts), including a stricter Content-Security-
+# Policy than the static pages can use, so the maps below give those paths an
+# empty value, and nginx adds no header whose value is empty.
+map $uri $ens_static {
+    ~^/(account|admin|api/licensing|api/audit)(/|$)  0;
+    default                                          1;
+}
+
+# The static pages' Content-Security-Policy. As built, the pages load their
+# scripts and stylesheet from /_astro/ and carry no inline script or style
+# (astro.config.mjs sets assetsInlineLimit to 0 to keep it that way, and CI
+# checks the rendered pages), so 'unsafe-inline' is needed for neither. The
+# contact form posts to mailto: today and may post to /api/licensing/contact
+# later, hence both in form-action. JSON-LD <script type="application/ld+json">
+# blocks are data, not script, and are not subject to script-src.
+map $ens_static $ens_csp {
+    1  "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; form-action 'self' mailto:; frame-ancestors 'self'; base-uri 'self'; object-src 'none'";
+    0  "";
+}
+
+# Caching. Astro's bundles (/_astro/) carry a content hash in their file names,
+# so a changed file is a new URL and they can be kept for as long as the browser
+# likes. Images under /assets/ keep their names; the render script versions
+# every reference to them by content hash instead, so a week is safe. The pages
+# themselves have the demo URLs filled in at container start and must not be
+# cached across a restart. The licensing service sets its own (no-store).
+map $uri $ens_cache_control {
+    ~^/(account|admin|api/licensing|api/audit)(/|$)  "";
+    ~^/_astro/                                       "public, max-age=31536000, immutable";
+    ~^/assets/                                       "public, max-age=604800";
+    default                                          "no-cache";
+}
+
 server {
     listen       8080;
     listen       [::]:8080;
@@ -15,11 +49,17 @@ server {
     root  /usr/share/nginx/html;
     index index.html;
 
-    # Nothing here is user-generated, but these cost nothing and keep the
-    # scanners quiet.
-    add_header X-Content-Type-Options "nosniff"        always;
-    add_header X-Frame-Options        "SAMEORIGIN"     always;
-    add_header Referrer-Policy        "strict-origin-when-cross-origin" always;
+    # Response headers. All of them are declared here, at server level, and
+    # none in a location: nginx drops every inherited add_header in a location
+    # that declares one of its own, so a header set per location is a header
+    # silently missing elsewhere. The values that differ by path come from the
+    # maps above, and an empty value means the header is not sent.
+    add_header X-Content-Type-Options  "nosniff"                          always;
+    add_header X-Frame-Options         "SAMEORIGIN"                       always;
+    add_header Referrer-Policy         "strict-origin-when-cross-origin"  always;
+    add_header Permissions-Policy      "camera=(), microphone=(), geolocation=()" always;
+    add_header Content-Security-Policy $ens_csp                           always;
+    add_header Cache-Control           $ens_cache_control                 always;
 
     # No directory listings.
     autoindex off;
@@ -27,7 +67,7 @@ server {
     gzip             on;
     gzip_vary        on;
     gzip_min_length  512;
-    gzip_types       text/plain text/css application/javascript text/javascript image/svg+xml;
+    gzip_types       text/plain text/css application/javascript text/javascript image/svg+xml application/xml;
 
     # The licensing service is looked up per request, so nginx starts (and the
     # static site works) even when it isn't running; requests for it then get
@@ -47,7 +87,9 @@ server {
         proxy_set_header X-Forwarded-For   $remote_addr;
         proxy_set_header X-Real-IP         $remote_addr;
         # nginx adds these to every response already; drop the service's copies
-        # so each is sent once. Its CSP (frame-ancestors 'none') still applies.
+        # so each is sent once. Its Content-Security-Policy (frame-ancestors
+        # 'none') and Cache-Control (no-store) are its own: nginx sends neither
+        # on these paths (see the maps above), so they pass through untouched.
         proxy_hide_header X-Frame-Options;
         proxy_hide_header X-Content-Type-Options;
         proxy_hide_header Referrer-Policy;
@@ -59,28 +101,15 @@ server {
     # Container orchestrators want a cheap endpoint that does not read from disk.
     location = /healthz {
         access_log off;
-        add_header Content-Type text/plain;
+        default_type text/plain;
         return 200 "ok\n";
     }
 
-    # Astro's bundles (the stylesheet and the page scripts) carry a content hash
-    # in their file names, so a changed file is a new URL and they can be kept
-    # for as long as the browser likes.
-    location /_astro/ {
-        expires 1y;
-        add_header Cache-Control "public, immutable";
-    }
-
-    # Images under /assets/ keep their names; the render script versions every
-    # reference to them by content hash instead. The demo URLs are filled in at
-    # container start, so HTML must not be cached across a restart.
-    location /assets/ {
-        expires 7d;
-        add_header Cache-Control "public";
-    }
-
+    # Everything else is a file in the root: the pages, Astro's bundles under
+    # /_astro/, the images under /assets/ (cached as the map above says),
+    # robots.txt, the sitemap, and /.well-known/security.txt (RFC 9116);
+    # nothing here hides dot-directories.
     location / {
-        add_header Cache-Control "no-cache";
         # Allow /products/readyroom as well as /products/readyroom.html.
         try_files $uri $uri.html $uri/ =404;
     }
