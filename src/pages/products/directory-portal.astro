@@ -1,16 +1,23 @@
 ---
+import CapabilityTable from '../../components/CapabilityTable.astro';
+import FactTable from '../../components/FactTable.astro';
 import ProductPricing from '../../components/ProductPricing.astro';
+import { docsUrl } from '../../data/site';
 import ProductLayout from '../../layouts/ProductLayout.astro';
+
+const docs = (page: string) => docsUrl(`directory-services-portal/${page}`);
 ---
 <ProductLayout
     product="directory-portal"
-    description="Directory Services Portal is a web front end for LDAP directories with custom schemas: administrators build forms for any object class, publish them as scoped directories, and grant read and write access to users and groups. From ENS Solutions."
+    description="Directory Services Portal is a web front end for LDAP directories with custom schemas: administrators build forms for any object class, publish them as scoped directories, and grant read and write access to users and groups. CAC/PIV, password or single sign-on, a hash-chained audit trail, CSV and LDIF import and export, a REST API and signed webhooks; Compose, native or Helm. From ENS Solutions."
     headline="Your directory&rsquo;s own schema, as forms people can use."
     sections={[
         { id: 'how-heading', label: 'How it works' },
         { id: 'screens-heading', label: 'Screens' },
         { id: 'users-heading', label: 'For users' },
         { id: 'security-heading', label: 'Security' },
+        { id: 'platform-heading', label: 'Security and integrations' },
+        { id: 'scope-heading', label: 'Today and not yet' },
         { id: 'tech-heading', label: 'Requirements' },
         { id: 'pricing-heading', label: 'Pricing' },
     ]}
@@ -128,11 +135,12 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
             </article>
             <article class="card">
                 <p class="card-kicker">Sign-in</p>
-                <h3>Directory password or smart card</h3>
+                <h3>Directory password, smart card or single sign-on</h3>
                 <p>
-                    Users sign in with their own directory password, or with a client certificate such
-                    as a CAC or PIV card. Each certificate is mapped to exactly one directory user. The
-                    portal can also be set to accept certificates only.
+                    Users sign in with their own directory password, with a client certificate such
+                    as a CAC or PIV card, or through your identity provider by OpenID Connect or
+                    SAML&nbsp;2.0. Each certificate is mapped to exactly one directory user, and the
+                    portal can be set to accept certificates only.
                 </p>
             </article>
         </div>
@@ -171,6 +179,114 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
     </div>
 </section>
 
+<section class="section" aria-labelledby="platform-heading">
+    <div class="wrap">
+        <h2 id="platform-heading">Security and integrations</h2>
+        <p class="lede">
+            What a security reviewer or an integrator will ask about, in one place. Each row links the
+            documentation page that describes it in full.
+        </p>
+        <FactTable
+            caption="Directory Services Portal security and integration summary"
+            rows={[
+                {
+                    label: 'Sign-in',
+                    detail: 'The directory password, by LDAP bind; X.509 client certificates such as a CAC or PIV card, each mapped to exactly one directory user and checked against OCSP or a CRL; or single sign-on by OpenID Connect or SAML&nbsp;2.0, with Entra ID, Okta and AD&nbsp;FS set-ups documented. Failed sign-ins lock out after a configurable number of attempts.',
+                    docs: { href: docs('single-sign-on/'), label: 'Single sign-on' },
+                },
+                {
+                    label: 'Permissions',
+                    detail: 'View or view-and-edit grants per directory, for users or directory groups, with a matrix of every grant; administrators from configuration or the identity provider&rsquo;s groups. Every DN is checked against the directory&rsquo;s namespace on the server.',
+                    docs: { href: docs('security/'), label: 'Security' },
+                },
+                {
+                    label: 'Public API',
+                    detail: 'A versioned REST API at <span class="mono">/api/v1</span> with an OpenAPI document. Administrators create scoped tokens with an expiry (up to a year by default), optionally limited to named directories and given their own rate limit; a token never exceeds its creator&rsquo;s access.',
+                    docs: { href: docs('api-reference/'), label: 'API reference' },
+                },
+                {
+                    label: 'Webhooks',
+                    detail: 'HMAC-signed HTTPS events for entry changes, group membership changes and form submissions, with a guard against requests to internal addresses and a delivery log.',
+                    docs: { href: docs('webhooks/'), label: 'Webhooks' },
+                },
+                {
+                    label: 'Import and export',
+                    detail: 'Entries and group members exported as CSV or LDIF; CSV and LDIF import with a dry run that reports what would change; bulk membership changes.',
+                    docs: { href: docs('import-export/'), label: 'Import and export' },
+                },
+                {
+                    label: 'High availability',
+                    detail: 'Several API instances with the Helm chart once a shared PostgreSQL database holds sessions, configuration and the audit store; the web tier is stateless. Without a database the API runs as one instance.',
+                    docs: { href: docs('availability-and-sizing/'), label: 'Sizing, availability and recovery' },
+                },
+                {
+                    label: 'Audit trail',
+                    detail: 'Every change and sign-in, with the values before and after, in the hash-chained <span class="mono">ens-audit/1</span> trail: searchable and verifiable in the app, exported as CSV or NDJSON, forwarded to Splunk HEC or syslog, or pulled by your SIEM through an API token.',
+                    docs: { href: docsUrl('audit-logging/'), label: 'Audit logging' },
+                },
+                {
+                    label: 'Observability',
+                    detail: 'Prometheus metrics and health probes on a separate management port, and JSON logs in Elastic Common Schema.',
+                    docs: { href: docs('operator-guide/'), label: 'Operator guide' },
+                },
+                {
+                    label: 'Deployment',
+                    detail: 'A release package for Docker or Podman Compose (podman-compose 1.0.6 or newer), a native package run by systemd on the host&rsquo;s Java&nbsp;21, or a Helm chart for Kubernetes and OpenShift. Container images are built on Red Hat UBI&nbsp;9 with base images pinned by digest; images and chart are signed with cosign, with an SPDX SBOM in the download and attested on the images.',
+                    docs: { href: docs('install/'), label: 'Install guide' },
+                },
+                {
+                    label: 'Directory servers',
+                    detail: 'Any LDAP v3 server over LDAP, LDAPS or StartTLS, with a pooled service account. The automated tests run against an embedded directory; the install guide&rsquo;s matrix says plainly which servers have and have not been tested, so check yours on a test instance first.',
+                    docs: { href: docs('install/'), label: 'What is tested' },
+                },
+                {
+                    label: 'STIG-style controls',
+                    detail: 'The ENS platform baseline: a notice-and-consent banner, idle, administrator and absolute session timeouts and a sessions-per-user limit, security headers and CSRF protection, client-certificate revocation checking and allowed issuers, and the Helm chart&rsquo;s non-root, read-only containers.',
+                    docs: { href: docs('fips-and-stig/'), label: 'FIPS 140-3 and DISA STIG' },
+                },
+                {
+                    label: 'FIPS 140-3',
+                    detail: 'Runs on FIPS-mode RHEL or OpenShift hosts: the API takes its cryptography from Red Hat&rsquo;s OpenJDK and the web tier from the system OpenSSL, and the license check accepts a license&rsquo;s ECDSA P-256 co-signature where Ed25519 is unavailable. ENS supplies no validated cryptographic module and claims no validation; the portal has not yet been run end to end in FIPS mode.',
+                    docs: { href: docsUrl('fips-and-stig/'), label: 'FIPS position' },
+                },
+                {
+                    label: 'Accessibility',
+                    detail: 'Built and checked against WCAG 2.1 A and AA. Every build runs axe-core over the web client&rsquo;s pages and dialogs, in light and dark colour schemes, with keyboard checks, and fails on a serious or critical violation. A self-audit and a draft conformance report are available on request; conformance is not yet claimed.',
+                    docs: { href: docs('accessibility/'), label: 'Accessibility' },
+                },
+            ]}
+        />
+    </div>
+</section>
+
+<section class="section" aria-labelledby="scope-heading">
+    <div class="wrap">
+        <h2 id="scope-heading">What it does, and what it does not yet</h2>
+        <p class="lede">
+            For your shortlist: what is in the product today, what is there in part, and what it does
+            not do yet. &ldquo;Not yet&rdquo; means not in the current release; ask us about the roadmap.
+        </p>
+        <CapabilityTable
+            caption="Directory Services Portal capabilities today"
+            rows={[
+                { label: 'Forms over any schema', status: 'included', note: 'Forms for custom object classes, a schema linter and drop-downs filled from the directory.' },
+                { label: 'Audit of every change', status: 'included', note: 'Hash-chained trail with before-and-after values, forwarded to Splunk or syslog.' },
+                { label: 'Single sign-on', status: 'included', note: 'OpenID Connect and SAML 2.0, beside smart cards and passwords.' },
+                { label: 'Signed releases', status: 'included', note: 'Images and chart signed with cosign, base images pinned by digest, an SPDX SBOM in every download.' },
+                { label: 'Delegated administration', status: 'partial', note: 'View or edit per directory, and API tokens by scope and directory; the administrator role itself is all or nothing.' },
+                { label: 'Group membership', status: 'partial', note: 'Add and remove members, bulk changes and export; no group owners or join requests.' },
+                { label: 'White pages and org chart', status: 'partial', note: 'Read-only white-pages directories; no org chart view.' },
+                { label: 'Reports for audits', status: 'partial', note: 'Metrics dashboards and data-quality analyses; no inactive, locked or expiring-account reports.' },
+                { label: 'Bulk edit, import and export', status: 'partial', note: 'CSV and LDIF import and export, with a dry run; no multi-select edit, and list views stop at 1,000 entries.' },
+                { label: 'REST API and webhooks', status: 'partial', note: 'A scoped API with an OpenAPI document and signed webhooks; no SCIM.' },
+                { label: 'Password change, reset and unlock', status: 'not-yet', note: 'The portal does not change passwords.' },
+                { label: 'Approval workflows', status: 'not-yet', note: 'Every permitted write applies at once; no second approver.' },
+                { label: 'Several directories with failover', status: 'not-yet', note: 'One directory server URL per installation.' },
+            ]}
+        />
+    </div>
+</section>
+
 <section class="section" aria-labelledby="tech-heading">
     <div class="wrap">
         <h2 id="tech-heading">What you need to run it</h2>
@@ -194,19 +310,19 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
                 </tr>
                 <tr>
                     <th scope="row">Directory</th>
-                    <td>Any LDAP / LDAPS server, with StartTLS supported. The service account needs read access to the schema and the exposed parts of the tree, and write access wherever users edit</td>
+                    <td>Any LDAP v3 server over LDAP, LDAPS or StartTLS. The service account needs read access to the schema and the exposed parts of the tree, and write access wherever users edit. The install guide lists which servers the automated tests cover</td>
                 </tr>
                 <tr>
                     <th scope="row">Storage</th>
-                    <td>No database. Forms, directories, grants and custom schema are kept in a single JSON configuration file</td>
+                    <td>A JSON configuration file and audit files on disk by default, with no database to run. For several API instances, a shared PostgreSQL database holds sessions, configuration and the audit store instead</td>
                 </tr>
                 <tr>
                     <th scope="row">Authentication</th>
-                    <td>Password sign-in verified by an LDAP bind; optional mutual TLS, ended at the web proxy or at the API</td>
+                    <td>Directory password by LDAP bind, X.509 client certificates (CAC or PIV) with OCSP or CRL revocation checking, ended at the web proxy or at the API, or single sign-on by OpenID Connect or SAML 2.0</td>
                 </tr>
                 <tr>
                     <th scope="row">Deployment</th>
-                    <td>Separate containers for the web client and the API, plus a Docker Compose stack with a demo OpenLDAP server</td>
+                    <td>A release package for Docker or Podman Compose (web and API containers, with an optional demo directory), a native package for systemd, or a Helm chart for Kubernetes and OpenShift</td>
                 </tr>
                 </tbody>
             </table>

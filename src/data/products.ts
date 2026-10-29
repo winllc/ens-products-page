@@ -58,7 +58,7 @@ export const products: readonly Product[] = [
         demoKey: 'READYROOM',
         status: 'available',
         summary:
-            'Know who&rsquo;s in without a sign-in sheet. Windows sign-ins, locks and sign-outs become daily attendance and accountability for your directory, with managers alerted when someone isn&rsquo;t in by their expected time.',
+            'Know who&rsquo;s in without a sign-in sheet. Windows sign-ins, locks and sign-outs become daily attendance and accountability for your directory, with managers alerted when someone isn&rsquo;t in by their expected time, leave approved in the app, and reports as PDF, CSV or Excel.',
         cardShot: {
             src: '/assets/img/screens/readyroom-home.jpg',
             width: 1440,
@@ -79,7 +79,7 @@ export const products: readonly Product[] = [
         demoKey: 'CERTALERT',
         status: 'available',
         summary:
-            'Certificate expiration visibility for your whole directory. Indexes every certificate people and servers publish, alerts each server&rsquo;s points of contact before one lapses, and checks revocation and what servers are actually serving.',
+            'Certificate expiration visibility for your whole directory. Indexes every certificate people and servers publish, alerts each server&rsquo;s points of contact before one lapses by email, Slack or Teams, checks revocation and what servers are actually serving, and exports the inventory for audit.',
         cardShot: {
             src: '/assets/img/screens/certalert-metrics.jpg',
             width: 1440,
@@ -100,7 +100,7 @@ export const products: readonly Product[] = [
         demoKey: 'MFA_PORTAL',
         status: 'available',
         summary:
-            'Run your RSA SecurID program from one portal. Self-service token activation and PIN resets, a Trusted Agent directory with appointments, help desk tools, and token shipments to every site &mdash; on top of RSA Authentication Manager.',
+            'Run your RSA SecurID program from one portal. Self-service token activation and PIN resets, a Trusted Agent directory with appointments, verified and dual-controlled help-desk requests, and token shipments to every site &mdash; on top of RSA Authentication Manager, with an API for your ITSM.',
         cardShot: {
             src: '/assets/img/screens/rsa-portal-user-details.jpg',
             width: 1440,
@@ -121,7 +121,7 @@ export const products: readonly Product[] = [
         demoKey: 'DIRECTORY_PORTAL',
         status: 'available',
         summary:
-            'A web front end for LDAP directories with custom schemas. Build forms for any object class, publish scoped read/write or white-pages directories, grant access by user or group, and let people update their own details.',
+            'A web front end for LDAP directories with custom schemas. Build forms for any object class, publish scoped read/write or white-pages directories, grant access by user or group, and let people update their own details &mdash; with smart-card, password or single sign-on, an audit trail of every change, and CSV and LDIF import and export.',
         cardShot: {
             src: '/assets/img/screens/directory-portal-staff.jpg',
             width: 1440,

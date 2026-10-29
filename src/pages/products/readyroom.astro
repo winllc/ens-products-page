@@ -1,11 +1,16 @@
 ---
+import CapabilityTable from '../../components/CapabilityTable.astro';
+import FactTable from '../../components/FactTable.astro';
 import ProductPricing from '../../components/ProductPricing.astro';
+import { docsUrl } from '../../data/site';
 import { formatUSD, startingPrice } from '../../lib/pricing';
 import ProductLayout from '../../layouts/ProductLayout.astro';
+
+const docs = (page: string) => docsUrl(`readyroom/${page}`);
 ---
 <ProductLayout
     product="readyroom"
-    description="ReadyRoom turns the Windows sign-ins your people already make into daily attendance, accountability and absence alerts, organized by the LDAP or Active Directory you already run."
+    description="ReadyRoom turns the Windows sign-ins your people already make into daily attendance, accountability and absence alerts, organized by the LDAP or Active Directory you already run. Leave approvals, PDF, CSV and Excel reports, CAC/PIV or single sign-on, a read-only API and webhooks, a hash-chained audit trail; Compose package or Helm chart."
     headline="Know who&rsquo;s in, without a sign-in sheet."
     sections={[
         { id: 'how-heading', label: 'How it works' },
@@ -15,6 +20,8 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
         { id: 'alerts-heading', label: 'Absence alerts' },
         { id: 'features-heading', label: 'More features' },
         { id: 'security-heading', label: 'Security' },
+        { id: 'platform-heading', label: 'Security and integrations' },
+        { id: 'scope-heading', label: 'Today and not yet' },
         { id: 'tech-heading', label: 'Requirements' },
         { id: 'pricing-heading', label: 'Pricing' },
     ]}
@@ -57,8 +64,8 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
         <ol class="flow-steps">
             <li>
                 <strong>People sign in to Windows as usual.</strong> A lightweight PowerShell agent, run
-                by four Windows scheduled tasks, reports sign-in, screen lock, screen unlock and sign-out.
-                Once IT has installed it there is nothing for anyone to open or click.
+                by five Windows scheduled tasks, reports sign-in, screen lock, screen unlock, session
+                disconnect and sign-out. Once IT has installed it there is nothing for anyone to open or click.
             </li>
             <li>
                 <strong>Events become a working day.</strong> The first sign-in or unlock of the day
@@ -138,8 +145,10 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
                     <li>Early leave</li>
                 </ul>
                 <p class="muted small">
-                    Managers can also record unscheduled leave and excused or unexcused absences when
-                    they follow up on an alert.
+                    A late arrival or early leave is set by the person; a status that excuses an absence,
+                    such as leave, telework or TDY, is requested and approved by their manager or a
+                    delegate on the Approvals page. Managers can also record unscheduled leave and
+                    excused or unexcused absences when they follow up on an alert.
                 </p>
             </div>
         </div>
@@ -263,7 +272,8 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
                 <h3>Certificate-first sign-in</h3>
                 <p>
                     Mutual TLS with X.509 client certificates, resolving the full subject DN against the
-                    directory. Browsers without a certificate fall back to an LDAP-validated form login.
+                    directory. Browsers without a certificate fall back to an LDAP-validated form login,
+                    or to single sign-on through your identity provider.
                 </p>
             </div>
             <div class="feature">
@@ -305,6 +315,120 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
     </div>
 </section>
 
+<section class="section" aria-labelledby="platform-heading">
+    <div class="wrap">
+        <h2 id="platform-heading">Security and integrations</h2>
+        <p class="lede">
+            What a security reviewer or an integrator will ask about, in one place. Each row links the
+            documentation page that describes it in full.
+        </p>
+        <FactTable
+            caption="ReadyRoom security and integration summary"
+            rows={[
+                {
+                    label: 'Sign-in',
+                    detail: 'Mutual TLS with X.509 client certificates (a CAC or PIV card) resolved against the directory; the directory password as the fallback; or single sign-on by OpenID Connect or SAML&nbsp;2.0, with a Microsoft Entra ID set-up documented. The workstation agent checks in with a certificate or, optionally, a Kerberos ticket.',
+                    docs: { href: docs('single-sign-on/'), label: 'Single sign-on' },
+                },
+                {
+                    label: 'Roles',
+                    detail: 'User, manager and administrator, with per-group grants and extra group managers where a role is too coarse, and delegates who approve statuses on a manager&rsquo;s behalf.',
+                    docs: { href: docs('security/'), label: 'Security' },
+                },
+                {
+                    label: 'Public API',
+                    detail: 'A read-only REST API at <span class="mono">/api/v1</span> with an OpenAPI document, called with scoped API tokens (<span class="mono">people:read</span>, <span class="mono">attendance:read</span>, <span class="mono">absences:read</span>) that expire and carry their own rate limit.',
+                    docs: { href: docs('api-reference/'), label: 'API reference' },
+                },
+                {
+                    label: 'Webhooks',
+                    detail: 'HMAC-signed webhooks for absence alerts and status changes, so another system hears the moment someone is late or a status changes.',
+                    docs: { href: docs('webhooks/'), label: 'Webhooks' },
+                },
+                {
+                    label: 'Reports and exports',
+                    detail: 'Group reports as PDF, CSV or Excel, people lists, and scheduled e-mailed reports, with each person&rsquo;s times in their own or their site&rsquo;s time zone.',
+                    docs: { href: docs('exports/'), label: 'Reports, exports and time zones' },
+                },
+                {
+                    label: 'Privacy and retention',
+                    detail: 'What coworkers see of each other is configurable. Old check-ins and statuses are summarised by month and deleted after a set number of days; everyone can download their own data, and administrators export or erase a person&rsquo;s. A page written for a DPIA or a works council.',
+                    docs: { href: docs('privacy/'), label: 'Privacy, DPIA and works council' },
+                },
+                {
+                    label: 'High availability',
+                    detail: 'Several replicas with the Helm chart. Sessions, job locks, sign-in requests in progress and the license state live in PostgreSQL, so each job runs once and two replicas keep workstation events flowing through an upgrade.',
+                    docs: { href: docs('availability-and-sizing/'), label: 'Sizing, availability and recovery' },
+                },
+                {
+                    label: 'Audit trail',
+                    detail: 'Sign-ins, refusals, settings, status requests, exports and retention runs in the hash-chained <span class="mono">ens-audit/1</span> trail: searchable and verifiable in the app, exported as CSV or NDJSON, forwarded to Splunk HEC or syslog, or pulled by your SIEM through an API token.',
+                    docs: { href: docsUrl('audit-logging/'), label: 'Audit logging' },
+                },
+                {
+                    label: 'Observability',
+                    detail: 'Prometheus metrics and health probes on a separate management port, and JSON logs in Elastic Common Schema.',
+                    docs: { href: docs('operator-guide/'), label: 'Operations' },
+                },
+                {
+                    label: 'Deployment',
+                    detail: 'A release package for Docker or Podman Compose (podman-compose 1.0.6 or newer) with PostgreSQL included and the Windows agent alongside, or a Helm chart for Kubernetes and OpenShift. The image is built on Red Hat UBI&nbsp;9; image and chart are signed with cosign by digest, with an SPDX SBOM in the download and attested on the image.',
+                    docs: { href: docs('install/'), label: 'Install guide' },
+                },
+                {
+                    label: 'Windows agent',
+                    detail: 'One PowerShell script run by five scheduled tasks (sign-in, lock, unlock, disconnect and sign-out), registered by an installer script and removed by the same script. Windows only.',
+                    docs: { href: docs('windows-client/'), label: 'Windows client' },
+                },
+                {
+                    label: 'STIG-style controls',
+                    detail: 'The ENS platform baseline: a notice-and-consent banner, idle, administrator and absolute session timeouts and a sessions-per-user limit, security headers and CSRF protection, client-certificate revocation checking and allowed issuers, and the Helm chart&rsquo;s non-root, read-only containers.',
+                    docs: { href: docs('fips-and-stig/'), label: 'FIPS 140-3 and DISA STIG' },
+                },
+                {
+                    label: 'FIPS 140-3',
+                    detail: 'Runs on FIPS-mode RHEL or OpenShift hosts, taking its cryptography from Red Hat&rsquo;s OpenJDK, and the license check accepts a license&rsquo;s ECDSA P-256 co-signature where Ed25519 is unavailable. ENS supplies no validated cryptographic module and claims no validation; the server, the Windows agent under Windows&rsquo; FIPS policy and Kerberos sign-in have not yet been tested in FIPS mode.',
+                    docs: { href: docsUrl('fips-and-stig/'), label: 'FIPS position' },
+                },
+                {
+                    label: 'Accessibility',
+                    detail: 'Targets WCAG 2.1 AA (Section 508). Every push runs axe-core through a real browser against the main pages, at desktop and phone widths and as an administrator, a manager and a user, and fails on a serious or critical violation. A self-audit (which lists the remaining keyboard gaps) and a draft VPAT are available on request; conformance is not yet claimed.',
+                    docs: { href: docs('accessibility/'), label: 'Accessibility' },
+                },
+            ]}
+        />
+    </div>
+</section>
+
+<section class="section" aria-labelledby="scope-heading">
+    <div class="wrap">
+        <h2 id="scope-heading">What it does, and what it does not yet</h2>
+        <p class="lede">
+            For your shortlist: what is in the product today, what is there in part, and what it does
+            not do yet. &ldquo;Not yet&rdquo; means not in the current release; ask us about the roadmap.
+        </p>
+        <CapabilityTable
+            caption="ReadyRoom capabilities today"
+            rows={[
+                { label: 'Automatic presence from workstation activity', status: 'included', note: 'Sign-in, lock, unlock, disconnect and sign-out, tied to the Windows session. Windows only.' },
+                { label: 'Leave and absence approvals', status: 'included', note: 'Statuses that excuse an absence are requested, then approved by a manager or delegate.' },
+                { label: 'Reports and exports', status: 'included', note: 'PDF, CSV and Excel, scheduled e-mailed reports, time zones.' },
+                { label: 'Single sign-on and smart cards', status: 'included', note: 'OpenID Connect and SAML 2.0 beside CAC/PIV and the directory password.' },
+                { label: 'High availability', status: 'included', note: 'Several replicas with the Helm chart; rolling updates.' },
+                { label: 'Privacy controls and retention', status: 'included', note: 'Visibility policy, purge with monthly roll-ups, export and erasure.' },
+                { label: 'Audit and SIEM', status: 'included', note: 'Hash-chained trail to Splunk, syslog or a pull API.' },
+                { label: 'Integrations', status: 'partial', note: 'A read-only API and two webhook events; nothing writes in, and there is no HRIS or calendar feed.' },
+                { label: 'Agent deployment', status: 'partial', note: 'A PowerShell installer registers the scheduled tasks; no MSI package for Intune, Group Policy or SCCM yet.' },
+                { label: 'Notifications', status: 'partial', note: 'E-mail, in-app and webhooks; Teams, Slack or SMS need a webhook receiver on your side.' },
+                { label: 'Proof for accreditation', status: 'partial', note: 'FIPS and STIG settings documented; no FIPS-mode test run yet, and the VPAT is a draft.' },
+                { label: 'Manual check-in (web, mobile, kiosk)', status: 'not-yet', note: 'People without a Windows workstation are accounted for only through calendar statuses.' },
+                { label: 'Emergency muster and roll call', status: 'not-yet', note: 'No muster event, board or &ldquo;I&rsquo;m safe&rdquo; response.' },
+                { label: 'macOS and Linux agents', status: 'not-yet', note: 'The agent is PowerShell on Windows.' },
+            ]}
+        />
+    </div>
+</section>
+
 <section class="section" aria-labelledby="tech-heading">
     <div class="wrap">
         <h2 id="tech-heading">What you need to run it</h2>
@@ -323,6 +447,10 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
                     <td>Spring Boot 4 on Java 21 with a Thymeleaf web UI, shipped as a container on Red Hat UBI 9</td>
                 </tr>
                 <tr>
+                    <th scope="row">Deployment</th>
+                    <td>A release package for Docker or Podman Compose, or a Helm chart for Kubernetes and OpenShift; signed images with an SBOM</td>
+                </tr>
+                <tr>
                     <th scope="row">Directory</th>
                     <td>LDAP / LDAPS or Active Directory, with pooled connections and paged searches for large directories</td>
                 </tr>
@@ -332,11 +460,11 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
                 </tr>
                 <tr>
                     <th scope="row">Workstations</th>
-                    <td>Windows with PowerShell; one install script registers the agent&rsquo;s four scheduled tasks</td>
+                    <td>Windows with PowerShell 5.1; one install script registers the agent&rsquo;s five scheduled tasks</td>
                 </tr>
                 <tr>
                     <th scope="row">Authentication</th>
-                    <td>A certificate authority for client certificates, and optionally an AD service account and keytab for Windows sign-in</td>
+                    <td>A certificate authority for client certificates, or an OpenID Connect or SAML 2.0 identity provider, with the directory password as the fallback; optionally an AD service account and keytab for Windows sign-in by the agent</td>
                 </tr>
                 <tr>
                     <th scope="row">Email</th>
@@ -348,7 +476,7 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
                 </tr>
                 <tr>
                     <th scope="row">Configuration</th>
-                    <td>Environment variables or external config &mdash; no edits to a shipped file</td>
+                    <td>Environment variables or external config &mdash; no edits to a shipped file; health probes and Prometheus metrics on a management port</td>
                 </tr>
                 </tbody>
             </table>
