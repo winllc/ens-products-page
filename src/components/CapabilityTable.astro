@@ -1,0 +1,49 @@
+---
+/*
+ * The "What it does, and what it does not yet" table on a product page: the
+ * capabilities a buyer shortlists on, each marked Included, Partial or Not
+ * yet, with a short factual note. Drawn from the documentation, never from
+ * the roadmap, so a "Not yet" is exactly that.
+ */
+export type CapabilityStatus = 'included' | 'partial' | 'not-yet';
+
+interface Row {
+    label: string;
+    status: CapabilityStatus;
+    /** HTML: one short, factual sentence. Entities allowed. */
+    note: string;
+}
+
+interface Props {
+    caption: string;
+    rows: Row[];
+}
+
+const { caption, rows } = Astro.props;
+const text: Record<CapabilityStatus, string> = {
+    included: 'Included',
+    partial: 'Partial',
+    'not-yet': 'Not yet',
+};
+---
+<div class="table-scroll">
+    <table class="cap-table">
+        <caption class="visually-hidden">{caption}</caption>
+        <thead>
+        <tr>
+            <th scope="col">Capability</th>
+            <th scope="col">Status</th>
+            <th scope="col">Today</th>
+        </tr>
+        </thead>
+        <tbody>
+        {rows.map((r) => (
+            <tr>
+                <th scope="row">{r.label}</th>
+                <td><span class:list={['pill', `pill--${r.status}`]}>{text[r.status]}</span></td>
+                <td set:html={r.note} />
+            </tr>
+        ))}
+        </tbody>
+    </table>
+</div>

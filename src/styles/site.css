@@ -546,6 +546,13 @@ th[scope="row"] {
     white-space: nowrap;
 }
 
+/* Product pages: the "Security and integrations" and capability tables.
+   Row headers wrap there, since topics are phrases rather than one word. */
+.fact-table th[scope="row"],
+.cap-table th[scope="row"] { white-space: normal; min-width: 9rem; }
+
+.fact-table td:last-child { white-space: nowrap; }
+
 /* ---------------------------------------------------------------- *
  * Callout
  * ---------------------------------------------------------------- */
@@ -1441,6 +1448,11 @@ img { max-width: 100%; height: auto; }
 .pill--not-yet-valid { background: var(--pending-soft); color: var(--pending); }
 .pill--expired,
 .pill--revoked { background: var(--danger-soft); color: var(--danger); }
+
+/* Product pages' capability table. */
+.pill--included { background: var(--ok-soft);      color: var(--ok); }
+.pill--partial  { background: var(--pending-soft); color: var(--pending); }
+.pill--not-yet  { background: var(--surface-alt);  color: var(--text-muted); }
 
 .license-table th[scope="row"] { white-space: normal; }
 .license-table th[scope="row"] a { font-weight: 620; }
