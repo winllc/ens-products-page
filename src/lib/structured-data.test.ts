@@ -62,7 +62,7 @@ describe('offers', () => {
             'Up to 2,500 directory users, annual subscription',
             '2,501–10,000 directory users, annual subscription',
             '10,001–50,000 directory users, annual subscription',
-            'Enterprise or multi-forest directory users, annual subscription',
+            'Enterprise directory users, annual subscription',
         ]);
     });
 });
