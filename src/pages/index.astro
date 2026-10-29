@@ -5,6 +5,7 @@ import { products } from '../data/products';
 import { docsUrl } from '../data/site';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { formatPercent, formatUSD, startingPrice } from '../lib/pricing';
+import { jsonLd, organization, productList } from '../lib/structured-data';
 
 const lowest = Math.min(...products.map((p) => startingPrice(p.id)));
 const firstBundle = bundleDiscounts[0]!;
@@ -15,6 +16,7 @@ const mission = supportTiers.at(-1)!;
     title="Products"
     description="Identity and accountability software from ENS Solutions, LLC — a service-disabled veteran-owned IT firm serving the DoD, the Intelligence Community and commercial customers. ReadyRoom, CertAlert, RSA Operations Portal and Directory Services Portal."
 >
+<script is:inline type="application/ld+json" slot="head" set:html={jsonLd([organization(), productList()])} />
 <section class="hero">
     <div class="wrap">
         <p class="eyebrow">Essential Network Security Solutions &middot; Veteran-owned</p>
@@ -64,6 +66,9 @@ const mission = supportTiers.at(-1)!;
         <div class="product-grid">
             {products.map((p) => <ProductCard product={p.id} />)}
         </div>
+        <p class="section-more">
+            <a href="/trust.html">Signed releases with SBOMs, a hash-chained audit trail and our FIPS and STIG position: the trust page, for security reviewers &rarr;</a>
+        </p>
     </div>
 </section>
 
