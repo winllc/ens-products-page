@@ -1,0 +1,8 @@
+# Security contact for ENS Solutions, LLC: this site, the licensing portal
+# and the products (ReadyRoom, CertAlert, RSA Operations Portal, Directory
+# Services Portal). RFC 9116. The disclosure policy is on the trust page.
+Contact: mailto:info@ens-solutions.com
+Expires: 2027-10-29T00:00:00.000Z
+Preferred-Languages: en
+Canonical: https://products.ens-solutions.com/.well-known/security.txt
+Policy: https://products.ens-solutions.com/trust.html#disclosure

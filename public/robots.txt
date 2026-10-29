@@ -1,0 +1,10 @@
+# https://products.ens-solutions.com
+# The marketing pages are open to every crawler. The licensing pages are
+# behind a sign-in and the API is not for browsers.
+User-agent: *
+Disallow: /account
+Disallow: /admin
+Disallow: /api/
+Allow: /
+
+Sitemap: https://products.ens-solutions.com/sitemap-index.xml
