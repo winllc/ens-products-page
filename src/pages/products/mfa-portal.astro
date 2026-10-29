@@ -1,16 +1,23 @@
 ---
+import CapabilityTable from '../../components/CapabilityTable.astro';
+import FactTable from '../../components/FactTable.astro';
 import ProductPricing from '../../components/ProductPricing.astro';
 import SavingsCalculator from '../../components/SavingsCalculator.astro';
+import { docsUrl } from '../../data/site';
 import ProductLayout from '../../layouts/ProductLayout.astro';
+
+const docs = (page: string) => docsUrl(`rsa-operations-portal/${page}`);
 ---
 <ProductLayout
     product="mfa-portal"
-    description="RSA Operations Portal runs the day-to-day of an RSA SecurID program on top of RSA Authentication Manager: token assignment and self-service PIN resets, a Trusted Agent directory with appointments, multi-site token shipments, and help desk tools. Available now from ENS Solutions."
+    description="RSA Operations Portal runs the day-to-day of an RSA SecurID program on top of RSA Authentication Manager: token assignment and self-service PIN resets, a Trusted Agent directory with appointments, multi-site token shipments, and verified, dual-controlled help-desk requests. Single sign-on for operators, a REST API and signed webhooks, a hash-chained audit trail; Compose package or Helm chart. Available now from ENS Solutions."
     headline="Run your SecurID program from one portal."
     sections={[
         { id: 'capabilities-heading', label: 'Features' },
         { id: 'screens-heading', label: 'Screens' },
         { id: 'fit-heading', label: 'How it fits' },
+        { id: 'platform-heading', label: 'Security and integrations' },
+        { id: 'scope-heading', label: 'Today and not yet' },
         { id: 'pricing-heading', label: 'Pricing' },
         { id: 'why-heading', label: 'Why it helps' },
     ]}
@@ -62,8 +69,9 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
                 <h3>Lost tokens, lockouts and emergency access</h3>
                 <p>
                     Look up any user to reset a PIN, mark a token lost, unlock an account, issue a
-                    one-day emergency tokencode, or deprovision a token back into the assignable pool
-                    &mdash; with each action recorded against the user.
+                    one-day emergency tokencode, or deprovision a token back into the assignable pool.
+                    Each privileged change is a help-desk request: a ticket, a verified user, a second
+                    operator for privileged accounts, a notice to the user, and a record of it all.
                 </p>
             </article>
             <article class="card">
@@ -143,9 +151,11 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
                 service account scoped to one security domain.
             </li>
             <li>
-                <strong>Roles come from Authentication Manager.</strong> Trusted Agent, help desk and
-                program office access map to administrative roles you already assign in Authentication
-                Manager, and users sign in to the portal with their SecurID passcode.
+                <strong>Roles come from Authentication Manager, or your identity provider.</strong>
+                Trusted Agent, help desk and program office access map to administrative roles you
+                already assign in Authentication Manager, or to groups in your identity provider.
+                Everyone signs in with their user ID and SecurID passcode; operators can start with
+                single sign-on by OpenID Connect or SAML&nbsp;2.0 and then enter their passcode.
             </li>
             <li>
                 <strong>The routine follow-up runs itself.</strong> Scheduled jobs warn users before
@@ -155,10 +165,127 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
             </li>
             <li>
                 <strong>Deploys on your own servers.</strong> The portal, its Authentication Manager
-                connector and a MySQL database run as containers, with install, backup and restore
-                scripts included. Logos, banners and wording can be changed to match your program.
+                connector and a MySQL database run as containers under Docker or Podman Compose, with
+                install, upgrade, backup and restore scripts included, or from a Helm chart on
+                Kubernetes or OpenShift. The connector is the only component that reaches Authentication
+                Manager, over mutual TLS. Logos, banners and wording can be changed to match your program.
             </li>
         </ol>
+    </div>
+</section>
+
+<section class="section" aria-labelledby="platform-heading">
+    <div class="wrap">
+        <h2 id="platform-heading">Security and integrations</h2>
+        <p class="lede">
+            What a security reviewer or an integrator will ask about, in one place. Each row links the
+            documentation page that describes it in full.
+        </p>
+        <FactTable
+            caption="RSA Operations Portal security and integration summary"
+            rows={[
+                {
+                    label: 'Sign-in',
+                    detail: 'Everyone signs in with their Authentication Manager user ID and SecurID passcode. Operators can start with single sign-on by OpenID Connect or SAML&nbsp;2.0 and then enter their passcode, with the identity provider&rsquo;s groups deciding their Portal roles; roles can also map to Authentication Manager&rsquo;s administrative roles.',
+                    docs: { href: docs('single-sign-on/'), label: 'Single sign-on' },
+                },
+                {
+                    label: 'Help-desk requests',
+                    detail: 'Marking a token lost, resetting a PIN, deprovisioning, issuing an emergency access code and clearing a cached Windows password each open a request: a ticket, a verified user (certificate, Windows password and serial, or an e-mailed code), a second operator&rsquo;s approval for privileged users, and a notice to the user.',
+                    docs: { href: docs('help-desk/'), label: 'Help-desk requests' },
+                },
+                {
+                    label: 'Abuse controls',
+                    detail: 'The steps anyone can reach without signing in are rate-limited per client address and per user ID, back off after repeated failures and give one answer whatever the cause; the Portal&rsquo;s limits sit on top of Authentication Manager&rsquo;s lockout policy.',
+                    docs: { href: docs('security/'), label: 'Security' },
+                },
+                {
+                    label: 'The Authentication Manager hop',
+                    detail: 'Only the Connector talks to Authentication Manager, over HTTPS protected by a shared secret and mutual TLS (on in new installations). It checks AM&rsquo;s certificate and host name, reads AM&rsquo;s replies through a deserialization filter, and runs each operator&rsquo;s changes in that operator&rsquo;s own AM session, with least-privilege AM roles documented.',
+                    docs: { href: docs('rsa-integration/'), label: 'RSA AM integration' },
+                },
+                {
+                    label: 'Public API',
+                    detail: 'A versioned REST API at <span class="mono">/api/v1</span> with an OpenAPI document, for ITSM and identity-governance tools: scoped tokens with a service identity and an expiry read users and tokens, and changes open help-desk requests rather than bypassing them.',
+                    docs: { href: docs('api-reference/'), label: 'API reference' },
+                },
+                {
+                    label: 'Webhooks',
+                    detail: 'HMAC-signed webhooks for help-desk, token and account events, with a guard against requests to internal addresses.',
+                    docs: { href: docs('webhooks/'), label: 'Webhooks' },
+                },
+                {
+                    label: 'Reports and exports',
+                    detail: 'Trusted Agent and site reports with each agent&rsquo;s activity, and the audit log exported as CSV or NDJSON.',
+                    docs: { href: docs('admin-guide/'), label: 'Admin guide' },
+                },
+                {
+                    label: 'High availability',
+                    detail: 'Several Portal replicas with the Helm chart, with sessions, job locks and the license state in MySQL. The Connector runs as one replica by design, and emergency access codes need session affinity to the Portal replica that made them.',
+                    docs: { href: docs('availability-and-sizing/'), label: 'Sizing, availability and recovery' },
+                },
+                {
+                    label: 'Audit trail',
+                    detail: 'Every sign-in, refusal, help-desk step and Authentication Manager change in the hash-chained <span class="mono">ens-audit/1</span> trail. A change attempt is recorded before every AM change, and refused if it cannot be. Searchable and verifiable in the app, exported as CSV or NDJSON, forwarded to Splunk HEC or syslog, or pulled by your SIEM through an API token.',
+                    docs: { href: docsUrl('audit-logging/'), label: 'Audit logging' },
+                },
+                {
+                    label: 'Observability',
+                    detail: 'Prometheus metrics and health probes on a separate management port; a request id on every log line, returned in the response and recorded in the audit trail, so the three can be matched; and optional JSON logs in Elastic Common Schema.',
+                    docs: { href: docs('operator-guide/'), label: 'Operator guide' },
+                },
+                {
+                    label: 'Deployment',
+                    detail: 'A release package that runs the Portal, the Connector and MySQL 8.4 as three containers under Docker or Podman Compose (podman-compose 1.0.6 or newer), with install, upgrade, backup and restore scripts, or a Helm chart for Kubernetes and OpenShift that uses your MySQL server. Images are built on Red Hat UBI&nbsp;9; both are signed with cosign by digest, with an SPDX SBOM in the download and attested on the images, and the CI vulnerability scan&rsquo;s accepted risks are listed with a review date.',
+                    docs: { href: docs('install/'), label: 'Install guide' },
+                },
+                {
+                    label: 'STIG-style controls',
+                    detail: 'The ENS platform baseline: a notice-and-consent banner shown before any page or self-service step, idle, administrator and absolute session timeouts and a sessions-per-user limit, security headers and CSRF protection, and the Helm chart&rsquo;s non-root, read-only containers.',
+                    docs: { href: docs('fips-and-stig/'), label: 'FIPS 140-3 and DISA STIG' },
+                },
+                {
+                    label: 'FIPS 140-3',
+                    detail: 'Runs on FIPS-mode RHEL or OpenShift hosts, taking its cryptography from Red Hat&rsquo;s OpenJDK, and the license check accepts a license&rsquo;s ECDSA P-256 co-signature where Ed25519 is unavailable. ENS supplies no validated cryptographic module and claims no validation; the Authentication Manager SDK&rsquo;s cryptography is RSA&rsquo;s to state, and the Portal has not yet been run end to end in FIPS mode.',
+                    docs: { href: docsUrl('fips-and-stig/'), label: 'FIPS position' },
+                },
+                {
+                    label: 'Accessibility',
+                    detail: 'Checked against WCAG 2.0, 2.1 and 2.2 A and AA on every build: axe-core runs through a real browser against the main pages, signed in and anonymously, and fails on a serious or critical violation. A self-assessment and a draft VPAT are available on request; conformance is not yet claimed, and the interface is English only.',
+                    docs: { href: docs('accessibility/'), label: 'Accessibility' },
+                },
+            ]}
+        />
+    </div>
+</section>
+
+<section class="section" aria-labelledby="scope-heading">
+    <div class="wrap">
+        <h2 id="scope-heading">What it does, and what it does not yet</h2>
+        <p class="lede">
+            For your shortlist: what is in the product today, what is there in part, and what it does
+            not do yet. &ldquo;Not yet&rdquo; means not in the current release; ask us about the roadmap.
+        </p>
+        <CapabilityTable
+            caption="RSA Operations Portal capabilities today"
+            rows={[
+                { label: 'Self-service token activation and PIN set', status: 'included', note: 'Test the token, set the PIN, done; no help-desk ticket.' },
+                { label: 'PIN reset with identity proofing', status: 'included', note: 'A certificate, the Windows password and token serial, or an e-mailed link.' },
+                { label: 'Hardware token inventory and shipments', status: 'included', note: 'Sites, serial ranges, states and packing sheets; no carrier tracking.' },
+                { label: 'Help-desk verification, dual control and user notice', status: 'included', note: 'Every privileged change is a verified, recorded request.' },
+                { label: 'Single sign-on for operators', status: 'included', note: 'OpenID Connect and SAML 2.0, followed by the SecurID passcode.' },
+                { label: 'Operations API and webhooks', status: 'included', note: 'Scoped tokens, an OpenAPI document and signed events; no ready-made ITSM app.' },
+                { label: 'Audit, logs and metrics', status: 'included', note: 'Hash-chained trail to Splunk, syslog or a pull API; Prometheus; JSON logs.' },
+                { label: 'Lost and stolen tokens', status: 'partial', note: 'Reported through the help desk, with a notice to the user; no self-report.' },
+                { label: 'Expiry and replacement', status: 'partial', note: 'Reminders before a token expires and a replacement appointment; no campaign view.' },
+                { label: 'Reports and exports', status: 'partial', note: 'Agent and site reports and an audit export; no scheduled reports.' },
+                { label: 'High availability', status: 'partial', note: 'Several Portal replicas; the Connector runs as one by design.' },
+                { label: 'Proof for accreditation', status: 'partial', note: 'FIPS and STIG settings documented; no FIPS-mode test run yet, and the VPAT is a draft.' },
+                { label: 'Software token provisioning', status: 'not-yet', note: 'Hardware tokens only; no CT-KIP or QR enrollment.' },
+                { label: 'Self-service emergency access', status: 'not-yet', note: 'Emergency access codes are issued by the help desk.' },
+                { label: 'Languages other than English', status: 'not-yet', note: 'One English interface; wording and branding are configurable.' },
+            ]}
+        />
     </div>
 </section>
 
