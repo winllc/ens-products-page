@@ -546,6 +546,13 @@ th[scope="row"] {
     white-space: nowrap;
 }
 
+/* Product pages: the "Security and integrations" and capability tables.
+   Row headers wrap there, since topics are phrases rather than one word. */
+.fact-table th[scope="row"],
+.cap-table th[scope="row"] { white-space: normal; min-width: 9rem; }
+
+.fact-table td:last-child { white-space: nowrap; }
+
 /* ---------------------------------------------------------------- *
  * Callout
  * ---------------------------------------------------------------- */
@@ -644,6 +651,21 @@ th[scope="row"] {
 }
 
 .contact-form .btn-row { margin-top: 1.5rem; }
+
+/* The honeypot: present for bots, absent for people and screen readers. */
+.contact-form .field--trap {
+    position: absolute;
+    left: -10000px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+}
+
+/* The "sent" confirmation: shown by the script, or by the #sent fragment after a plain form post. */
+.form-sent { display: none; }
+.form-sent:target,
+.form-sent.is-shown { display: block; }
+.form-status.is-error { background: var(--danger-soft); color: var(--danger); }
 
 .form-grid {
     display: grid;
@@ -1442,9 +1464,41 @@ img { max-width: 100%; height: auto; }
 .pill--expired,
 .pill--revoked { background: var(--danger-soft); color: var(--danger); }
 
+/* Product pages' capability table. */
+.pill--included { background: var(--ok-soft);      color: var(--ok); }
+.pill--partial  { background: var(--pending-soft); color: var(--pending); }
+.pill--not-yet  { background: var(--surface-alt);  color: var(--text-muted); }
+
 .license-table th[scope="row"] { white-space: normal; }
 .license-table th[scope="row"] a { font-weight: 620; }
 .license-table td { vertical-align: middle; }
+
+/* Leads (admin): the status change in a table row, and the message as sent. */
+.inline-form {
+    display: flex;
+    gap: .4rem;
+    align-items: center;
+}
+.inline-form select {
+    font: inherit;
+    font-size: .875rem;
+    color: var(--text);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: .35rem .5rem;
+}
+.btn--small { padding: .35rem .75rem; font-size: .85rem; }
+.lead-message {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font: inherit;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin: 0;
+}
 
 /* Downloads: a product's versions, each a <details> with its files. */
 .release-product { margin-top: 2.5rem; }

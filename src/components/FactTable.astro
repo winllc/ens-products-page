@@ -1,0 +1,43 @@
+---
+/*
+ * A product page's "Security and integrations" table: one row per topic,
+ * each with what the product offers and the documentation page that backs
+ * it. Every claim on a product page should trace to a page on the
+ * documentation site, so each row links one.
+ */
+interface Row {
+    label: string;
+    /** HTML: what the product offers. Entities allowed. */
+    detail: string;
+    /** The documentation page for the row. */
+    docs: { href: string; label: string };
+}
+
+interface Props {
+    caption: string;
+    rows: Row[];
+}
+
+const { caption, rows } = Astro.props;
+---
+<div class="table-scroll">
+    <table class="fact-table">
+        <caption class="visually-hidden">{caption}</caption>
+        <thead>
+        <tr>
+            <th scope="col">Topic</th>
+            <th scope="col">What you get</th>
+            <th scope="col">Read more</th>
+        </tr>
+        </thead>
+        <tbody>
+        {rows.map((r) => (
+            <tr>
+                <th scope="row">{r.label}</th>
+                <td set:html={r.detail} />
+                <td><a href={r.docs.href}>{r.docs.label}</a></td>
+            </tr>
+        ))}
+        </tbody>
+    </table>
+</div>

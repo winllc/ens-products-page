@@ -1,0 +1,65 @@
+---
+export const prerender = false;
+
+import AccountLayout from '../../../layouts/AccountLayout.astro';
+import { accountById } from '../../../server/accounts';
+import { form, requireAdmin, withNotice } from '../../../server/http';
+import { LEAD_STATUSES, LeadError, leadById, leadStatusLabel, setLeadStatus } from '../../../server/leads';
+
+const admin = requireAdmin(Astro);
+if (admin instanceof Response) return admin;
+
+let lead = leadById(Astro.params.id ?? '');
+if (!lead) return new Response('Not found', { status: 404 });
+
+let error: string | null = null;
+if (Astro.request.method === 'POST') {
+    const get = await form(Astro);
+    try {
+        lead = setLeadStatus(admin, lead, get('status'));
+        return Astro.redirect(withNotice(`/admin/leads/${lead.id}`, 'lead-updated'), 303);
+    } catch (err) {
+        if (!(err instanceof LeadError)) throw err;
+        error = err.message;
+    }
+}
+
+const when = (iso: string) => iso.replace('T', ' ').slice(0, 16) + ' UTC';
+const updatedBy = lead.updated_by ? accountById(lead.updated_by) : null;
+const reply = `mailto:${encodeURIComponent(lead.email)}?subject=${encodeURIComponent(`Re: ${lead.topic} — ENS Solutions`)}`;
+---
+<AccountLayout title={`${lead.topic} — ${lead.name}`} eyebrow="Administration · Lead" section="admin-leads" error={error}>
+    <p slot="lede" class="lede"><a href="/admin/leads">&larr; All leads</a></p>
+
+    <dl class="data-list">
+        <div><dt>Received</dt><dd><time datetime={lead.created_at}>{when(lead.created_at)}</time></dd></div>
+        <div><dt>Name</dt><dd>{lead.name}</dd></div>
+        <div><dt>Email</dt><dd><a href={reply}>{lead.email}</a></dd></div>
+        <div><dt>Organization</dt><dd>{lead.organization || <span class="muted">—</span>}</dd></div>
+        <div><dt>Phone</dt><dd>{lead.phone || <span class="muted">—</span>}</dd></div>
+        <div><dt>Topic</dt><dd>{lead.topic}</dd></div>
+        <div><dt>Status</dt><dd>{leadStatusLabel[lead.status]}{lead.updated_at && <span class="muted small"> (changed {when(lead.updated_at)}{updatedBy && <> by {updatedBy.email}</>})</span>}</dd></div>
+        <div><dt>Lead id</dt><dd><span class="mono">{lead.id}</span>{lead.source_ip && <span class="muted small"> from {lead.source_ip}</span>}</dd></div>
+    </dl>
+
+    <h2 class="section-gap">Message</h2>
+    <pre class="lead-message">{lead.message}</pre>
+
+    <div class="split section-gap">
+        <form method="post" class="panel">
+            <h3>Status</h3>
+            <div class="field">
+                <label for="status">Status</label>
+                <select id="status" name="status">
+                    {LEAD_STATUSES.map((s) => <option value={s} selected={s === lead.status}>{leadStatusLabel[s]}</option>)}
+                </select>
+            </div>
+            <button class="btn btn--primary" type="submit">Save</button>
+        </form>
+        <div class="panel">
+            <h3>Reply</h3>
+            <p class="muted small">Replies go from your own mail client; the form's acknowledgement already told them to expect one within a business day.</p>
+            <a class="btn btn--ghost" href={reply}>Reply by email</a>
+        </div>
+    </div>
+</AccountLayout>

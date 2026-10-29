@@ -268,14 +268,20 @@ Feature ids per product, as the applications should check them:
 
 | Product | Features |
 |---|---|
-| `certalert` | `directory-sync`, `changelog-sync`, `notifications`, `metrics`, `projects`, `revocation-checks`, `endpoint-checks`, `risky-names`, `directory-cleanup`, `classification-banners`, `multi-directory` (Enterprise) |
+| `certalert` | `directory-sync`, `changelog-sync`, `notifications`, `metrics`, `projects`, `revocation-checks`, `endpoint-checks`, `risky-names`, `directory-cleanup`, `classification-banners`; reserved, not issued: `multi-directory` (Enterprise, on the roadmap) |
 | `mfa-portal` | `self-service`, `trusted-agents`, `help-desk`, `shipments`, `scheduled-jobs`, `branding`, `reports`, `bulk-upload`, `group-email` |
-| `readyroom` | `attendance`, `calendar`, `absence-alerts`, `metrics` (metrics and reports), `org-chart`, `classification-banners` |
+| `readyroom` | `attendance`, `calendar`, `absence-alerts`, `metrics` (metrics, reports and CSV, Excel, PDF and scheduled exports), `org-chart`, `classification-banners` |
 | `directory-portal` | `directory-editor`, `form-builder`, `self-service-profile`, `white-pages`, `smart-card-sign-in`, `metrics`, `data-analysis`, `schema-transfer` |
 
 Ship every app with all of a product's features gated from the start, even
 those every license includes today: a feature that's checked can be moved to
 a different tier later by changing `src/data/licensing.ts` alone.
+
+A feature marked `roadmap` in the catalog is announced but not built. The
+site shows it as planned, the portal never writes it into a new license, and
+the id stays reserved so files issued before the flag was set keep
+verifying and the application can gate it the day it ships. Clear the flag
+(never rename the id) when it does.
 
 ## Keys
 

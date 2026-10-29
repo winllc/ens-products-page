@@ -2,7 +2,7 @@
 export const prerender = false;
 
 import LicenseTable from '../../components/licensing/LicenseTable.astro';
-import { editions, evaluationLimit } from '../../data/licensing';
+import { editions, EVALUATION_EXTENSION_DAYS, evaluationLimit } from '../../data/licensing';
 import { productPricing } from '../../data/pricing';
 import { products } from '../../data/products';
 import AccountLayout from '../../layouts/AccountLayout.astro';
@@ -16,6 +16,7 @@ const account = requireAccount(Astro);
 if (account instanceof Response) return account;
 
 const licenses = licensesOf(account.id);
+const evaluationOf = (product: string) => licenses.find((l) => l.product === product && l.edition === 'evaluation');
 const verified = account.email_verified_at !== null;
 const evaluation = editions.evaluation;
 const activity = auditFor({ account: account.id, customer: true }, 15);
@@ -46,13 +47,17 @@ const activity = auditFor({ account: account.id, customer: true }, 15);
 
     <h2 id="evaluate" class="section-gap">Free evaluation licenses</h2>
     <p class="muted">
-        {evaluation.days} days of every feature, sized at each product&rsquo;s smallest tier, one per product.
-        Evaluation copies show an evaluation banner and are not for production use.
+        {evaluation.days} days of every feature, sized at each product&rsquo;s second size band so a real directory
+        fits, one per product, with a {evaluation.graceDays}-day grace period at the end. Need longer? Extend it once
+        by {EVALUATION_EXTENSION_DAYS} days from its license page, or ask about a paid pilot. Evaluation copies show an
+        evaluation banner and are not for production use.
     </p>
     <div class="card-grid card-grid--pairs">
         {products.map((p) => {
             const available = verified && canTakeEvaluation(account, p.id);
             const taken = !canTakeEvaluation(account, p.id);
+            const existing = taken ? evaluationOf(p.id) : undefined;
+            const extendable = existing && !existing.extended_at && (existing.status === 'valid' || existing.status === 'grace');
             return (
                 <article class="card">
                     <h3><a href={p.href}>{p.name}</a></h3>
@@ -62,7 +67,9 @@ const activity = auditFor({ account: account.id, customer: true }, 15);
                         <button class="btn btn--primary" type="submit" disabled={!available}>
                             {taken ? 'Evaluation taken' : 'Get evaluation license'}
                         </button>
-                        {taken && <a class="small" href="/contact.html?product=pilot">Need longer? Ask about a pilot</a>}
+                        {taken && (extendable
+                            ? <a class="small" href={`/account/licenses/${existing.id}#extend`}>Need longer? Extend it by {EVALUATION_EXTENSION_DAYS} days</a>
+                            : <a class="small" href="/contact.html?product=pilot">Need longer? Ask about a pilot</a>)}
                     </form>
                 </article>
             );

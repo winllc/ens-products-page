@@ -6,6 +6,7 @@
 import Estimator from '../components/Estimator.astro';
 import PriceTable from '../components/PriceTable.astro';
 import { dodComponentExample } from '../data/examples';
+import { editions, EVALUATION_EXTENSION_DAYS, evaluationLimit } from '../data/licensing';
 import {
     PERPETUAL_MULTIPLE,
     bundleDiscounts,
@@ -22,6 +23,7 @@ import {
 import { products } from '../data/products';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import {
+    formatCount,
     formatPercent,
     formatRange,
     formatUSD,
@@ -177,6 +179,7 @@ const servicePrice = (s: (typeof serviceList)[number]) =>
             Mission is built for DoD and Intelligence Community programs: around-the-clock coverage, cleared
             engineers on site, and every release delivered on media for networks with no internet route.
             Subscription add-ons are a share of the subscription after any suite discount.
+            Severities, hours and escalation: <a href="/support.html">support policy</a>.
         </p>
     </div>
 </section>
@@ -242,6 +245,9 @@ const servicePrice = (s: (typeof serviceList)[number]) =>
                 <h3>{evaluation.days}-day evaluation, free</h3>
                 <p>
                     Run the product&rsquo;s container on your own hardware against your own directory, at no cost.
+                    Sized at the second band ({formatCount(evaluationLimit('certalert'))} directory users for CertAlert),
+                    with a {editions.evaluation.graceDays}-day grace period and one self-serve
+                    {' '}{EVALUATION_EXTENSION_DAYS}-day extension.
                     <a href="/account/signup">Create an account</a> to download the evaluation license.
                 </p>
             </article>
@@ -377,9 +383,20 @@ const servicePrice = (s: (typeof serviceList)[number]) =>
             <details>
                 <summary>Can we try it first?</summary>
                 <p>
-                    The {evaluation.days}-day evaluation container is free. For a supported trial in your
+                    The {evaluation.days}-day evaluation is free and sized at each product&rsquo;s second band
+                    ({products.map((p, i) => <>{i > 0 && (i === products.length - 1 ? ' and ' : ', ')}{formatCount(evaluationLimit(p.id))} {productPricing[p.id].unit} for {p.name}</>)}),
+                    so a real directory fits. It ends with a {editions.evaluation.graceDays}-day grace period, and you
+                    can extend it once by {EVALUATION_EXTENSION_DAYS} days from your account. For a supported trial in your
                     environment, the {pilot.days}-day pilot is {formatUSD(pilot.price)} and is credited in full
                     toward the first year.
+                </p>
+            </details>
+            <details>
+                <summary>How many installations does a license cover?</summary>
+                <p>
+                    Each license covers one production installation; test and disaster-recovery copies of the same
+                    installation are included. A second production installation, such as another enclave, is a
+                    second license.
                 </p>
             </details>
             <details>

@@ -101,7 +101,40 @@ describe('evaluation licenses', () => {
         expect(file.filename).toMatch(/^certalert-lic_[0-9a-f]{20}-r1\.lic$/);
         expect(verifyLicense(file.content, trustedKeys()).licensee.organization).toBe('Example Agency');
         expect(() => licenses.issueEvaluation(a, 'certalert')).toThrow(/already have/);
-        expect(licenses.issueEvaluation(a, 'readyroom').payload.limit.quantity).toBe(500);
+        expect(licenses.issueEvaluation(a, 'readyroom').payload.limit.quantity).toBe(2_500);
+        expect(l.payload.limit.quantity).toBe(10_000);
+        expect(l.payload.graceDays).toBe(7);
+    });
+
+    it('can be extended once, by 30 days, while running or in grace', async () => {
+        const a = await verifiedAccount();
+        const l = licenses.issueEvaluation(a, 'certalert');
+        expect(licenses.extensionBlocker(l)).toBeNull();
+
+        const stranger = await verifiedAccount('someone@else.gov');
+        expect(() => licenses.extendEvaluation(stranger, l)).toThrow(/Not your license/);
+
+        const extended = licenses.extendEvaluation(a, l);
+        expect(extended.revision).toBe(2);
+        expect(extended.extended_at).not.toBeNull();
+        expect(extended.daysLeft).toBe(60);
+        expect(Date.parse(extended.payload.expiresAt!) - Date.parse(l.payload.expiresAt!)).toBe(30 * 24 * 60 * 60 * 1000);
+        expect(verifyLicense(extended.token, trustedKeys()).expiresAt).toBe(extended.payload.expiresAt);
+        // Nothing else changed.
+        expect({ ...extended.payload, revision: 0, issuedAt: '', expiresAt: '' }).toEqual({ ...l.payload, revision: 0, issuedAt: '', expiresAt: '' });
+
+        expect(() => licenses.extendEvaluation(a, extended)).toThrow(/already been extended once.*pilot/);
+        expect(licenses.extensionBlocker(extended)).toMatch(/pilot/);
+        expect(auditFor({ license: l.id }).map((e) => e.action)).toEqual(['license.extended', 'license.issued']);
+        expect(auditFor({ license: l.id, customer: true })[0]!.label).toBe('Evaluation extended');
+
+        // Paid licenses are not extended here, and an evaluation past its grace period isn't either.
+        const admin = await verifiedAccount('boss@ens-solutions.com');
+        const paid = licenses.issueLicense(admin, a, { product: 'readyroom', edition: 'subscription', quantity: 400 });
+        expect(licenses.extensionBlocker(paid)).toMatch(/Only evaluation/);
+        const old = licenses.issueLicense(admin, a, { product: 'mfa-portal', edition: 'evaluation', start: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000) });
+        expect(old.status).toBe('expired');
+        expect(() => licenses.extendEvaluation(a, old)).toThrow(/can’t be extended/);
     });
 
     it('re-signs as a new revision when bound to an installation', async () => {

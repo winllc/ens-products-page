@@ -63,7 +63,7 @@ class LicenseVerifierTest {
         assertEquals("Agência Ñandú \"Test\"", l.licenseeOrganization());
         assertEquals(Optional.of("RR-TEST-0001"), l.installationId());
         assertTrue(l.watermark());
-        assertEquals(500, l.limitQuantity());
+        assertEquals(2_500, l.limitQuantity());
     }
 
     @Test

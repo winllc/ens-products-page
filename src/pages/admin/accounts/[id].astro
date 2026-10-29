@@ -3,7 +3,7 @@ export const prerender = false;
 
 import AuditList from '../../../components/licensing/AuditList.astro';
 import LicenseTable from '../../../components/licensing/LicenseTable.astro';
-import { editions, type Edition } from '../../../data/licensing';
+import { editions, sellableEnterpriseFeatures, type Edition } from '../../../data/licensing';
 import { productPricing, supportTiers, type SupportTierId } from '../../../data/pricing';
 import { products, type ProductId } from '../../../data/products';
 import AccountLayout from '../../../layouts/AccountLayout.astro';
@@ -70,6 +70,8 @@ if (Astro.request.method === 'POST') {
 
 const licenses = licensesOf(owner.id);
 const today = new Date().toISOString().slice(0, 10);
+// Features sold only in the top band (roadmap features are never issued). None today.
+const enterpriseFeatures = sellableEnterpriseFeatures();
 ---
 <AccountLayout title={owner.name} eyebrow="Administration · Account" section="admin-accounts" error={error}>
     <p slot="lede" class="lede">{owner.email}{owner.organization && <> &middot; {owner.organization}</>}</p>
@@ -146,12 +148,14 @@ const today = new Date().toISOString().slice(0, 10);
                     <label for="installationId">Installation id <span class="optional">optional</span></label>
                     <input id="installationId" name="installationId" class="mono" maxlength="64">
                 </div>
-                <div class="field field--check">
-                    <label class="check">
-                        <input type="checkbox" name="enterprise">
-                        <span>Enterprise features below the Enterprise band (e.g. CertAlert multi-forest)</span>
-                    </label>
-                </div>
+                {enterpriseFeatures.length > 0 && (
+                    <div class="field field--check">
+                        <label class="check">
+                            <input type="checkbox" name="enterprise">
+                            <span>Enterprise features below the Enterprise band ({enterpriseFeatures.map((e) => e.feature.name).join(', ')})</span>
+                        </label>
+                    </div>
+                )}
             </div>
             <button class="btn btn--primary" type="submit">Issue license</button>
         </form>

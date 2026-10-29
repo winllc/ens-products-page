@@ -1,6 +1,6 @@
 import { generateKeyPairSync } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { featuresFor } from '../../data/licensing';
+import { evaluationLimit, featuresFor, productFeatures } from '../../data/licensing';
 import { buildPayload, normalizeInstallationId } from './issue';
 import {
     LicenseError,
@@ -136,21 +136,30 @@ describe('ECDSA P-256 signatures, for Java in FIPS mode', () => {
 });
 
 describe('issuing', () => {
-    it('sizes an evaluation at the smallest band, for 30 days, watermarked, with every feature', () => {
+    it('sizes an evaluation at the second band, for 30 days plus 7 of grace, watermarked, with every shipped feature', () => {
         const p = buildPayload({ product: 'certalert', edition: 'evaluation', licensee, quantity: 99_999 }, { id: 'x', revision: 1, now });
-        expect(p.limit).toEqual({ quantity: 2_500, unit: 'directory users' });
+        expect(p.limit).toEqual({ quantity: 10_000, unit: 'directory users' });
         expect(p.expiresAt).toBe('2026-11-13T12:00:00.000Z');
+        expect(p.graceDays).toBe(7);
         expect(p.watermark).toBe(true);
-        expect(p.features).toContain('certalert.multi-directory');
+        expect(p.features).toContain('certalert.directory-sync');
+        expect(p.features).toContain('certalert.classification-banners');
         expect(p.licensee.email).toBe('pat@example.gov');
+        expect(evaluationLimit('readyroom')).toBe(2_500);
+        expect(evaluationLimit('directory-portal')).toBe(10_000);
+        expect(evaluationLimit('mfa-portal')).toBe(10_000);
     });
 
-    it('keeps Enterprise features for the Enterprise band', () => {
+    it('never issues a roadmap feature, whatever the band or edition', () => {
         const small = buildPayload({ product: 'certalert', edition: 'subscription', licensee, quantity: 10_000 }, { id: 'x', revision: 1, now });
         const big = buildPayload({ product: 'certalert', edition: 'subscription', licensee, quantity: 80_000 }, { id: 'x', revision: 1, now });
+        const pilot = buildPayload({ product: 'certalert', edition: 'pilot', licensee, quantity: 100, enterprise: true }, { id: 'x', revision: 1, now });
         expect(small.features).not.toContain('certalert.multi-directory');
-        expect(big.features).toContain('certalert.multi-directory');
+        expect(big.features).not.toContain('certalert.multi-directory');
+        expect(pilot.features).not.toContain('certalert.multi-directory');
         expect(small.graceDays).toBe(30);
+        // The id stays reserved in the catalog, so older files that carry it still describe themselves.
+        expect(productFeatures.certalert.find((f) => f.id === 'multi-directory')).toMatchObject({ enterprise: true, roadmap: true });
     });
 
     it('gives a perpetual license no expiry and a year of maintenance', () => {

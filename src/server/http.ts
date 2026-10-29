@@ -58,6 +58,8 @@ export const notices = {
     'evaluation-issued': 'Your evaluation license is ready to download.',
     'evaluation-downloads': 'Your evaluation license is issued: its releases are below, and the license file is on the Licenses page.',
     'license-updated': 'The license is updated. Download the new file and install it in place of the old one.',
+    'evaluation-extended': 'Your evaluation is extended. Download the new file and install it in place of the old one.',
+    'lead-updated': 'The lead is updated.',
     'license-issued': 'The license is issued.',
     'license-revoked': 'The license is revoked.',
     'license-reinstated': 'The license is reinstated.',

@@ -12,7 +12,7 @@
  * can't be put back once a newer one is installed.
  */
 
-import { editions, EVALUATIONS_PER_PRODUCT, type Edition } from '../data/licensing';
+import { editions, EVALUATION_EXTENSION_DAYS, EVALUATIONS_PER_PRODUCT, type Edition } from '../data/licensing';
 import { product as productInfo, type ProductId } from '../data/products';
 import { buildPayload, newLicenseId, normalizeInstallationId, type IssueRequest } from '../lib/licensing/issue';
 import {
@@ -49,6 +49,8 @@ interface LicenseRow {
     revoked_reason: string | null;
     order_reference: string;
     created_by: string | null;
+    /** When the customer extended this evaluation themselves; null until they do. */
+    extended_at: string | null;
 }
 
 export interface License extends Omit<LicenseRow, 'payload'> {
@@ -185,7 +187,7 @@ export function issueEvaluation(account: Account, product: ProductId, installati
     return transaction(() => {
         if (!canTakeEvaluation(account, product)) {
             throw new LicenseActionError(
-                `You already have a ${productInfo(product).name} evaluation. Ask us to extend it, or about a paid pilot.`,
+                `You already have a ${productInfo(product).name} evaluation. Extend it from its license page, or ask about a paid pilot.`,
             );
         }
         const payload = payloadFor({
@@ -205,6 +207,59 @@ export function issueEvaluation(account: Account, product: ProductId, installati
         });
         return licenseById(payload.id)!;
     });
+}
+
+const DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * Whether the customer can still extend this evaluation themselves: once,
+ * while it is running or in its grace period. Null when they can, or the
+ * reason they can't.
+ */
+export function extensionBlocker(license: License): string | null {
+    if (license.edition !== 'evaluation') return 'Only evaluation licenses can be extended here';
+    if (license.status === 'revoked') return 'A revoked license can’t be extended';
+    if (license.extended_at) {
+        return `This evaluation has already been extended once. For more time, ask about a ${editions.pilot.days}-day paid pilot, which is credited toward your first year.`;
+    }
+    if (license.status === 'expired') {
+        return `This evaluation ended more than ${editions.evaluation.graceDays} days ago, so it can’t be extended. Ask about a ${editions.pilot.days}-day paid pilot.`;
+    }
+    if (license.status === 'not-yet-valid') return 'This evaluation hasn’t started yet';
+    return null;
+}
+
+/**
+ * The one self-serve extension: adds EVALUATION_EXTENSION_DAYS to the expiry
+ * and re-issues the file. The customer installs the new revision in place of
+ * the old one; nothing else in the license changes.
+ */
+export function extendEvaluation(actor: Account, license: License): License {
+    if (license.account_id !== actor.id && !isAdmin(actor)) {
+        throw new LicenseActionError('Not your license');
+    }
+    const blocker = extensionBlocker(license);
+    if (blocker) throw new LicenseActionError(blocker);
+    const from = Math.max(Date.parse(license.payload.expiresAt!), Date.now());
+    const until = new Date(from + EVALUATION_EXTENSION_DAYS * DAY).toISOString();
+    transaction(() => {
+        const stamp = nowIso();
+        // The row is the lock: a second request racing this one finds extended_at set.
+        const changed = db()
+            .prepare('UPDATE licenses SET extended_at = ? WHERE id = ? AND extended_at IS NULL')
+            .run(stamp, license.id).changes;
+        if (changed !== 1) throw new LicenseActionError(extensionBlocker({ ...license, extended_at: stamp })!);
+        resign(license, (p) => ({ ...p, expiresAt: until }));
+        audit({
+            actor: actor.id,
+            account: license.account_id,
+            license: license.id,
+            action: 'license.extended',
+            detail: `evaluation extended by ${EVALUATION_EXTENSION_DAYS} days, to ${until.slice(0, 10)}`,
+            details: { 'expiresAt.old': license.payload.expiresAt, 'expiresAt.new': until, days: EVALUATION_EXTENSION_DAYS, revision: license.revision + 1 },
+        });
+    });
+    return licenseById(license.id)!;
 }
 
 /* ---- Customer: release downloads ---------------------------------------- */
@@ -346,8 +401,6 @@ export function issueLicense(
     });
     return licenseById(payload.id)!;
 }
-
-const DAY = 24 * 60 * 60 * 1000;
 
 /** Moves the expiry (or, on a perpetual license, the end of maintenance) to a new date. */
 export function renewLicense(actor: Account, license: License, until: Date, orderReference = ''): License {

@@ -18,7 +18,7 @@ export interface IssueRequest {
     product: ProductId;
     edition: Edition;
     licensee: { name: string; organization: string; email: string };
-    /** Ignored for evaluations, which are always the smallest band. */
+    /** Ignored for evaluations, which are always sized by evaluationLimit (the second band). */
     quantity?: number;
     support?: SupportTierId;
     start?: Date;
@@ -27,7 +27,7 @@ export interface IssueRequest {
     /** Term in days, overriding years and the edition's default. */
     days?: number;
     installationId?: string | null;
-    /** Unlock Enterprise features below the Enterprise band (e.g. multi-forest at 5,000 users). */
+    /** Unlock Enterprise features below the Enterprise band. */
     enterprise?: boolean;
 }
 

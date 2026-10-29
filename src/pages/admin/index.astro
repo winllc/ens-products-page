@@ -7,6 +7,7 @@ import AccountLayout from '../../layouts/AccountLayout.astro';
 import { listAccounts } from '../../server/accounts';
 import { auditFor } from '../../server/audit';
 import { requireAdmin } from '../../server/http';
+import { countLeads } from '../../server/leads';
 import { allLicenses } from '../../server/licenses';
 
 const admin = requireAdmin(Astro);
@@ -20,6 +21,7 @@ const attention = licenses
     .filter((l) => l.edition !== 'evaluation' && (l.status === 'grace' || (l.status === 'valid' && l.daysLeft !== null && l.daysLeft <= 60)))
     .sort((a, b) => (a.daysLeft ?? 0) - (b.daysLeft ?? 0));
 const unverified = accounts.filter((a) => !a.email_verified_at).length;
+const newLeads = countLeads('new');
 ---
 <AccountLayout title="Licensing administration" eyebrow="Administration" section="admin">
     <dl class="facts facts--flush">
@@ -27,11 +29,13 @@ const unverified = accounts.filter((a) => !a.email_verified_at).length;
         <div><dt>Evaluations running</dt><dd>{evaluations.length}</dd></div>
         <div><dt>Due for renewal (60 days)</dt><dd>{attention.length}</dd></div>
         <div><dt>Accounts</dt><dd>{accounts.length}{unverified > 0 && <span class="muted small"> ({unverified} unconfirmed)</span>}</dd></div>
+        <div><dt>New leads</dt><dd><a href="/admin/leads?status=new">{newLeads}</a></dd></div>
     </dl>
 
     <div class="btn-row">
         <a class="btn btn--primary" href="/admin/accounts">Issue a license</a>
         <a class="btn btn--ghost" href="/admin/licenses">All licenses</a>
+        <a class="btn btn--ghost" href="/admin/leads">Leads from the contact form</a>
     </div>
 
     <h2 class="section-gap">Due for renewal</h2>
