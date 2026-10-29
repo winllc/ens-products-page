@@ -21,6 +21,8 @@
  *   SMTP_URL                    e.g. smtps://user:pass@mail.example.com:465.
  *                               Unset: emails are written to the log instead
  *   MAIL_FROM                   default "ENS Solutions <licensing@ens-solutions.com>"
+ *   CONTACT_TO                  Where the contact form's messages go
+ *                               (default info@ens-solutions.com)
  *   COOKIE_SECURE               "false" to allow sessions over plain HTTP
  *                               (local development only)
  *
@@ -103,6 +105,7 @@ export interface Config {
     adminEmails: Set<string>;
     smtpUrl: string | null;
     mailFrom: string;
+    contactTo: string;
     cookieSecure: boolean;
     audit: AuditConfig;
     /** Null when RELEASES_S3_BUCKET is unset: no downloads. */
@@ -136,6 +139,7 @@ export function config(): Config {
         adminEmails: new Set(list(env.ADMIN_EMAILS).map((e) => e.toLowerCase())),
         smtpUrl: env.SMTP_URL?.trim() || null,
         mailFrom: env.MAIL_FROM ?? 'ENS Solutions <licensing@ens-solutions.com>',
+        contactTo: env.CONTACT_TO?.trim() || 'info@ens-solutions.com',
         cookieSecure: env.COOKIE_SECURE ? env.COOKIE_SECURE !== 'false' : publicUrl.startsWith('https:'),
         audit: auditConfig(env),
         releases: releasesConfig(env),

@@ -254,6 +254,29 @@ const migrations: Migration[] = [
         d.prepare('INSERT INTO audit_head (id, seq, hash) VALUES (1, ?, ?)').run(seq, prevHash);
         d.exec('DROP TABLE audit_log');
     },
+
+    // 3: when a customer extended their evaluation themselves (once per license).
+    `ALTER TABLE licenses ADD COLUMN extended_at TEXT;`,
+
+    // 4: leads from the contact form on the public site.
+    `
+    CREATE TABLE leads (
+        id            TEXT PRIMARY KEY,
+        created_at    TEXT NOT NULL,
+        name          TEXT NOT NULL,
+        email         TEXT NOT NULL,
+        organization  TEXT NOT NULL DEFAULT '',
+        phone         TEXT NOT NULL DEFAULT '',
+        topic         TEXT NOT NULL,
+        message       TEXT NOT NULL,
+        status        TEXT NOT NULL DEFAULT 'new' CHECK (status IN ('new', 'contacted', 'closed')),
+        source_ip     TEXT,
+        updated_at    TEXT,
+        updated_by    TEXT REFERENCES accounts(id)
+    );
+    CREATE INDEX leads_created ON leads(created_at);
+    CREATE INDEX leads_status ON leads(status);
+    `,
 ];
 
 let instance: DatabaseSync | null = null;

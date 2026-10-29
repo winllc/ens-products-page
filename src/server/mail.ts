@@ -1,7 +1,8 @@
 /*
- * Outgoing email: address verification and password resets. With SMTP_URL
- * unset the message is written to the log instead, which is what local
- * development and an enclave with no mail relay get.
+ * Outgoing email: address verification, password resets, and the contact
+ * form's messages. With SMTP_URL unset the message is written to the log
+ * instead, which is what local development and an enclave with no mail
+ * relay get.
  */
 
 import nodemailer, { type Transporter } from 'nodemailer';
@@ -13,6 +14,8 @@ export interface Mail {
     to: string;
     subject: string;
     text: string;
+    /** Where a reply goes when that isn't MAIL_FROM: the contact form's visitor. */
+    replyTo?: string;
 }
 
 /** The last messages sent, for tests and for `npm run dev` without SMTP. */
@@ -25,7 +28,9 @@ export async function sendMail(mail: Mail): Promise<void> {
     }
     const c = config();
     if (!c.smtpUrl) {
-        console.info(`licensing: email to ${mail.to} (no SMTP_URL configured)\nSubject: ${mail.subject}\n\n${mail.text}\n`);
+        console.info(
+            `licensing: email to ${mail.to} (no SMTP_URL configured)\n${mail.replyTo ? `Reply-To: ${mail.replyTo}\n` : ''}Subject: ${mail.subject}\n\n${mail.text}\n`,
+        );
         return;
     }
     transport ??= nodemailer.createTransport(c.smtpUrl);

@@ -127,21 +127,31 @@ carries a `HEALTHCHECK` that uses it. The licensing image's equivalent is
 ## Licensing service
 
 Customers create an account, confirm their email, and download a free 30-day
-evaluation license for any product, one per product per account. Licenses
-they buy (subscriptions, perpetual licenses, pilots) are issued into the same
-account by ENS staff at `/admin` against the order, and renewals re-issue them
-there. Everything that creates or changes a license goes through this
-service, and every change is in an audit log customers and staff can read.
+evaluation license for any product, one per product per account. An
+evaluation covers the product's second size band (10,000 directory users
+for CertAlert and Directory Services Portal, 10,000 SecurID users for the
+RSA Operations Portal, 2,500 tracked people for ReadyRoom), ends with a
+7-day grace period, and can be extended once, by 30 days, from its license
+page; after that it's the paid pilot. Licenses they buy (subscriptions,
+perpetual licenses, pilots) are issued into the same account by ENS staff at
+`/admin` against the order, and renewals re-issue them there. Everything that
+creates or changes a license goes through this service, and every change is
+in an audit log customers and staff can read.
+
+The service also takes the public site's contact form: each message is
+stored as a lead, emailed to `CONTACT_TO` and acknowledged to the sender,
+and worked at `/admin/leads` (see [Contact form](#contact-form)).
 
 | Customers (`/account`) | ENS staff (`/admin`) |
 |---|---|
 | Sign up, confirm email, reset password | Find accounts and licenses; renewals due in 60 days |
-| Download evaluation licenses | Issue subscription, perpetual, pilot or evaluation licenses with order reference |
+| Download evaluation licenses; extend one once by 30 days | Issue subscription, perpetual, pilot or evaluation licenses with order reference |
 | Download any license they hold | Renew (new expiry, or new end of maintenance) |
 | Download releases of the products they're licensed for | Download releases of every product |
 | Bind a license to an installation id | Revoke and reinstate |
 | Name licenses; check a license file | Make administrators; disable accounts |
 | Their own activity history | Full audit log: search, export, verify, SIEM delivery |
+| | Leads from the contact form: list, detail, status (new, contacted, closed) |
 
 How a license file unlocks features in the applications, the file format,
 and the Java library the applications use are in
@@ -160,7 +170,8 @@ All in the `licensing` service's environment (see `.env.example`):
 | `LICENSE_SIGNING_KEY_P256` | Optional ECDSA P-256 private key, from `npm run license -- keygen --alg p256`. **A secret.** Set, every license is also signed with it, so it verifies on Java in FIPS mode, which has no Ed25519 (`licensing/README.md`, "FIPS 140-3"). Never generated. |
 | `LICENSE_SIGNING_KEY_P256_FILE` | Or a path to it. |
 | `LICENSE_TRUSTED_KEYS` | Retired public keys (Ed25519 or ECDSA P-256) still accepted by *Check a file*, after a key rotation. |
-| `SMTP_URL`, `MAIL_FROM` | Outgoing mail for confirmations and password resets. Unset, messages are written to the service's log. |
+| `SMTP_URL`, `MAIL_FROM` | Outgoing mail for confirmations, password resets and the contact form. Unset, messages are written to the service's log. |
+| `CONTACT_TO` | Where the contact form's messages are sent, with the visitor as Reply-To. Default `info@ens-solutions.com`. |
 | `DATA_DIR` | `/data` in the image: `licensing.sqlite` and, if generated, the signing key. |
 | `RELEASES_S3_BUCKET` | The private bucket the applications' CI publishes releases to. Unset, downloads are off and the downloads page says they aren't available yet. See [Release downloads](#release-downloads). |
 | `RELEASES_S3_REGION` | Default `us-east-1`; `auto` for Cloudflare R2. |
@@ -488,12 +499,12 @@ src/
     index.astro             Homepage: company intro, product cards, pricing teaser
     pricing.astro           Price list, support, services, buying terms, estimator
     licensing.astro         How licensing works, for buyers and installers
-    contact.astro           Contact form (opens the visitor's email app)
+    contact.astro           Contact form (posts to the licensing service; mailto: fallback)
     404.astro, licensing-unavailable.astro
     products/               One page per product, each ending in its pricing
     account/                Customer licensing pages (rendered on demand)
     admin/                  ENS staff licensing pages (rendered on demand)
-    api/licensing/          Public keys, license status, health
+    api/licensing/          Public keys, license status, health, the contact form's endpoint
     api/audit/              Audit pull API for SIEMs (bearer token)
   layouts/
     BaseLayout.astro        The page shell: <head>, header, footer
@@ -514,7 +525,8 @@ src/
     products.ts             The product line: names, paths, demo keys, cards, docs sections
     site.ts                 The documentation site's address (DOCS_URL)
     pricing.ts              Every price and pricing rule
-    licensing.ts            Features per product, editions, evaluation size
+    licensing.ts            Features per product (and which are still planned), editions, evaluation size
+    contact.ts              The contact form's topics, field limits, honeypot and endpoint
     examples.ts             Worked examples quoted on the site
   lib/
     pricing.ts              Pricing arithmetic (pure functions)
@@ -522,9 +534,9 @@ src/
     licensing/issue.ts      Building a license from what was sold
     releases.ts             Release versions, SHA256SUMS, file names (pure functions)
   server/                   The licensing service: config, database and migrations,
-                            accounts, sessions, licenses, audit trail (audit*.ts:
-                            format and chain, store, outputs, pull API), mail, keys,
-                            release bucket (releases.ts)
+                            accounts, sessions, licenses, leads from the contact form,
+                            audit trail (audit*.ts: format and chain, store, outputs,
+                            pull API), mail, keys, release bucket (releases.ts)
   middleware.ts             Loads the signed-in account on licensing pages
   scripts/                  Browser code: contact form, estimator, savings calculator
   styles/site.css           The whole stylesheet
@@ -615,24 +627,39 @@ the same page carry every number it uses.
 
 ### Contact form
 
-`/contact.html` has no server side. On submit, `src/scripts/contact.ts` checks the
-required fields and builds a `mailto:` link to `info@ens-solutions.com` with a
-subject and a body laid out from the fields, which opens a draft in the
-visitor's own email app — the message is sent from there, and nothing is stored
-or sent by this site. Without JavaScript the form falls back to the browser's
-native `mailto:` form submission.
+`/contact.html` posts to the licensing service at `POST /api/licensing/contact`
+(`src/pages/api/licensing/contact.ts`), which nginx already proxies. The
+service checks the fields, stores the message as a **lead**, records
+`lead.created` in the audit trail, emails it to `CONTACT_TO` (default
+`info@ens-solutions.com`, sent from `MAIL_FROM` with the visitor as
+Reply-To) and sends the visitor an acknowledgement. ENS staff work the list
+at `/admin/leads`: newest first, with a status per lead (new, contacted,
+closed) and a detail page. The page itself stays static:
 
-- The recipient is the form's `action` and `data-recipient` attributes.
+- With JavaScript, `src/scripts/contact.ts` posts the fields as JSON and
+  shows the answer in place. If the service answers with a server error or
+  can't be reached at all (a network where the licensing service is down),
+  it falls back to what the form did before: it composes a `mailto:` link to
+  the address in `data-recipient` and opens the visitor's own email app.
+- Without JavaScript the browser posts the form and the service answers
+  with a redirect to `/contact.html?sent=1#sent`, where the confirmation is
+  shown by the `#sent` fragment alone.
+- A hidden honeypot field (`website`) catches form-filling bots: a
+  submission with it set is accepted and dropped. Each address may send
+  five messages an hour (`src/server/rate-limit.ts`); more get a 429.
+- Astro's `security.checkOrigin` refuses a form post from another site; a
+  JSON post from another site fails the browser's preflight, since the
+  endpoint answers no CORS headers.
 - Product pages link to `/contact.html?product=readyroom` (or `certalert`,
   `mfa-portal`, `directory-portal`, `pricing`, `pilot`) to pre-select the
   topic; the mapping is `contactTopics` in `src/data/products.ts`, and the
-  topic list in the form is built from it.
+  topic list the form shows and the service accepts is `contactTopicList`
+  in `src/data/contact.ts`.
 - `?message=...` pre-fills the message, which is how the estimator hands over
   a quote.
-- The message is capped at 1,500 characters (`CONTACT_MESSAGE_LIMIT`) because
-  some mail clients truncate long `mailto:` links.
-- Visitors with no email app configured get nothing to happen, so the page
-  also lists the address and phone number directly.
+- The message is capped at 1,500 characters (`CONTACT_MESSAGE_LIMIT`), which
+  also keeps the `mailto:` fallback inside what mail clients accept.
+- The page lists the address and phone number directly as well.
 
 ### External references
 

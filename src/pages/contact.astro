@@ -1,8 +1,6 @@
 ---
-import { CONTACT_MESSAGE_LIMIT, contactTopics } from '../data/products';
+import { CONTACT_ENDPOINT, CONTACT_HONEYPOT, contactLimits, contactTopicList } from '../data/contact';
 import BaseLayout from '../layouts/BaseLayout.astro';
-
-const topics = ['General inquiry', ...Object.values(contactTopics), 'IT services'];
 ---
 <BaseLayout
     title="Contact"
@@ -23,45 +21,57 @@ const topics = ['General inquiry', ...Object.values(contactTopics), 'IT services
 <section class="section" aria-label="Contact form and details">
     <div class="wrap contact-layout">
         <!--
-            No backend: the script composes an email from these fields and opens the visitor's own
-            mail app. Without JavaScript the browser's built-in mailto form submission is the fallback.
+            The form posts to the licensing service, which stores the message, emails it to us and
+            acknowledges it. The script posts it in place and shows the result here; without JavaScript
+            the browser posts it and comes back to #sent. If the service can't be reached, the script
+            falls back to composing an email in the visitor's own mail app.
         -->
-        <form class="contact-form" id="contact-form" action="mailto:info@ens-solutions.com"
-              method="post" enctype="text/plain" data-recipient="info@ens-solutions.com">
+        <form class="contact-form" id="contact-form" action={CONTACT_ENDPOINT} method="post"
+              data-recipient="info@ens-solutions.com">
+            <div class="form-sent callout callout--ok" id="sent" role="status" tabindex="-1">
+                <p>
+                    <strong>Thanks, we have your message.</strong> We will reply within one business day. A copy
+                    is on its way to the address you gave.
+                </p>
+            </div>
             <div class="form-grid">
                 <div class="field">
                     <label for="name">Name</label>
-                    <input id="name" name="name" type="text" autocomplete="name" required maxlength="120">
+                    <input id="name" name="name" type="text" autocomplete="name" required maxlength={contactLimits.name}>
                 </div>
                 <div class="field">
                     <label for="email">Email</label>
-                    <input id="email" name="email" type="email" autocomplete="email" required maxlength="200">
+                    <input id="email" name="email" type="email" autocomplete="email" required maxlength={contactLimits.email}>
                 </div>
                 <div class="field">
                     <label for="organization">Organization <span class="optional">optional</span></label>
-                    <input id="organization" name="organization" type="text" autocomplete="organization" maxlength="160">
+                    <input id="organization" name="organization" type="text" autocomplete="organization" maxlength={contactLimits.organization}>
                 </div>
                 <div class="field">
                     <label for="phone">Phone <span class="optional">optional</span></label>
-                    <input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="40">
+                    <input id="phone" name="phone" type="tel" autocomplete="tel" maxlength={contactLimits.phone}>
                 </div>
                 <div class="field field--wide">
                     <label for="topic">What is this about?</label>
                     <select id="topic" name="topic" required>
-                        {topics.map((t) => <option value={t}>{t}</option>)}
+                        {contactTopicList.map((t) => <option value={t}>{t}</option>)}
                     </select>
                 </div>
                 <div class="field field--wide">
                     <label for="message">Message</label>
-                    <textarea id="message" name="message" rows="7" required maxlength={CONTACT_MESSAGE_LIMIT}
+                    <textarea id="message" name="message" rows="7" required maxlength={contactLimits.message}
                               aria-describedby="message-hint"></textarea>
                     <p class="field-hint" id="message-hint">Up to 1,500 characters.</p>
+                </div>
+                <div class="field field--trap" aria-hidden="true">
+                    <label for={CONTACT_HONEYPOT}>Leave this field empty</label>
+                    <input id={CONTACT_HONEYPOT} name={CONTACT_HONEYPOT} type="text" tabindex="-1" autocomplete="off">
                 </div>
             </div>
 
             <div class="btn-row">
-                <button class="btn btn--primary" type="submit">Compose email</button>
-                <span class="btn-note">Opens your email app with the message ready to send.</span>
+                <button class="btn btn--primary" type="submit">Send message</button>
+                <span class="btn-note">We reply within one business day.</span>
             </div>
 
             <p class="form-status" id="form-status" role="status" hidden></p>
@@ -88,8 +98,9 @@ const topics = ['General inquiry', ...Object.values(contactTopics), 'IT services
                 </div>
             </dl>
             <p class="muted small">
-                The form doesn&rsquo;t send anything by itself &mdash; it opens a draft in your own email
-                app, and nothing is stored on this site.
+                What you send is kept only so we can answer it, is emailed to us and acknowledged to you, and
+                is not shared with anyone else. If the form can&rsquo;t reach us, it opens a draft in your
+                own email app instead.
             </p>
         </aside>
     </div>
