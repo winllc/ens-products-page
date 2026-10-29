@@ -44,7 +44,7 @@ export const productPricing: Readonly<Record<ProductId, ProductPricing>> = {
             { upTo: 2_500, annual: 12_000 },
             { upTo: 10_000, annual: 30_000 },
             { upTo: 50_000, annual: 65_000 },
-            { upTo: null, annual: 120_000, startingAt: true, label: 'Enterprise or multi-forest' },
+            { upTo: null, annual: 120_000, startingAt: true, label: 'Enterprise' },
         ],
     },
     'mfa-portal': {

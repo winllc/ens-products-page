@@ -98,6 +98,7 @@ export const ACTIONS = {
     'license.revoked': { category: 'data', severity: 'notice', label: 'License revoked' },
     'license.reinstated': { category: 'data', severity: 'notice', label: 'License reinstated' },
     'license.resigned': { category: 'data', severity: 'notice', label: 'License re-signed' },
+    'license.extended': { category: 'data', severity: 'notice', label: 'Evaluation extended' },
     'release.downloaded': { category: 'data', severity: 'info', label: 'Release downloaded' },
     'access.denied': { category: 'authorization', severity: 'warning', label: 'Access denied' },
     'audit.exported': { category: 'audit', severity: 'info', label: 'Audit log exported' },

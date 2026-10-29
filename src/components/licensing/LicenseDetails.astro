@@ -51,12 +51,13 @@ const support = supportTiers.find((t) => t.id === p.support);
 <h2 class="section-gap">What it unlocks</h2>
 <ul class="feature-checklist">
     {all.map((f) => {
-        const on = unlocked.has(`${license.product}.${f.id}`);
+        // A roadmap feature isn't in the product yet, whatever an older file says.
+        const on = !f.roadmap && unlocked.has(`${license.product}.${f.id}`);
         return (
             <li class:list={{ 'is-off': !on }}>
                 <strong>{f.name}</strong>
                 <span class="muted"> &mdash; {f.description}</span>
-                {!on && <span class="small muted"> (Enterprise)</span>}
+                {f.roadmap ? <span class="small muted"> (Planned: not yet in the product)</span> : !on && <span class="small muted"> (Enterprise)</span>}
                 <span class="visually-hidden">{on ? ' (included)' : ' (not included)'}</span>
             </li>
         );

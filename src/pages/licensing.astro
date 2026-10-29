@@ -4,14 +4,15 @@
  * products. Prerendered like the other marketing pages; the account pages it
  * links to are served by the licensing service.
  */
-import { editions, OVERAGE_TOLERANCE, productFeatures, type Edition } from '../data/licensing';
+import { editions, EVALUATION_EXTENSION_DAYS, evaluationLimit, OVERAGE_TOLERANCE, productFeatures, type Edition } from '../data/licensing';
+import { productPricing } from '../data/pricing';
 import { products } from '../data/products';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import { formatPercent } from '../lib/pricing';
+import { formatCount, formatPercent } from '../lib/pricing';
 
 const order: Edition[] = ['evaluation', 'pilot', 'subscription', 'perpetual'];
 const how: Record<Edition, string> = {
-    evaluation: 'Free, from your account, one per product. Smallest size tier, every feature, evaluation banner.',
+    evaluation: `Free, from your account, one per product. Second size band, every feature, evaluation banner; extend it once by ${EVALUATION_EXTENSION_DAYS} days yourself.`,
     pilot: 'Paid and supported, credited toward the first year. Your chosen size, every feature.',
     subscription: 'Issued against your order, for its term. Renewals re-issue it with a new expiry.',
     perpetual: 'Issued once and never expires. Maintenance decides which releases it covers.',
@@ -42,7 +43,7 @@ const how: Record<Edition, string> = {
         <h2 id="steps-heading">How it works</h2>
         <ol class="flow-steps">
             <li><strong>Create an account and confirm your email.</strong> Use your work address; your name and organization go on your license files.</li>
-            <li><strong>Download an evaluation license.</strong> One click per product, valid for {editions.evaluation.days} days, with every feature.</li>
+            <li><strong>Download an evaluation license.</strong> One click per product, valid for {editions.evaluation.days} days with every feature, sized for a real directory: {products.map((p, i) => <>{i > 0 && (i === products.length - 1 ? ' and ' : ', ')}{formatCount(evaluationLimit(p.id))} {productPricing[p.id].unit} for {p.name}</>)}.</li>
             <li><strong>Install the file.</strong> Copy it to the server and point the application at it. It checks the file offline, so it works on networks with no internet route.</li>
             <li><strong>Buy when you&rsquo;re ready.</strong> Once your order is in, we issue the subscription, pilot or perpetual license into your account. Renewals and upgrades arrive the same way.</li>
         </ol>
@@ -130,8 +131,17 @@ const how: Record<Edition, string> = {
                 visible and exportable, scheduled jobs and notifications pause.
             </li>
             <li>
+                <strong>Evaluation ends.</strong> The same {editions.evaluation.graceDays}-day grace period, then read-only.
+                Before that, extend it once by {EVALUATION_EXTENSION_DAYS} days from its license page; for longer, the
+                {' '}{editions.pilot.days}-day paid pilot is credited toward your first year.
+            </li>
+            <li>
                 <strong>Perpetual maintenance ends.</strong> The license never stops working with the releases it
                 covers. Releases made after maintenance ends need maintenance renewed.
+            </li>
+            <li>
+                <strong>Installations.</strong> Each license covers one production installation; test and
+                disaster-recovery copies of the same installation are included.
             </li>
         </ul>
     </div>
@@ -140,16 +150,21 @@ const how: Record<Edition, string> = {
 <section class="section" aria-labelledby="features-heading">
     <div class="wrap">
         <h2 id="features-heading">What a license unlocks</h2>
-        <p class="lede">Every license includes all of a product&rsquo;s standard features. Enterprise features come with the top size band, evaluations and pilots.</p>
+        <p class="lede">Every license includes all of a product&rsquo;s features. Features marked planned are on the roadmap and not yet in the product; they are not part of any license today.</p>
         <div class="card-grid card-grid--pairs">
             {products.map((p) => (
                 <article class="card">
                     <h3><a href={p.href}>{p.name}</a></h3>
                     <ul class="ticks">
-                        {productFeatures[p.id].map((f) => (
+                        {productFeatures[p.id].filter((f) => !f.roadmap).map((f) => (
                             <li>{f.name}{f.enterprise && <span class="muted small"> (Enterprise)</span>}</li>
                         ))}
                     </ul>
+                    {productFeatures[p.id].some((f) => f.roadmap) && (
+                        <p class="muted small">
+                            Planned: {productFeatures[p.id].filter((f) => f.roadmap).map((f) => f.name).join(', ')}.
+                        </p>
+                    )}
                 </article>
             ))}
         </div>

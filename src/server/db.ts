@@ -254,6 +254,9 @@ const migrations: Migration[] = [
         d.prepare('INSERT INTO audit_head (id, seq, hash) VALUES (1, ?, ?)').run(seq, prevHash);
         d.exec('DROP TABLE audit_log');
     },
+
+    // 3: when a customer extended their evaluation themselves (once per license).
+    `ALTER TABLE licenses ADD COLUMN extended_at TEXT;`,
 ];
 
 let instance: DatabaseSync | null = null;

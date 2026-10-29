@@ -49,7 +49,7 @@ describe('tiers', () => {
         expect(tierLabel(tiers, 0)).toBe('Up to 500');
         expect(tierLabel(tiers, 1)).toBe('501–2,500');
         expect(tierLabel(tiers, 3)).toBe('Over 10,000');
-        expect(tierLabel(productPricing.certalert.tiers, 3)).toBe('Enterprise or multi-forest');
+        expect(tierLabel(productPricing.certalert.tiers, 3)).toBe('Enterprise');
     });
 
     it('formats prices, floors and on-request bands', () => {

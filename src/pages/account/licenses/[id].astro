@@ -3,11 +3,12 @@ export const prerender = false;
 
 import AuditList from '../../../components/licensing/AuditList.astro';
 import LicenseDetails from '../../../components/licensing/LicenseDetails.astro';
+import { editions, EVALUATION_EXTENSION_DAYS } from '../../../data/licensing';
 import { product } from '../../../data/products';
 import AccountLayout from '../../../layouts/AccountLayout.astro';
 import { auditFor } from '../../../server/audit';
 import { form, requireAccount, withNotice } from '../../../server/http';
-import { bindInstallation, LicenseActionError, licenseFor, renameLicense } from '../../../server/licenses';
+import { bindInstallation, extendEvaluation, extensionBlocker, LicenseActionError, licenseFor, renameLicense } from '../../../server/licenses';
 
 const account = requireAccount(Astro);
 if (account instanceof Response) return account;
@@ -29,6 +30,10 @@ if (Astro.request.method === 'POST') {
             license = renameLicense(account, license, get('label'));
             return Astro.redirect(`/account/licenses/${license.id}`, 303);
         }
+        if (get('action') === 'extend') {
+            license = extendEvaluation(account, license);
+            return Astro.redirect(withNotice(`/account/licenses/${license.id}`, 'evaluation-extended'), 303);
+        }
     } catch (err) {
         if (!(err instanceof LicenseActionError)) throw err;
         error = err.message;
@@ -38,6 +43,8 @@ if (Astro.request.method === 'POST') {
 const info = product(license.product);
 const activity = auditFor({ license: license.id, customer: true }, 25);
 const usable = license.status !== 'revoked';
+const evaluation = license.edition === 'evaluation';
+const blocker = evaluation ? extensionBlocker(license) : null;
 ---
 <AccountLayout title={license.label || `${info.name} license`} section="licenses" error={error}>
     <p slot="lede" class="lede"><a href="/account">&larr; All licenses</a></p>
@@ -67,6 +74,35 @@ const usable = license.status !== 'revoked';
             what is unlocked, how many {license.payload.limit.unit} it covers, and when it expires.
         </li>
     </ol>
+
+    {evaluation && usable && (
+        <div class="callout section-gap" id="extend">
+            <h3>Need longer?</h3>
+            {blocker === null ? (
+                <form method="post">
+                    <p>
+                        Every evaluation can be extended once, by {EVALUATION_EXTENSION_DAYS} days, while it is running or
+                        within its {editions.evaluation.graceDays}-day grace period. The license is re-issued with the new
+                        expiry; download the new file and install it in place of the old one. After that, a
+                        {' '}{editions.pilot.days}-day <a href="/contact.html?product=pilot">paid pilot</a> covers a longer trial
+                        and is credited toward your first year.
+                    </p>
+                    <input type="hidden" name="action" value="extend">
+                    <button class="btn btn--primary" type="submit">Extend by {EVALUATION_EXTENSION_DAYS} days</button>
+                </form>
+            ) : (
+                <p>
+                    {license.extended_at ? (
+                        <>This evaluation was extended once, on {license.extended_at.slice(0, 10)}, which is the one self-serve extension. </>
+                    ) : (
+                        <>{blocker} </>
+                    )}
+                    For a longer trial, the {editions.pilot.days}-day <a href="/contact.html?product=pilot">paid pilot</a> runs in
+                    your environment with support, and is credited in full toward your first year.
+                </p>
+            )}
+        </div>
+    )}
 
     {usable && (
         <div class="split section-gap">

@@ -27,7 +27,7 @@ export interface EditionPolicy {
 }
 
 export const editions: Record<Edition, EditionPolicy> = {
-    evaluation: { name: 'Evaluation', days: 30, graceDays: 0, watermark: true },
+    evaluation: { name: 'Evaluation', days: 30, graceDays: 7, watermark: true },
     pilot: { name: 'Pilot', days: 90, graceDays: 0, watermark: false },
     subscription: { name: 'Subscription', days: 365, graceDays: 30, watermark: false },
     perpetual: { name: 'Perpetual', days: null, graceDays: 0, watermark: false },
@@ -35,6 +35,9 @@ export const editions: Record<Edition, EditionPolicy> = {
 
 /** Free evaluations an account may download per product. */
 export const EVALUATIONS_PER_PRODUCT = 1;
+
+/** Days a customer may add to an evaluation themselves, once, from its license page. After that it's the paid pilot. */
+export const EVALUATION_EXTENSION_DAYS = 30;
 
 /** How far over its size a deployment may go before it stops taking on more (LicenseCheck.OVERAGE_TOLERANCE). */
 export const OVERAGE_TOLERANCE = 0.1;
@@ -46,6 +49,13 @@ export interface Feature {
     description: string;
     /** Only in the top size band, evaluations and pilots, or when ENS adds it to an order. */
     enterprise?: boolean;
+    /**
+     * Announced but not yet in the product. Shown as planned on the site and
+     * never written into a new license; the id is reserved so files issued
+     * before the flag was set keep verifying, and so the applications can
+     * gate it the day it ships.
+     */
+    roadmap?: boolean;
 }
 
 export const productFeatures: Record<ProductId, readonly Feature[]> = {
@@ -60,13 +70,13 @@ export const productFeatures: Record<ProductId, readonly Feature[]> = {
         { id: 'risky-names', name: 'Risk analysis', description: 'Flags certificates with risky names, keys and algorithms.' },
         { id: 'directory-cleanup', name: 'Directory cleanup', description: 'Removes expired certificates and stale entries from the directory.' },
         { id: 'classification-banners', name: 'Classification banners', description: 'Configurable banners for classified networks.' },
-        { id: 'multi-directory', name: 'Multiple directories', description: 'Sweeps more than one directory or forest from one installation.', enterprise: true },
+        { id: 'multi-directory', name: 'Multiple directories', description: 'Sweeps more than one directory or forest from one installation.', enterprise: true, roadmap: true },
     ],
     readyroom: [
         { id: 'attendance', name: 'Attendance tracking', description: 'Logon, lock, unlock and logoff from the Windows client, turned into daily status.' },
         { id: 'calendar', name: 'Calendar', description: 'Leave, telework and events on a shared calendar.' },
         { id: 'absence-alerts', name: 'Absence alerts', description: 'Emails managers when someone has not checked in.' },
-        { id: 'metrics', name: 'Metrics and reports', description: 'Accountability metrics, personal and group reports, and PDF export.' },
+        { id: 'metrics', name: 'Metrics, reports and exports', description: 'Accountability metrics, personal and group reports as PDF, CSV or Excel, and scheduled emailed reports.' },
         { id: 'org-chart', name: 'Org chart', description: 'The organization chart, with live status.' },
         { id: 'classification-banners', name: 'Classification banners', description: 'Configurable banners for classified networks.' },
     ],
@@ -93,17 +103,36 @@ export const productFeatures: Record<ProductId, readonly Feature[]> = {
     ],
 };
 
-/** The smallest size band: what an evaluation covers. */
+/**
+ * What an evaluation covers: the second size band, so a trial pointed at a
+ * real directory sees all of it rather than a sample of the smallest.
+ */
 export function evaluationLimit(product: ProductId): number {
-    const first = productPricing[product].tiers[0]?.upTo;
-    if (first === null || first === undefined) {
-        throw new Error(`${product} has no size band to evaluate at`);
+    const second = productPricing[product].tiers[1]?.upTo;
+    if (second === null || second === undefined) {
+        throw new Error(`${product} has no second size band to evaluate at`);
     }
-    return first;
+    return second;
 }
 
-/** The feature ids a license of this edition and size carries. */
+/** The features a license can carry today: everything in the catalog that isn't still on the roadmap. */
+export function shippedFeatures(product: ProductId): Feature[] {
+    return productFeatures[product].filter((f) => !f.roadmap);
+}
+
+/** The enterprise features that can be sold today, across every product. */
+export function sellableEnterpriseFeatures(): { product: ProductId; feature: Feature }[] {
+    return (Object.keys(productFeatures) as ProductId[]).flatMap((product) =>
+        shippedFeatures(product)
+            .filter((f) => f.enterprise)
+            .map((feature) => ({ product, feature })),
+    );
+}
+
+/** The feature ids a license of this edition and size carries. Roadmap features are never issued. */
 export function featuresFor(product: ProductId, edition: Edition, enterprise: boolean): string[] {
     const all = enterprise || edition === 'evaluation' || edition === 'pilot';
-    return productFeatures[product].filter((f) => all || !f.enterprise).map((f) => `${product}.${f.id}`);
+    return shippedFeatures(product)
+        .filter((f) => all || !f.enterprise)
+        .map((f) => `${product}.${f.id}`);
 }
