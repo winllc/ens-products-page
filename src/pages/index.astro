@@ -10,7 +10,7 @@ import { jsonLd, organization, productList } from '../lib/structured-data';
 const lowest = Math.min(...products.map((p) => startingPrice(p.id)));
 const firstBundle = bundleDiscounts[0]!;
 const topBundle = bundleDiscounts.at(-1)!;
-const mission = supportTiers.at(-1)!;
+const premium = supportTiers.at(-1)!;
 ---
 <BaseLayout
     title="Products"
@@ -110,8 +110,8 @@ const mission = supportTiers.at(-1)!;
                 <p>Take two or more products and the discount comes off the sum of all of them.</p>
             </div>
             <div class="feature">
-                <h3>{mission.name} support for DoD and IC</h3>
-                <p>{mission.hours} coverage, {mission.response} response, cleared on-site support and releases on media for air-gapped networks.</p>
+                <h3>{premium.name} support when you need it</h3>
+                <p>{premium.response} response, a named engineer who knows your deployment and a quarterly health check, as a yearly add-on.</p>
             </div>
             <div class="feature">
                 <h3>A pilot that counts</h3>

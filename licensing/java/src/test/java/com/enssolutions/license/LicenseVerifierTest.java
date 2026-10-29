@@ -49,7 +49,7 @@ class LicenseVerifierTest {
         assertEquals("subscription", l.edition());
         assertEquals(10_000, l.limitQuantity());
         assertEquals("directory users", l.limitUnit());
-        assertEquals("mission", l.support());
+        assertEquals("premium", l.support());
         assertEquals(30, l.graceDays());
         assertEquals(Instant.parse("2027-10-14T00:00:00Z"), l.expiresAt().orElseThrow());
         assertTrue(l.features().contains("certalert.revocation-checks"));

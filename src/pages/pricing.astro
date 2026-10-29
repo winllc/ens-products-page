@@ -150,12 +150,12 @@ const servicePrice = (s: (typeof serviceList)[number]) =>
     <div class="wrap">
         <h2 id="support-heading">Support and maintenance</h2>
         <p class="lede">
-            Standard is included in every subscription; Premium and Mission are yearly add-ons. On a perpetual
+            Standard is included in every subscription; Premium is a yearly add-on. On a perpetual
             license the same tiers are the yearly maintenance charge, as a share of the license.
         </p>
         <div class="card-grid support-cards">
             {supportTiers.map((t) => (
-                <article class={t.id === 'mission' ? 'card support-card is-featured' : 'card support-card'}>
+                <article class={t.id === 'premium' ? 'card support-card is-featured' : 'card support-card'}>
                     <p class="card-kicker">{t.hours} &middot; {t.response} response</p>
                     <h3>{t.name}</h3>
                     <p>{t.summary}</p>
@@ -176,9 +176,9 @@ const servicePrice = (s: (typeof serviceList)[number]) =>
             ))}
         </div>
         <p class="small muted">
-            Mission is built for DoD and Intelligence Community programs: around-the-clock coverage, cleared
-            engineers on site, and every release delivered on media for networks with no internet route.
-            Subscription add-ons are a share of the subscription after any suite discount.
+            Subscription add-ons are a share of the subscription after any suite discount. Around-the-clock
+            coverage, cleared on-site support and delivery of releases on media are quoted for the programs
+            that need them.
             Severities, hours and escalation: <a href="/support.html">support policy</a>.
         </p>
     </div>
@@ -203,7 +203,7 @@ const servicePrice = (s: (typeof serviceList)[number]) =>
                     For vehicles that only allow one-time purchases. The license lists at
                     {PERPETUAL_MULTIPLE}&times; the annual subscription for the same size, and maintenance is
                     {formatPercent(standard.perpetualRate)} of the license a year for {standard.name}, more for
-                    Premium or Mission.
+                    Premium.
                 </p>
             </div>
         </div>
@@ -290,7 +290,7 @@ const servicePrice = (s: (typeof serviceList)[number]) =>
     <div class="wrap">
         <h2 id="example-heading">What a typical order comes to</h2>
         <p class="lede">
-            A 10,000-user DoD component taking CertAlert and RSA Operations Portal, with Mission support, on
+            A 10,000-user DoD component taking CertAlert and RSA Operations Portal, with Premium support, on
             subscription.
         </p>
         <div class="example">
@@ -369,15 +369,16 @@ const servicePrice = (s: (typeof serviceList)[number]) =>
                 <p>
                     Buy a perpetual license at {PERPETUAL_MULTIPLE}&times; the annual price, then maintenance
                     yearly at {formatPercent(standard.perpetualRate)} of the license for {standard.name}, or more
-                    for Premium or Mission. The suite discount applies to the licenses the same way.
+                    for Premium. The suite discount applies to the licenses the same way.
                 </p>
             </details>
             <details>
                 <summary>Do you support classified and air-gapped networks?</summary>
                 <p>
-                    The products are self-hosted, so they run inside your own enclave. Mission support adds cleared
-                    on-site support and delivers each release on media, and classified installations are quoted on
-                    top of the standard installation range.
+                    The products are self-hosted, so they run inside your own enclave, and every release is a
+                    signed package you can carry in. Cleared on-site support and delivery of releases on media are
+                    quoted on request, and classified installations are quoted on top of the standard
+                    installation range.
                 </p>
             </details>
             <details>

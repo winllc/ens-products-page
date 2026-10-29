@@ -640,16 +640,16 @@ The rules it encodes:
 - **Annual subscriptions**, tiered by size, include updates, security patches
   and Standard (business-hours) support. ReadyRoom is sized by tracked people,
   RSA Operations Portal by SecurID users, the others by directory users. The
-  largest band of each product is priced on request, except Enterprise or
-  multi-forest CertAlert, which is a "from" price.
+  largest band of each product is priced on request, except CertAlert's
+  Enterprise band, which is a "from" price.
 - **Perpetual licenses** list at `PERPETUAL_MULTIPLE` (2.75x) the annual
   subscription for the same band, with yearly maintenance as a share of the
-  license: Standard 20%, Premium 28%, Mission 35%.
+  license: Standard 20%, Premium 28%.
 - **Support add-ons** on a subscription are the same percentages of the
   subscription after the suite discount (Standard is included). That is the
-  reading that makes the plan's example come out at roughly $55K: CertAlert
+  reading that makes the worked example come out at roughly $53K: CertAlert
   plus RSA Operations Portal at 10,000 users is $55,000, less 25% is $41,250,
-  plus 35% for Mission is $55,688 a year.
+  plus 28% for Premium is $52,800 a year.
 - **Suite discount**: 25% off the sum for two products, 30% for three or more.
   Products priced on request count toward the discount but are left out of
   the estimator's totals.
@@ -674,7 +674,7 @@ halves round up, as they would on a hand-written quote.
 `/pricing.html#estimate` lets a buyer pick products, sizes, the license model,
 support tier, prepay, pilot and services, and prices it with the same
 `quote()` the tests cover (`src/scripts/estimator.ts`). The configuration is
-kept in the query string (`?p=certalert:10000,mfa-portal:10000&support=mission`),
+kept in the query string (`?p=certalert:10000,mfa-portal:10000&support=premium`),
 so an estimate can be bookmarked or forwarded, and product pages link to it
 with `?product=certalert` to start from that product. "Request this quote"
 opens the contact form with the topic set to *Pricing and quotes* and the

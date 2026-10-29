@@ -86,7 +86,7 @@ export const productPricing: Readonly<Record<ProductId, ProductPricing>> = {
  */
 export const PERPETUAL_MULTIPLE = 2.75;
 
-export type SupportTierId = 'standard' | 'premium' | 'mission';
+export type SupportTierId = 'standard' | 'premium';
 
 export interface SupportTier {
     id: SupportTierId;
@@ -121,21 +121,6 @@ export const supportTiers: readonly SupportTier[] = [
         response: '4 hours',
         hours: 'Business hours',
         features: ['Everything in Standard', 'Named support engineer', 'Quarterly health check'],
-    },
-    {
-        id: 'mission',
-        name: 'Mission',
-        summary: 'Around the clock, on site if needed, and releases on media for air-gapped networks.',
-        perpetualRate: 0.35,
-        subscriptionRate: 0.35,
-        response: '1-hour P1',
-        hours: '24/7',
-        features: [
-            'Everything in Premium',
-            '24/7 coverage, 1-hour response for P1 issues',
-            'Cleared on-site support',
-            'Air-gapped delivery of releases on media',
-        ],
     },
 ];
 
