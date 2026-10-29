@@ -1,19 +1,26 @@
 ---
+import CapabilityTable from '../../components/CapabilityTable.astro';
+import FactTable from '../../components/FactTable.astro';
 import ProductPricing from '../../components/ProductPricing.astro';
 import { enterpriseCertificatePlatformRange } from '../../data/pricing';
+import { docsUrl } from '../../data/site';
 import { formatUSD } from '../../lib/pricing';
 import ProductLayout from '../../layouts/ProductLayout.astro';
+
+const docs = (page: string) => docsUrl(`cert-alert/${page}`);
 ---
 <ProductLayout
     product="certalert"
-    description="CertAlert indexes every certificate your LDAP directory publishes, alerts the points of contact before one expires, checks revocation and what servers actually serve, and reports on the whole directory. From ENS Solutions."
+    description="CertAlert indexes every certificate your LDAP directory publishes, alerts the points of contact before one expires by email, Slack or Teams, checks revocation and what servers actually serve, and exports the inventory. CAC/PIV, password or single sign-on, a REST API, a hash-chained audit trail, and a Helm chart or Compose package. From ENS Solutions."
     headline="Every certificate in your directory, and who answers for it."
     sections={[
         { id: 'how-heading', label: 'How it works' },
         { id: 'screens-heading', label: 'Screens' },
         { id: 'capabilities-heading', label: 'Features' },
         { id: 'beyond-heading', label: 'Beyond expiry' },
-        { id: 'security-heading', label: 'Security' },
+        { id: 'security-heading', label: 'Accredited networks' },
+        { id: 'platform-heading', label: 'Security and integrations' },
+        { id: 'scope-heading', label: 'Today and not yet' },
         { id: 'tech-heading', label: 'Requirements' },
         { id: 'pricing-heading', label: 'Pricing' },
     ]}
@@ -193,7 +200,7 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
 
 <section class="section" aria-labelledby="security-heading">
     <div class="wrap">
-        <h2 id="security-heading">Security</h2>
+        <h2 id="security-heading">Built for accredited networks</h2>
         <div class="feature-grid">
             <div class="feature">
                 <h3>Certificate sign-in, matched exactly</h3>
@@ -201,7 +208,7 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
                     A client certificate is matched by its SHA-256 fingerprint against the certificates
                     the directory publishes for that person, not by pattern-matching a subject name.
                     Removing the certificate from the directory removes the access. Directory password
-                    sign-in is the fallback.
+                    sign-in and single sign-on through your identity provider are the alternatives.
                 </p>
             </div>
             <div class="feature">
@@ -230,6 +237,110 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
     </div>
 </section>
 
+<section class="section" aria-labelledby="platform-heading">
+    <div class="wrap">
+        <h2 id="platform-heading">Security and integrations</h2>
+        <p class="lede">
+            What a security reviewer or an integrator will ask about, in one place. Each row links the
+            documentation page that describes it in full.
+        </p>
+        <FactTable
+            caption="CertAlert security and integration summary"
+            rows={[
+                {
+                    label: 'Sign-in',
+                    detail: 'X.509 client certificates (a CAC or PIV card) matched by fingerprint against the directory, optionally checked for revocation at sign-in or forwarded by a TLS-terminating proxy; the directory password, by LDAP bind; or single sign-on by OpenID Connect or SAML&nbsp;2.0, with Entra ID, Okta and AD&nbsp;FS set-ups documented.',
+                    docs: { href: docs('single-sign-on/'), label: 'Single sign-on and roles' },
+                },
+                {
+                    label: 'Roles',
+                    detail: 'Reader, a read-only <strong>auditor</strong> who sees everything and changes nothing, and administrator, assigned from configuration, directory groups or the identity provider&rsquo;s groups.',
+                    docs: { href: docs('security/'), label: 'Security' },
+                },
+                {
+                    label: 'Public API',
+                    detail: 'A versioned REST API at <span class="mono">/api/v1</span> with an OpenAPI 3.1 document, called with scoped, expiring API tokens that never exceed their creator&rsquo;s own role, rate-limited per token.',
+                    docs: { href: docs('api-reference/'), label: 'API reference' },
+                },
+                {
+                    label: 'Webhooks',
+                    detail: 'HMAC-signed webhooks for expiry alerts and job results, delivered as plain JSON, a Slack message or a Microsoft Teams card.',
+                    docs: { href: docs('webhooks/'), label: 'Webhooks' },
+                },
+                {
+                    label: 'Exports and reports',
+                    detail: 'The Certificates page filters by key algorithm and size, hash algorithm and issuer, exports CSV or Excel, keeps saved views, assigns points of contact in bulk and e-mails scheduled reports.',
+                    docs: { href: docs('exports-and-reports/'), label: 'Exports and reports' },
+                },
+                {
+                    label: 'High availability',
+                    detail: 'Several replicas with the Helm chart. Sessions, job locks, sign-in requests in progress and the license state live in PostgreSQL, so each scheduled job runs once and a rolling update signs nobody out.',
+                    docs: { href: docs('availability-and-sizing/'), label: 'Sizing, availability and recovery' },
+                },
+                {
+                    label: 'Audit trail',
+                    detail: 'Every sign-in, refusal, setting, job run and change to an entry in the hash-chained <span class="mono">ens-audit/1</span> trail: searchable and verifiable in the app, exported as CSV or NDJSON, forwarded to Splunk HEC or syslog, or pulled by your SIEM through an API token.',
+                    docs: { href: docsUrl('audit-logging/'), label: 'Audit logging' },
+                },
+                {
+                    label: 'Observability',
+                    detail: 'Prometheus metrics, liveness and readiness probes on a separate management port, and JSON logs in Elastic Common Schema.',
+                    docs: { href: docs('operator-guide/'), label: 'Operator guide' },
+                },
+                {
+                    label: 'Deployment',
+                    detail: 'A release package for Docker or Podman Compose (podman-compose 1.0.6 or newer) with PostgreSQL included, or a Helm chart for Kubernetes and OpenShift. Images are built on Red Hat UBI&nbsp;9; the images and the chart are signed with cosign by digest, with an SPDX SBOM in the download and attested on the image.',
+                    docs: { href: docs('install/'), label: 'Install guide' },
+                },
+                {
+                    label: 'STIG-style controls',
+                    detail: 'The ENS platform baseline: a notice-and-consent banner, idle, administrator and absolute session timeouts and a sessions-per-user limit, security headers and CSRF protection, client-certificate revocation checking and allowed issuers, and the Helm chart&rsquo;s non-root, read-only containers.',
+                    docs: { href: docs('fips-and-stig/'), label: 'FIPS 140-3 and DISA STIG' },
+                },
+                {
+                    label: 'FIPS 140-3',
+                    detail: 'Runs on FIPS-mode RHEL or OpenShift hosts, taking its cryptography from Red Hat&rsquo;s OpenJDK, and the license check accepts a license&rsquo;s ECDSA P-256 co-signature where Ed25519 is unavailable. ENS supplies no validated cryptographic module and claims no validation; the application has not yet been run end to end in FIPS mode.',
+                    docs: { href: docsUrl('fips-and-stig/'), label: 'FIPS position' },
+                },
+                {
+                    label: 'Accessibility',
+                    detail: 'Targets WCAG 2.1 AA (Section 508). Every build scans every page with axe-core and fails on a serious or critical violation. A self-audit and a draft VPAT are available on request; conformance is not yet claimed.',
+                    docs: { href: docs('accessibility/'), label: 'Accessibility' },
+                },
+            ]}
+        />
+    </div>
+</section>
+
+<section class="section" aria-labelledby="scope-heading">
+    <div class="wrap">
+        <h2 id="scope-heading">What it does, and what it does not yet</h2>
+        <p class="lede">
+            For your shortlist: what is in the product today, what is there in part, and what it does
+            not do yet. &ldquo;Not yet&rdquo; means not in the current release; ask us about the roadmap.
+        </p>
+        <CapabilityTable
+            caption="CertAlert capabilities today"
+            rows={[
+                { label: 'Discovery from an LDAP directory', status: 'included', note: 'Paged sweeps and the changelog connector; one directory per installation.' },
+                { label: 'Ownership and routing of alerts', status: 'included', note: 'Points of contact, contact addresses, projects and bulk assignment.' },
+                { label: 'Revocation checking', status: 'included', note: 'CRL, and OCSP where no CRL exists, on a schedule and optionally at sign-in.' },
+                { label: 'Single sign-on with roles from groups', status: 'included', note: 'OpenID Connect and SAML 2.0; administrators and auditors from provider groups.' },
+                { label: 'REST API, tokens and OpenAPI', status: 'included', note: 'Scoped, expiring tokens; rate limits apply per replica.' },
+                { label: 'Inventory search and export', status: 'included', note: 'CSV and Excel, saved views and scheduled e-mailed reports.' },
+                { label: 'High availability, backup and recovery', status: 'included', note: 'Several replicas with the Helm chart; a database dump before every upgrade.' },
+                { label: 'Metrics, logs and SIEM forwarding', status: 'included', note: 'Prometheus, JSON logs, Splunk HEC and syslog.' },
+                { label: 'Alert channels', status: 'partial', note: 'E-mail, in-app, and JSON, Slack or Teams webhooks. No ticketing or paging connector; a webhook receiver bridges to those.' },
+                { label: 'Crypto-agility reporting', status: 'partial', note: 'Filters by key algorithm, size and hash; no policy alerts and no cryptographic bill of materials.' },
+                { label: 'Short-lived certificates', status: 'partial', note: 'Expiring-soon and critical thresholds (30 and 7 days by default) apply to every certificate alike; nothing yet distinguishes short-lived ones.' },
+                { label: 'Proof for accreditation', status: 'partial', note: 'FIPS and STIG settings documented; no FIPS-mode test run yet, and the VPAT is a draft.' },
+                { label: 'Network, CA and cloud discovery', status: 'not-yet', note: 'The directory is the only inventory source; a TLS probe checks one server on demand.' },
+                { label: 'Renewal automation', status: 'not-yet', note: 'Monitoring only: no ACME, CA connectors or certificate installation.' },
+            ]}
+        />
+    </div>
+</section>
+
 <section class="section" aria-labelledby="tech-heading">
     <div class="wrap">
         <h2 id="tech-heading">What you need to run it</h2>
@@ -248,6 +359,10 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
                     <td>Spring Boot 4 on Java 21 with a Thymeleaf and Tabler web UI, shipped as a container on Red Hat UBI 9 that runs as non-root and under OpenShift&rsquo;s default policy</td>
                 </tr>
                 <tr>
+                    <th scope="row">Deployment</th>
+                    <td>A release package for Docker or Podman Compose, or a Helm chart for Kubernetes and OpenShift; signed images with an SBOM</td>
+                </tr>
+                <tr>
                     <th scope="row">Directory</th>
                     <td>LDAP / LDAPS with a read-only service account; optionally a changelog (<span class="mono">cn=changelog</span>) for near-real-time updates</td>
                 </tr>
@@ -257,7 +372,7 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
                 </tr>
                 <tr>
                     <th scope="row">Authentication</th>
-                    <td>X.509 client certificates already published in the directory, with directory username and password as the fallback</td>
+                    <td>X.509 client certificates already published in the directory (CAC or PIV), directory username and password, or single sign-on by OpenID Connect or SAML 2.0; reader, auditor and administrator roles</td>
                 </tr>
                 <tr>
                     <th scope="row">Email</th>
@@ -269,7 +384,7 @@ import ProductLayout from '../../layouts/ProductLayout.astro';
                 </tr>
                 <tr>
                     <th scope="row">Configuration</th>
-                    <td>Environment variables or external config; liveness and readiness probes for orchestrators</td>
+                    <td>Environment variables or external config; liveness and readiness probes and Prometheus metrics on a management port</td>
                 </tr>
                 </tbody>
             </table>
