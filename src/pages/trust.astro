@@ -1,0 +1,495 @@
+---
+/*
+ * Trust and security: the page a security reviewer reads first. Every
+ * statement here comes from the documentation site (fips-and-stig, releases,
+ * audit-logging, licensing and each product's security and accessibility
+ * pages) or from this repository; nothing is claimed that they do not state.
+ * Prerendered like the other marketing pages.
+ */
+import { services } from '../data/pricing';
+import { products } from '../data/products';
+import { docsUrl } from '../data/site';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { formatRange } from '../lib/pricing';
+
+const sections = [
+    { id: 'build', label: 'How they are built' },
+    { id: 'releases', label: 'Release verification' },
+    { id: 'audit', label: 'Audit trail' },
+    { id: 'sign-in', label: 'Sign-in and sessions' },
+    { id: 'data', label: 'Data handling' },
+    { id: 'fips', label: 'FIPS and STIG' },
+    { id: 'accessibility', label: 'Accessibility' },
+    { id: 'testing', label: 'Independent testing' },
+    { id: 'disclosure', label: 'Vulnerability disclosure' },
+];
+
+const ato = services.ato;
+const security = 'info@ens-solutions.com';
+---
+<BaseLayout
+    title="Trust and security"
+    description="How ENS Solutions builds, signs and ships ReadyRoom, CertAlert, RSA Operations Portal and Directory Services Portal: supply chain, release verification, audit trail, sign-in controls, data handling, FIPS 140-3 and DISA STIG position, accessibility, and how to report a vulnerability."
+>
+<section class="hero">
+    <div class="wrap">
+        <p class="eyebrow">Trust and security</p>
+        <h1>What a security reviewer needs to know.</h1>
+        <p class="lede">
+            Four self-hosted applications, one platform baseline. This page collects what is true of
+            all of them: how they are built and scanned, how a release is signed and checked, what the
+            audit trail records, how people sign in, where data goes, where we stand on FIPS 140-3,
+            DISA STIG and Section 508, and how to tell us about a vulnerability. Each statement links
+            to the documentation it comes from.
+        </p>
+        <div class="btn-row">
+            <a class="btn btn--primary" href="#disclosure">Report a vulnerability</a>
+            <a class="btn btn--ghost" href={docsUrl('fips-and-stig/')}>FIPS and STIG documentation</a>
+            <a class="btn btn--ghost" href="/.well-known/security.txt">security.txt</a>
+        </div>
+    </div>
+</section>
+
+<nav class="page-nav" aria-label="Trust page sections">
+    <div class="wrap">
+        <ul>
+            {sections.map((s) => <li><a href={`#${s.id}`}>{s.label}</a></li>)}
+        </ul>
+    </div>
+</nav>
+
+<section class="section" id="build" aria-labelledby="build-heading">
+    <div class="wrap">
+        <h2 id="build-heading">How the products are built</h2>
+        <p class="lede">
+            Spring Boot applications on Red Hat UBI 9 images, with no cryptography of their own and a
+            build that fails on a fixable vulnerability.
+        </p>
+        <div class="feature-grid">
+            <div class="feature">
+                <h3>Runtime</h3>
+                <p>
+                    Spring Boot on Red Hat OpenJDK 21 (the RSA Operations Portal on OpenJDK 17), in
+                    containers built on Red Hat UBI 9 (<code>ubi9/openjdk-21-runtime</code>; the
+                    Directory Services Portal&rsquo;s web tier on <code>ubi9/nginx-126</code>). No
+                    application&rsquo;s own code implements cryptography: TLS, certificate and revocation
+                    checking, hashing, random numbers and the license check go through the Java
+                    runtime&rsquo;s providers.
+                </p>
+            </div>
+            <div class="feature">
+                <h3>Vulnerability scanning</h3>
+                <p>
+                    Every image is scanned with Trivy in CI, and the build fails on a HIGH or CRITICAL
+                    vulnerability that has a fix. Accepted risks are listed in each repository&rsquo;s
+                    <code>.trivyignore</code> with a reason and a review date.
+                </p>
+            </div>
+            <div class="feature">
+                <h3>Pinned builds</h3>
+                <p>
+                    The Directory Services Portal&rsquo;s security page documents its pipeline in full:
+                    every GitHub Action pinned to a commit and every base image to a digest, Dependabot
+                    updates weekly, and CodeQL, <code>npm audit</code> and Trivy on every push and
+                    pull request. The other products publish the same supply-chain table on the
+                    <a href={docsUrl('fips-and-stig/#supply-chain')}>FIPS and STIG page</a>.
+                </p>
+            </div>
+            <div class="feature">
+                <h3>Hardened by default</h3>
+                <p>
+                    Security headers and CSRF protection are always on. The Helm charts run every
+                    application as non-root with a read-only root file system and no capabilities, and
+                    Prometheus metrics are served on a separate management port that stays off every
+                    ingress.
+                </p>
+            </div>
+        </div>
+        <p class="section-more">
+            <a href={docsUrl('fips-and-stig/#supply-chain')}>Supply chain, per product, on the documentation site &rarr;</a>
+        </p>
+    </div>
+</section>
+
+<section class="section" id="releases" aria-labelledby="releases-heading">
+    <div class="wrap">
+        <h2 id="releases-heading">Release verification</h2>
+        <p class="lede">
+            A release is a signed deployment bundle and a Helm chart, with an SPDX software bill of
+            materials for every image, and you can check all of it before you install.
+        </p>
+        <div class="split">
+            <div>
+                <h3>What a release holds</h3>
+                <ul class="ticks">
+                    <li>The deployment bundle: everything a Docker or Podman Compose installation needs, container images included, so a site with no internet access installs from it alone</li>
+                    <li>The Helm chart at the same version, also published at <code>oci://ghcr.io/winllc/charts/&lt;chart&gt;</code></li>
+                    <li><code>sbom-*.spdx.json</code>: an SPDX software bill of materials for each container image</li>
+                    <li><code>SHA256SUMS</code>, and <code>SHA256SUMS.asc</code>, ENS Solutions&rsquo; GPG signature over the checksums</li>
+                </ul>
+                <h3>How it is signed</h3>
+                <p>
+                    On a release tag, CI signs each published image and the Helm chart with cosign:
+                    keyless signatures (Sigstore), made with the release workflow&rsquo;s GitHub identity,
+                    always by digest. Each image also gets its SPDX SBOM attached as a signed attestation.
+                    The checksum file is signed with our GPG release key, which is kept offline and is
+                    separate from the key that signs license files. <code>SHA256SUMS.asc</code> is
+                    present when the release was signed with it.
+                </p>
+            </div>
+            <div>
+                <h3>How to verify a download</h3>
+<pre><code># 1. The signature: proves SHA256SUMS came from ENS Solutions
+gpg --import ens-solutions-release.asc
+gpg --verify SHA256SUMS.asc SHA256SUMS
+
+# 2. The checksums: proves each file matches what was signed
+sha256sum -c SHA256SUMS --ignore-missing</code></pre>
+                <p class="small muted">
+                    Both must succeed. The Downloads page in your account links to our public key when
+                    the portal is configured with it. Check the key&rsquo;s fingerprint against the one
+                    ENS Solutions gives you separately, never against anything in the download itself.
+                </p>
+                <h3>How to verify an image</h3>
+<pre><code>cosign verify ghcr.io/winllc/in-n-out-work@&lt;digest&gt; \
+  --certificate-identity-regexp 'https://github.com/winllc/in-n-out-work/.github/workflows/.*' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+cosign verify-attestation --type spdxjson ghcr.io/winllc/in-n-out-work@&lt;digest&gt; \
+  --certificate-identity-regexp 'https://github.com/winllc/in-n-out-work/.github/workflows/.*' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com</code></pre>
+                <p class="small muted">
+                    That is ReadyRoom; the image names and repositories for the other products are in the
+                    documentation. cosign contacts Sigstore&rsquo;s public services to verify a keyless
+                    signature, so on an air-gapped network verify on a connected machine before you mirror
+                    the images.
+                </p>
+            </div>
+        </div>
+        <p class="section-more">
+            <a href={docsUrl('releases/')}>Releases and downloads: files, verification and installing &rarr;</a>
+        </p>
+    </div>
+</section>
+
+<section class="section" id="audit" aria-labelledby="audit-heading">
+    <div class="wrap">
+        <h2 id="audit-heading">Audit trail</h2>
+        <p class="lede">
+            Every application, and the licensing portal, keeps the same tamper-evident audit trail:
+            one event format, <code>ens-audit/1</code>, one set of settings, one Splunk add-on.
+        </p>
+        <div class="feature-grid">
+            <div class="feature">
+                <h3>What is recorded</h3>
+                <p>
+                    Sign-ins (success and failure, with the method), every refused request with its
+                    reason, changes to users, roles, settings and data with old and new values, the
+                    license, scheduled jobs, and every export. Secrets are never recorded: passwords,
+                    tokens, keys, license files, session ids, one-time codes and PINs appear as
+                    <code>[redacted]</code>.
+                </p>
+            </div>
+            <div class="feature">
+                <h3>Hash-chained</h3>
+                <p>
+                    Each event&rsquo;s SHA-256 hash covers the previous event&rsquo;s hash and its own
+                    JSON, so changing, removing or inserting an event breaks the chain from that point.
+                    The application&rsquo;s <strong>Verify integrity</strong> button reports where, and
+                    an auditor can check an export independently with a script from the documentation
+                    repository, without access to the application.
+                </p>
+            </div>
+            <div class="feature">
+                <h3>Into your SIEM</h3>
+                <p>
+                    Splunk HTTP Event Collector, syslog (RFC 5424 over UDP, TCP or TLS), an audit file or
+                    the container log for a forwarder, or a pull API with read-only tokens. HEC and
+                    syslog delivery is stored first and retried: an unreachable receiver queues events,
+                    never slows a request, and raises an alert after 15 minutes of failure.
+                </p>
+            </div>
+            <div class="feature">
+                <h3>Always available</h3>
+                <p>
+                    The audit page and the pull API work while an application is read-only or
+                    unlicensed. Nothing is removed unless you set a retention period, and then only
+                    events every enabled output has delivered, with the removal itself audited.
+                </p>
+            </div>
+        </div>
+        <p class="section-more">
+            <a href={docsUrl('audit-logging/')}>Audit logging: the event format, settings and Splunk setup &rarr;</a>
+        </p>
+    </div>
+</section>
+
+<section class="section" id="sign-in" aria-labelledby="sign-in-heading">
+    <div class="wrap">
+        <h2 id="sign-in-heading">Sign-in and session controls</h2>
+        <p class="lede">
+            Smart cards, directory passwords or your identity provider, behind the DoD notice-and-consent
+            banner and session limits, all of it audited.
+        </p>
+        <div class="table-scroll">
+            <table>
+                <caption class="visually-hidden">Sign-in and session controls across the products</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Control</th>
+                    <th scope="col">What the products do</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <th scope="row">Client certificates</th>
+                    <td>
+                        X.509 client certificates (smart cards such as CAC/PIV) sign in to CertAlert, the
+                        Directory Services Portal and ReadyRoom, with OCSP and CRL revocation checking
+                        (<code>ENS_X509_REVOCATION</code>) and a list of allowed issuers. Password sign-in can
+                        be turned off where only certificate sign-in is allowed. The RSA Operations Portal
+                        signs its users in with their Authentication Manager user ID and SecurID passcode.
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Single sign-on</th>
+                    <td>
+                        OpenID Connect or SAML 2.0 against your identity provider in every product; for the
+                        RSA Operations Portal, operators can start with single sign-on and then enter the
+                        SecurID passcode of the same user. Signing out can end the provider&rsquo;s session
+                        too (OpenID Connect end-session; SAML single logout both ways, with signed
+                        messages): each product&rsquo;s single sign-on page says which release carries it.
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Notice and consent</th>
+                    <td>
+                        With <code>ENS_CONSENT_BANNER_ENABLED=true</code> the DoD notice-and-consent banner
+                        comes before any sign-in of any kind, enforced by the server, not just shown, and
+                        each acknowledgement is audited. The standard DoD text is the default; a site can
+                        supply its own.
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Session limits</th>
+                    <td>
+                        An idle timeout (30 minutes by default), a shorter one for administrators, an absolute
+                        lifetime (12 hours by default) and an optional limit on concurrent sessions per user
+                        (<code>ENS_SESSION_*</code>). A session that ends is audited with its reason:
+                        idle, absolute or concurrent.
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Failed sign-ins</th>
+                    <td>
+                        A password sign-in is a bind as the user, so your directory&rsquo;s lockout policy
+                        applies; the Directory Services Portal adds its own lockout, and the RSA Operations
+                        Portal adds rate limits and backoff to Authentication Manager&rsquo;s policy.
+                        Repeated failures are audited.
+                    </td>
+                </tr>
+                <tr>
+                    <th scope="row">Browser protections</th>
+                    <td>
+                        A Content-Security-Policy with no inline scripts, <code>X-Frame-Options: DENY</code>,
+                        <code>X-Content-Type-Options</code>, <code>Referrer-Policy</code>,
+                        <code>Permissions-Policy</code> and HSTS on TLS; CSRF protection on every
+                        state-changing request; <code>HttpOnly</code>, <code>SameSite</code> session cookies,
+                        <code>Secure</code> behind a TLS proxy.
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+        <ul class="resource-list resource-list--spaced">
+            {products.map((p) => (
+                <li><a href={docsUrl(`${p.docsPath}/security/`)}>{p.name} security</a><span>Sign-in, roles, headers and outbound connections</span></li>
+            ))}
+        </ul>
+    </div>
+</section>
+
+<section class="section" id="data" aria-labelledby="data-heading">
+    <div class="wrap">
+        <h2 id="data-heading">Data handling</h2>
+        <p class="lede">
+            You run the software; we never see your data.
+        </p>
+        <div class="feature-grid feature-grid--pairs">
+            <div class="feature">
+                <h3>Self-hosted, no route to us needed</h3>
+                <p>
+                    Every product installs from its release package (Docker or Podman Compose) or Helm chart
+                    on your own infrastructure. The license is checked offline, against public keys built
+                    into the application, so it works on an air-gapped network. The outbound connections a
+                    product makes are listed on its security page, and all of them go to systems you name:
+                    your directory, mail server, PKI, SIEM, identity provider and webhook receivers. There is
+                    no usage reporting to ENS Solutions.
+                </p>
+            </div>
+            <div class="feature">
+                <h3>The license file</h3>
+                <p>
+                    A signed plain-text file. It is not secret: it holds only the licensee and what is
+                    licensed, can optionally be bound to one installation id, and is verified by the
+                    application with no network call. A license signed with ECDSA P-256 as well as Ed25519
+                    verifies on a Java runtime in FIPS mode.
+                </p>
+            </div>
+            <div class="feature">
+                <h3>The licensing portal</h3>
+                <p>
+                    Your account holds your email address, name, organization, license files and download
+                    history, and nothing else about your deployment. Passwords are stored with scrypt;
+                    session, confirmation and reset tokens only as hashes. Everything that creates or changes
+                    a license is in the portal&rsquo;s own hash-chained audit trail, and you see your own
+                    account&rsquo;s events on your account page. Release files never pass through the
+                    portal: a download is a short-lived link to private storage.
+                </p>
+            </div>
+            <div class="feature">
+                <h3>Personal data in ReadyRoom</h3>
+                <p>
+                    ReadyRoom records when people sign in to, lock, unlock and sign out of their
+                    workstations. Its <a href={docsUrl('readyroom/privacy/')}>privacy page</a> sets out, for
+                    a DPIA, a works council or a privacy review, what is stored, where, who can see it, how
+                    long it is kept, and how it is exported and erased.
+                </p>
+            </div>
+        </div>
+        <p class="section-more">
+            <a href={docsUrl('licensing/')}>Licensing: the file, binding and what happens offline &rarr;</a>
+        </p>
+    </div>
+</section>
+
+<section class="section" id="fips" aria-labelledby="fips-heading">
+    <div class="wrap">
+        <h2 id="fips-heading">FIPS 140-3 and DISA STIG</h2>
+        <div class="callout">
+            <p>
+                <strong>No ENS validation.</strong> ENS Solutions does not supply or claim a FIPS 140-3
+                validated cryptographic module, and none of the applications has been validated or
+                certified. Whether a deployment meets FIPS 140-3 depends on the Java runtime, the operating
+                system and their validated modules, which you choose and configure.
+            </p>
+        </div>
+        <div class="split">
+            <div>
+                <h3>Running in FIPS mode</h3>
+                <p>
+                    Run the images on a RHEL host with FIPS mode enabled, or on an OpenShift cluster
+                    installed in FIPS mode. Red Hat&rsquo;s OpenJDK in the container follows the host&rsquo;s
+                    FIPS flag and switches to its FIPS providers; the applications need no setting of their
+                    own. Red Hat&rsquo;s OpenJDK in FIPS mode has no Ed25519, so there the license&rsquo;s
+                    ECDSA P-256 co-signature is the one that counts: a license issued before we enabled P-256
+                    signing needs re-signing first, which we do on request. No application has a CI job that
+                    runs it end to end on a Java runtime in FIPS mode; the license library does.
+                </p>
+            </div>
+            <div>
+                <h3>DISA STIG settings</h3>
+                <p>
+                    All four applications implement the same platform baseline: the notice-and-consent
+                    banner, session limits, security headers, revocation checking where certificates sign
+                    in, the hash-chained audit trail forwarded to a SIEM, metrics on a separate management
+                    port, and non-root, read-only containers. The settings that need a decision for a STIG
+                    deployment, and the options that are not FIPS-appropriate, are documented per product.
+                    A STIG-hardened image and the documentation package for your authorization is a
+                    service we price at {formatRange({ low: ato.low!, high: ato.high! })} {ato.per}.
+                </p>
+            </div>
+        </div>
+        <ul class="resource-list resource-list--spaced">
+            <li><a href={docsUrl('fips-and-stig/')}>FIPS 140-3 and DISA STIG, suite-wide</a><span>Where the cryptography comes from, TLS defaults, the STIG control table</span></li>
+            {products.map((p) => (
+                <li><a href={docsUrl(`${p.docsPath}/fips-and-stig/`)}>{p.name}</a><span>Its FIPS notes and STIG settings</span></li>
+            ))}
+        </ul>
+    </div>
+</section>
+
+<section class="section" id="accessibility" aria-labelledby="accessibility-heading">
+    <div class="wrap">
+        <h2 id="accessibility-heading">Accessibility</h2>
+        <p class="lede">
+            WCAG 2.1 level AA is the target, checked on every build; the conformance reports are drafts,
+            available on request.
+        </p>
+        <div class="split">
+            <div>
+                <p>
+                    Every build runs axe-core against each product&rsquo;s pages and fails on a serious or
+                    critical violation of the WCAG A and AA rules. The pages offer a skip link, landmarks,
+                    one level-one heading per page, text and controls at WCAG contrast, keyboard operation
+                    of every control, and status messages for counts, job state and form errors.
+                </p>
+                <p>
+                    None of the products yet claims conformance. For each there is a self-audit against
+                    WCAG 2.1 AA and a <strong>draft</strong> Accessibility Conformance Report in the ITI
+                    VPAT 2.5 format, kept in the product&rsquo;s source repository for ENS Solutions to review
+                    before publication. Ask us for the current copies when a procurement needs them.
+                </p>
+            </div>
+            <ul class="resource-list">
+                {products.map((p) => (
+                    <li><a href={docsUrl(`${p.docsPath}/accessibility/`)}>{p.name}</a><span>How it is checked, known limits, conformance documents</span></li>
+                ))}
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="testing" aria-labelledby="testing-heading">
+    <div class="wrap">
+        <h2 id="testing-heading">Independent testing</h2>
+        <p class="lede">
+            We have not yet published a third-party penetration test report for any of the products.
+        </p>
+        <p>
+            What runs on every build is our own: each product&rsquo;s test suite, the Trivy scan of each
+            image and the accessibility checks (see <a href="#build">how the products are built</a>). The
+            outputs a reviewer can
+            take away today are the SBOMs, the cosign signatures and attestations on the images, and the
+            documentation site, which was written from the source code. Requests for test evidence,
+            questionnaire answers or a review call with an engineer go through the
+            <a href="/contact.html">contact page</a>.
+        </p>
+    </div>
+</section>
+
+<section class="section" id="disclosure" aria-labelledby="disclosure-heading">
+    <div class="wrap">
+        <h2 id="disclosure-heading">Vulnerability disclosure</h2>
+        <p class="lede">
+            If you believe you have found a security problem in one of our products, the licensing
+            portal or this site, please tell us.
+        </p>
+        <div class="split">
+            <div>
+                <h3>How to report</h3>
+                <p>
+                    Email <a href={`mailto:${security}`}>{security}</a> with &ldquo;Security&rdquo; in the
+                    subject. Include the product and version, what you found, how to reproduce it, and
+                    how we can reach you. The same contact is published in this site&rsquo;s
+                    <a href="/.well-known/security.txt"><code>/.well-known/security.txt</code></a>.
+                </p>
+                <h3>What to expect</h3>
+                <p>
+                    We aim to acknowledge every report within three business days, keep you informed while
+                    we investigate, and tell you when a fix ships. Security fixes reach customers as
+                    releases through the licensing portal&rsquo;s Downloads page.
+                </p>
+            </div>
+            <div>
+                <h3>What we ask</h3>
+                <ul class="ticks">
+                    <li>Give us a reasonable time to fix the problem before you publish it</li>
+                    <li>Test only against installations you are authorized to test, never against another customer&rsquo;s</li>
+                    <li>Do not access, change or keep data that is not yours beyond what is needed to show the problem</li>
+                    <li>Do not send us personal data from a live system; a description is enough</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+</BaseLayout>

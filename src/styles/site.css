@@ -1962,3 +1962,31 @@ img { max-width: 100%; height: auto; }
     font-size: .8rem;
     line-height: 1.5;
 }
+
+/* ---------------------------------------------------------------- *
+ * Trust and support pages
+ * ---------------------------------------------------------------- */
+
+/* Command blocks (how to verify a release). */
+pre {
+    font-family: var(--mono);
+    font-size: .85rem;
+    line-height: 1.55;
+    background: var(--surface-alt);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    margin: 0 0 1rem;
+    overflow-x: auto;
+}
+
+pre code { background: none; border: 0; padding: 0; font-size: inherit; }
+
+/* A resource list standing on its own, under a table or a paragraph. */
+.resource-list--spaced { margin-top: 1rem; }
+
+/* Sections reached by their own id (the trust and support pages' menus) land
+   below the sticky header and section menu, like the headings do. */
+@media (min-width: 641px) {
+    main section[id] { scroll-margin-top: 130px; }
+}
