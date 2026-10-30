@@ -707,3 +707,276 @@ export const controls: readonly Control[] = [
             },
         },
     },
+    // ------------------------------------------------------------------ CM
+    {
+        id: 'CM-2',
+        family: 'CM',
+        title: 'Baseline Configuration',
+        products: {
+            certalert: {
+                status: 'implemented',
+                implementation: 'The baseline is the release: a container image built from Red Hat UBI 9 (ubi9/openjdk-21-runtime) pinned by digest, a Helm chart and a release bundle whose compose file is pinned to the release images, with env.template and values.yaml as the documented settings. Every pull request builds a dry-run bundle so packaging differences show before a release.',
+                evidence: [CA + 'Dockerfile', CA + 'deploy/release/env.template', CA + 'deploy/helm/cert-alert/values.yaml', CI.ca, RELEASES_DOC],
+            },
+            'directory-portal': {
+                status: 'implemented',
+                implementation: 'Two images (ubi9/openjdk-21-runtime for the API, ubi9/nginx-126 for the web tier) pinned by digest, a Helm chart, a Docker package and a native systemd package, each with its settings template.',
+                evidence: [DSP + 'backend/Dockerfile', DSP + 'web/Dockerfile', DSP + 'deploy/package/docker/env.template', DSP + 'deploy/helm/directory-services-portal/values.yaml', CI.dsp],
+            },
+            readyroom: {
+                status: 'implemented',
+                implementation: 'One image on ubi9/openjdk-21-runtime pinned by digest (built with a digest-pinned eclipse-temurin JDK stage), a Helm chart and a release bundle with env.template.',
+                evidence: [RR + 'Dockerfile', RR + 'deploy/bundle/env.template', RR + 'deploy/helm/readyroom/values.yaml', CI.rr],
+            },
+            'mfa-portal': {
+                status: 'implemented',
+                implementation: 'Portal and Connector images on ubi9/ubi with java-17-openjdk-headless, pinned by digest through the BASE_TAG build argument, a Helm chart and a release bundle with separate settings templates per service (.env, connector.env, mysql.env).',
+                evidence: [RSA + 'rsaapp-portal/Dockerfile', RSA + 'rsaapp-connector/Dockerfile', RSA + 'deploy/release/install.sh', RSA + 'deploy/helm/rsa-operations-portal/values.yaml', CI.rsa],
+            },
+        },
+    },
+    {
+        id: 'CM-3',
+        family: 'CM',
+        title: 'Configuration Change Control',
+        products: {
+            certalert: {
+                status: 'implemented',
+                implementation: 'Changes reach main through pull requests that CI builds and tests (build, test-postgres, a11y, helm, release-bundle, image jobs) and CodeQL analyses; a release is a tag that CI turns into signed images, chart and bundle. Whether the repository requires reviews and status checks before merge is an organization setting ENS confirms separately.',
+                evidence: [CI.ca, CA + '.github/workflows/codeql.yml', RELEASES_DOC],
+            },
+            'directory-portal': {
+                status: 'implemented',
+                implementation: 'Pull requests run api-test, web-test, accessibility, helm, bundle and image jobs plus CodeQL and npm audit; releases are tags. Branch protection is an organization setting ENS confirms separately.',
+                evidence: [CI.dsp, DSP + '.github/workflows/codeql.yml', RELEASES_DOC],
+            },
+            readyroom: {
+                status: 'implemented',
+                implementation: 'Pull requests run build, helm, bundle, accessibility, windows-client and image jobs plus CodeQL; releases are tags. Branch protection is an organization setting ENS confirms separately.',
+                evidence: [CI.rr, RR + '.github/workflows/codeql.yml', RELEASES_DOC],
+            },
+            'mfa-portal': {
+                status: 'implemented',
+                implementation: 'Pull requests run build, accessibility, compose, helm, image and podman-bundle jobs; releases are tags. This repository has no CodeQL workflow. Branch protection is an organization setting ENS confirms separately.',
+                evidence: [CI.rsa, RELEASES_DOC],
+            },
+        },
+    },
+    {
+        id: 'CM-5',
+        family: 'CM',
+        title: 'Access Restrictions for Change',
+        products: {
+            certalert: {
+                status: 'partial',
+                implementation: 'Signing and upload run only in the GitHub release environment on a v* tag, with contents: read and id-token: write and an AWS role assumed through OIDC; the workflow holds contents: read elsewhere. Who may push to main and approve a release is a repository setting not visible in the code; ENS confirms it separately. In the product, settings changes need the administrator role and are audited.',
+                evidence: [CI.ca, CA + 'README.md (section "Releases")', RELEASES_DOC],
+                customerResponsibility: 'Restrict who may change .env, values files and Secrets on your platform.',
+            },
+            'directory-portal': {
+                status: 'partial',
+                implementation: 'The release job runs in the release environment with id-token: write on that job only; repository permissions are an organization setting ENS confirms separately. In the product, configuration changes need ROLE_ADMIN and are audited.',
+                evidence: [CI.dsp, RELEASES_DOC],
+                customerResponsibility: 'Restrict who may change settings and Secrets on your platform.',
+            },
+            readyroom: {
+                status: 'partial',
+                implementation: 'The image job runs under the release environment on tags, with the long-lived keys only a warned fallback; repository permissions are an organization setting ENS confirms separately. In the product, settings need ADMIN and are audited.',
+                evidence: [CI.rr, RELEASES_DOC],
+                customerResponsibility: 'Restrict who may change settings and Secrets on your platform.',
+            },
+            'mfa-portal': {
+                status: 'partial',
+                implementation: 'The image job runs under the release environment on tags; repository permissions are an organization setting ENS confirms separately. In the product, settings need PMO and are audited; util/check-env.sh refuses a .env that holds Connector or MySQL secrets.',
+                evidence: [CI.rsa, RSA + 'util/check-env.sh', RELEASES_DOC],
+                customerResponsibility: 'Keep .env, connector.env and mysql.env at the modes install.sh sets.',
+            },
+        },
+    },
+    {
+        id: 'CM-6',
+        family: 'CM',
+        title: 'Configuration Settings',
+        products: {
+            certalert: {
+                status: 'implemented',
+                implementation: 'Security settings default closed: security headers and CSRF always on, HttpOnly and SameSite cookies, TLS 1.2 and 1.3 only, error messages off (server.error.include-message: never), the application refuses to start with security off outside the dev profile, and the release package refuses plain HTTP to other hosts. The settings a STIG deployment must decide (banner, session limits, revocation, allowed issuers, Secure cookie, audit forwarding) are tabulated with defaults.',
+                evidence: [CA_SEC + 'SecurityOffGuard.java', CA_SEC + 'SecurityHeaders.java', CA + 'src/main/resources/application.yml', ca('fips-and-stig'), ca('configuration')],
+                customerResponsibility: 'Apply the STIG settings table; set revocation.allow-unverified-crl to false once issuer-directory is populated.',
+            },
+            'directory-portal': {
+                status: 'implemented',
+                implementation: 'Headers and the request-header CSRF check always on; plain HTTP on 127.0.0.1 by default; the demo directory refuses to start outside demo mode; startup warns about trust-all, mutable claims and proxy misconfiguration. The STIG settings table lists what to decide.',
+                evidence: [DSP_SRC + 'config/StartupChecks.java', DSP_SRC + 'config/RequestHeaderCsrfFilter.java', DSP + 'deploy/package/docker/install.sh', dsp('fips-and-stig'), dsp('configuration')],
+                customerResponsibility: 'Apply the STIG settings table and the hardening checklist.',
+            },
+            readyroom: {
+                status: 'implemented',
+                implementation: 'Headers and CSRF always on; TLS refuses to start without a keystore and truststore; revocation defaults to ocsp-then-crl; STARTTLS required for mail by default; demo mode cannot run with Windows sign-in. The STIG settings table lists what to decide.',
+                evidence: [RR_SRC + 'config/SecurityHeadersConfig.java', RR_SRC + 'config/SslStoresCheck.java', RR_SRC + 'security/x509/X509Config.java', rr('fips-and-stig'), rr('configuration')],
+                customerResponsibility: 'Apply the STIG settings table and the hardening checklist.',
+            },
+            'mfa-portal': {
+                status: 'implemented',
+                implementation: 'Headers, CSRF and method security always on; rate limits on; mutual TLS to the Connector in new installations; the Connector refuses every request while no shared secret is set and warns about plain HTTP, trust-all host names and a disabled serial filter; settings files are made mode 600/640 by install.sh. The STIG settings table lists what to decide.',
+                evidence: [RSA_SRC + 'security/SecurityHeaders.java', RSA_CONN + 'security/ConnectorAuthFilter.java', RSA + 'util/file-owners.sh', rsa('fips-and-stig'), rsa('configuration')],
+                customerResponsibility: 'Apply the STIG settings table; keep CONNECTOR_TLS_CLIENT_AUTH=required.',
+            },
+        },
+    },
+    {
+        id: 'CM-7',
+        family: 'CM',
+        title: 'Least Functionality',
+        products: {
+            certalert: {
+                status: 'implemented',
+                implementation: 'Only health, info and the OpenAPI document are open on the application port; Prometheus is on a separate management port never published by the compose file, ingress or route; other actuator endpoints need ADMIN. Outbound connections are enumerated and bounded (allowed-hosts for revocation fetches and webhooks). The container runs as non-root with no capabilities in the chart.',
+                evidence: [CA + 'src/main/java/com/winllc/certalert/observability/ManagementEndpoints.java', CA + 'deploy/helm/cert-alert/values.yaml', ca('security')],
+                customerResponsibility: 'Keep the management port off every ingress and published port.',
+            },
+            'directory-portal': {
+                status: 'implemented',
+                implementation: 'The compose files never publish the API; only the web proxy reaches it. The management port serves health and metrics without sign-in and is never published; the native package binds it to 127.0.0.1 and its systemd unit drops capabilities and filters system calls. Demo seeding is off in production.',
+                evidence: [DSP + 'deploy/package/docker/docker-compose.yml', DSP + 'deploy/package/native/directory-services-portal.service', dsp('security')],
+                customerResponsibility: 'Keep the management port off user networks; SEED_DEMO_CONFIG=false.',
+            },
+            readyroom: {
+                status: 'implemented',
+                implementation: 'Actuator exposure is health only on the application port, Prometheus only on the management port; Windows sign-in is off by default and applies to three check-in calls; the public API serves GETs only.',
+                evidence: [RR_SRC + 'config/ManagementPortExposure.java', RR_SRC + 'api/ApiSecurityConfig.java', rr('security')],
+                customerResponsibility: 'Keep Actuator exposure at health; never publish the management port.',
+            },
+            'mfa-portal': {
+                status: 'implemented',
+                implementation: 'Only health and prometheus are exposed, prometheus on the management port only. The Connector has two handlers, a Hessian endpoint that rebuilds allow-listed classes and accepts only POST, and a health endpoint; its plain HTTP port binds to loopback. The mock Authentication Manager is not shipped in releases.',
+                evidence: [RSA_CONN + 'security/AllowListHessianServiceExporter.java', RSA + 'scripts/release-bundle.sh', rsa('security')],
+                customerResponsibility: 'Never publish the management port; do not expose 8080 beyond the host.',
+            },
+        },
+    },
+    {
+        id: 'CM-8',
+        family: 'CM',
+        title: 'System Component Inventory',
+        products: {
+            certalert: {
+                status: 'implemented',
+                implementation: 'CI generates an SPDX 2.3 SBOM of the image with syft on every image build, ships it in the release download (sbom-cert-alert.spdx.json) and attaches it to the image as a cosign attestation of type spdxjson on release tags.',
+                evidence: [CI.ca, RELEASES_DOC, FIPS_DOC],
+                customerResponsibility: 'Record the deployed image digests and chart version in your own inventory.',
+            },
+            'directory-portal': {
+                status: 'implemented',
+                implementation: 'SPDX SBOMs of both images (api and web) generated with syft, in the download and attested on the images.',
+                evidence: [CI.dsp, RELEASES_DOC],
+                customerResponsibility: 'Record the deployed image digests and chart version.',
+            },
+            readyroom: {
+                status: 'implemented',
+                implementation: 'SPDX SBOMs of the application image (sbom-in-n-out-work.spdx.json) and the bundled postgres image, in the download; the application image\'s SBOM is attested on the image.',
+                evidence: [CI.rr, RELEASES_DOC],
+                customerResponsibility: 'Record the deployed image digests and chart version.',
+            },
+            'mfa-portal': {
+                status: 'implemented',
+                implementation: 'SPDX SBOMs of the Portal, Connector and bundled MySQL images, in the download; the Portal\'s and Connector\'s are attested on the images.',
+                evidence: [CI.rsa, RELEASES_DOC],
+                customerResponsibility: 'Record the deployed image digests and chart version.',
+            },
+        },
+    },
+    // ------------------------------------------------------------------ CP
+    {
+        id: 'CP-2',
+        family: 'CP',
+        title: 'Contingency Plan',
+        products: {
+            certalert: {
+                status: 'customer',
+                implementation: 'The contingency plan is the operating organization\'s. The documentation supplies its inputs: what to back up (the PostgreSQL database and the license volume), the recovery order, cold-standby guidance and the rollback rule. ENS has not load-tested the application and publishes no capacity figures.',
+                evidence: [HA_DOC, ca('availability-and-sizing')],
+                customerResponsibility: 'Write and exercise the plan; decide RPO and RTO.',
+            },
+            'directory-portal': {
+                status: 'customer',
+                implementation: 'As above; what to back up is the data directory (or the shared database) and the license directory. The portal talks to one LDAP server (no failover in the product).',
+                evidence: [HA_DOC, dsp('availability-and-sizing')],
+                customerResponsibility: 'Write and exercise the plan; provide directory availability.',
+            },
+            readyroom: {
+                status: 'customer',
+                implementation: 'As above; what to back up is the PostgreSQL database and the license volume.',
+                evidence: [HA_DOC, rr('availability-and-sizing')],
+                customerResponsibility: 'Write and exercise the plan.',
+            },
+            'mfa-portal': {
+                status: 'customer',
+                implementation: 'As above; what to back up is the MySQL database, the license volume, the AM trust store and the Connector\'s certificates. The Connector runs as one replica by design.',
+                evidence: [HA_DOC, rsa('availability-and-sizing')],
+                customerResponsibility: 'Write and exercise the plan; accept or mitigate the single-Connector recovery time.',
+            },
+        },
+    },
+    {
+        id: 'CP-9',
+        family: 'CP',
+        title: 'System Backup',
+        products: {
+            certalert: {
+                status: 'implemented',
+                implementation: 'The release package has backup.sh and restore.sh (exercised in CI), upgrade.sh writes a database dump before upgrading, and the Helm chart runs a pre-upgrade backup hook. Scheduling backups is the customer\'s.',
+                evidence: [CA + 'deploy/release/backup.sh', CA + 'deploy/release/restore.sh', CA + 'deploy/helm/cert-alert/templates/upgrade-backup.yaml', CI.ca, ca('availability-and-sizing')],
+                customerResponsibility: 'Schedule and store backups off the host; back up the database with your own tooling where you run it externally.',
+            },
+            'directory-portal': {
+                status: 'implemented',
+                implementation: './portal.sh backup and ./portal.sh restore in the Docker package (the license volume is not included); native and Helm installations use tar or volume snapshots. upgrade.sh writes a backup first.',
+                evidence: [DSP + 'deploy/package/docker/portal.sh', DSP + 'deploy/package/docker/upgrade.sh', dsp('availability-and-sizing')],
+                customerResponsibility: 'Schedule backups; include the license directory and DSP_SECRETS_KEY, kept apart from the backups.',
+            },
+            readyroom: {
+                status: 'implemented',
+                implementation: './backup.sh (database and license volume, kept 14 days) and ./restore.sh in the bundle; the Helm chart has a backup CronJob, off by default (backup.enabled).',
+                evidence: [RR + 'deploy/bundle/backup.sh', RR + 'deploy/bundle/restore.sh', RR + 'deploy/helm/readyroom/templates/backup.yaml', rr('availability-and-sizing')],
+                customerResponsibility: 'Schedule backups; run ./backup.sh before an upgrade.',
+            },
+            'mfa-portal': {
+                status: 'implemented',
+                implementation: 'util/backupdb.sh and scripts/restoredb.sh for the MySQL database; upgrade.sh backs up first; the Helm chart has a backup CronJob, off by default.',
+                evidence: [RSA + 'util/backupdb.sh', RSA + 'scripts/restoredb.sh', RSA + 'deploy/helm/rsa-operations-portal/templates/backup.yaml', rsa('availability-and-sizing')],
+                customerResponsibility: 'Schedule backups; include the license volume, trust store and Connector certificates.',
+            },
+        },
+    },
+    {
+        id: 'CP-10',
+        family: 'CP',
+        title: 'System Recovery and Reconstitution',
+        products: {
+            certalert: {
+                status: 'partial',
+                implementation: 'Recovery is documented: install the same release, restore settings, license volume and data, start, then check the license screen, Verify integrity and a sign-in. Rollback needs the pre-upgrade backup. ENS has not tested rollbacks as procedures; the documentation says to practise one.',
+                evidence: [HA_DOC, ca('operator-guide'), CA + 'deploy/release/restore.sh'],
+                customerResponsibility: 'Practise the recovery on a test installation; reset pull-API cursors after a restore.',
+            },
+            'directory-portal': {
+                status: 'partial',
+                implementation: 'The same documented recovery order; rollbacks untested as procedures.',
+                evidence: [HA_DOC, dsp('operator-guide')],
+                customerResponsibility: 'Practise the recovery on a test installation.',
+            },
+            readyroom: {
+                status: 'partial',
+                implementation: 'The same documented recovery order; rollbacks untested as procedures.',
+                evidence: [HA_DOC, rr('operator-guide'), RR + 'deploy/bundle/restore.sh'],
+                customerResponsibility: 'Practise the recovery on a test installation.',
+            },
+            'mfa-portal': {
+                status: 'partial',
+                implementation: 'The same documented recovery order; rollbacks untested as procedures; the Connector\'s state (pending multi-step logins) is in memory and lost on restart by design.',
+                evidence: [HA_DOC, rsa('operator-guide'), RSA + 'scripts/restoredb.sh'],
+                customerResponsibility: 'Practise the recovery on a test installation.',
+            },
+        },
+    },
