@@ -1541,3 +1541,171 @@ export const controls: readonly Control[] = [
             'mfa-portal': { status: 'inherited', implementation: 'The chart runs the Portal (uid 1001), the Connector and the embedded MySQL with all capabilities dropped, no privilege escalation, read-only root file systems and RuntimeDefault seccomp; the Connector runs as the tomcat user.', evidence: [RSA + 'deploy/helm/rsa-operations-portal/values.yaml', RSA + 'rsaapp-connector/Dockerfile', rsa('security')] },
         },
     },
+    // ------------------------------------------------------------------ SI
+    {
+        id: 'SI-2',
+        family: 'SI',
+        title: 'Flaw Remediation',
+        products: {
+            certalert: { status: 'implemented', implementation: 'Dependabot proposes weekly updates (minor and patch grouped, majors alone) for Gradle dependencies, the digest-pinned base images, GitHub Actions and the a11y packages; the Trivy gate fails the build on a fixable HIGH or CRITICAL finding; fixes ship as signed releases downloaded from the licensing portal, and the support policy gives a release security fixes for twelve months. The remediation targets by severity are in the vulnerability management policy.', evidence: [CA + '.github/dependabot.yml', CI.ca, 'ens-products-page: src/pages/support.astro', 'ens-products-page: compliance/vulnerability-management-policy.md'], customerResponsibility: 'Install releases within your patch window; patch the host, database and directory.' },
+            'directory-portal': { status: 'implemented', implementation: 'As for CertAlert, for Maven, npm, Docker and Actions.', evidence: [DSP + '.github/dependabot.yml', CI.dsp, 'ens-products-page: compliance/vulnerability-management-policy.md'], customerResponsibility: 'Install releases within your patch window.' },
+            readyroom: { status: 'implemented', implementation: 'As for CertAlert, for Gradle, Docker and Actions; version overrides in build.gradle carry security fixes ahead of Spring Boot where needed.', evidence: [RR + '.github/dependabot.yml', RR + 'build.gradle', CI.rr, 'ens-products-page: compliance/vulnerability-management-policy.md'], customerResponsibility: 'Install releases within your patch window; redeploy the agent when it changes.' },
+            'mfa-portal': { status: 'partial', implementation: 'As for CertAlert for Maven, Docker and Actions, but the Connector\'s Spring 3.2 line cannot be upgraded (the RSA SDK requires it) and the base image digest is updated by hand. Flaws in that stack are handled by risk acceptance with an expiry rather than by patching; the Trivy gate still fails the build when an accepted entry expires.', evidence: [RSA + '.github/dependabot.yml', RSA + '.trivyignore', CI.rsa, 'ens-products-page: compliance/vulnerability-management-policy.md'], customerResponsibility: 'Install releases within your patch window.' },
+        },
+    },
+    {
+        id: 'SI-3',
+        family: 'SI',
+        title: 'Malicious Code Protection',
+        products: {
+            certalert: { status: 'not-applicable', implementation: 'The application executes no uploaded code and offers no file execution; malicious-code protection is the host\'s and endpoint\'s. Dependencies and images are scanned for known vulnerabilities (RA-5) and images are signed (SI-7).', evidence: [CI.ca], customerResponsibility: 'Run anti-malware on hosts and workstations as your policy requires.' },
+            'directory-portal': { status: 'not-applicable', implementation: 'As for CertAlert; CSV and LDIF imports are parsed as data, never executed.', evidence: [CI.dsp], customerResponsibility: 'Run anti-malware on hosts as your policy requires.' },
+            readyroom: { status: 'not-applicable', implementation: 'As for CertAlert for the server. The Windows agent is PowerShell installed by the customer; its scripts are unsigned in this release, so AppLocker or WDAC policies that require signatures cannot allow them by signature.', evidence: [CI.rr, RR + 'powershell/Install-InOutWorker.ps1'], customerResponsibility: 'Run anti-malware on hosts and workstations; install the agent under Program Files as the installer does.' },
+            'mfa-portal': { status: 'not-applicable', implementation: 'As for CertAlert; the Connector\'s deserialization filters (SI-10) bound what Authentication Manager\'s replies may instantiate.', evidence: [CI.rsa], customerResponsibility: 'Run anti-malware on hosts as your policy requires.' },
+        },
+    },
+    {
+        id: 'SI-4',
+        family: 'SI',
+        title: 'System Monitoring',
+        products: {
+            certalert: { status: 'implemented', implementation: 'Prometheus metrics (ens_* gauges and counters) on a separate management port with a ServiceMonitor and a PrometheusRule of alert rules in the chart; ECS-style JSON logs; health endpoints with liveness and readiness; the audit trail to the SIEM with alert-severity events for lockouts, a broken chain and failed delivery.', evidence: [CA + 'src/main/java/com/winllc/certalert/observability/EnsMetrics.java', CA + 'deploy/helm/cert-alert/templates/prometheusrule.yaml', CA + 'deploy/helm/cert-alert/templates/servicemonitor.yaml', ca('operator-guide')], customerResponsibility: 'Scrape the metrics, collect the logs and alert on them.' },
+            'directory-portal': { status: 'implemented', implementation: 'Prometheus metrics on the management port with a ServiceMonitor; readiness fails when the directory does not answer, the audit log is not writable or the data disk is full; audit delivery status on the audit page.', evidence: [DSP_SRC + 'config/Observability.java', DSP + 'deploy/helm/directory-services-portal/templates/servicemonitor.yaml', dsp('operator-guide')], customerResponsibility: 'Scrape, collect and alert.' },
+            readyroom: { status: 'implemented', implementation: 'Prometheus metrics (ens_* and business metrics) on the management port with a ServiceMonitor; health probes; audit alerts.', evidence: [RR_SRC + 'metrics/EnsMetrics.java', RR_SRC + 'metrics/BusinessMetrics.java', RR + 'deploy/helm/readyroom/templates/servicemonitor.yaml', rr('operator-guide')], customerResponsibility: 'Scrape, collect and alert.' },
+            'mfa-portal': { status: 'implemented', implementation: 'Prometheus ens_* metrics on the management port with a ServiceMonitor; health with database, Connector and disk details for PMO; request ids across both hops; ECS JSON logs available for both; a start-up warning when the lost-token report is unaddressed.', evidence: [RSA_SRC + 'metrics/PortalMetrics.java', RSA + 'deploy/helm/rsa-operations-portal/templates/servicemonitor.yaml', RSA_CONN + 'logging/EcsJsonLayout.java', rsa('operator-guide')], customerResponsibility: 'Scrape, collect and alert.' },
+        },
+    },
+    {
+        id: 'SI-5',
+        family: 'SI',
+        title: 'Security Alerts, Advisories, and Directives',
+        products: {
+            certalert: { status: 'partial', implementation: 'Advisories reach ENS through Dependabot, Trivy\'s database, CodeQL and reports to the disclosure address, and reach customers as release notes and the support policy\'s end-of-support e-mails. There is no customer security-advisory mailing list or advisory page yet; the vulnerability management policy says what ENS commits to.', evidence: ['ens-products-page: compliance/vulnerability-management-policy.md', 'ens-products-page: src/pages/support.astro', 'ens-products-page: src/pages/trust.astro'], customerResponsibility: 'Subscribe the account holder address to ENS release e-mails; track advisories for the host, database and directory.' },
+            'directory-portal': { status: 'partial', implementation: 'As for CertAlert.', evidence: ['ens-products-page: compliance/vulnerability-management-policy.md'], customerResponsibility: 'As for CertAlert.' },
+            readyroom: { status: 'partial', implementation: 'As for CertAlert.', evidence: ['ens-products-page: compliance/vulnerability-management-policy.md'], customerResponsibility: 'As for CertAlert.' },
+            'mfa-portal': { status: 'partial', implementation: 'As for CertAlert; RSA\'s advisories for Authentication Manager and the SDK are RSA\'s.', evidence: ['ens-products-page: compliance/vulnerability-management-policy.md'], customerResponsibility: 'Track RSA\'s advisories for Authentication Manager.' },
+        },
+    },
+    {
+        id: 'SI-7',
+        family: 'SI',
+        title: 'Software, Firmware, and Information Integrity',
+        products: {
+            certalert: { status: 'implemented', implementation: 'On a release tag CI signs the image and the Helm chart with cosign (keyless, Sigstore, the workflow\'s GitHub OIDC identity, by digest), attaches the SPDX SBOM as a signed attestation, records SLSA build provenance with actions/attest-build-provenance (verifiable with gh attestation verify), and signs SHA256SUMS with the ENS release GPG key when that key is configured. The license file is signature-checked offline; the audit trail is hash-chained.', evidence: [CI.ca, RELEASES_DOC, suite('licensing')], customerResponsibility: 'Verify signatures, attestations and checksums before deploying; check the GPG fingerprint out of band.' },
+            'directory-portal': { status: 'implemented', implementation: 'Both images and the chart signed with cosign on release tags, SPDX SBOM attestations on both images, GPG-signed checksums when the key is set. No SLSA provenance attestation in this repository.', evidence: [CI.dsp, RELEASES_DOC, dsp('security')], customerResponsibility: 'Verify before deploying.' },
+            readyroom: { status: 'implemented', implementation: 'Image and chart signed with cosign on release tags, the image\'s SPDX SBOM attested, GPG-signed checksums when the key is set. No SLSA provenance attestation. The Windows agent scripts are not code-signed.', evidence: [CI.rr, RELEASES_DOC, RR + 'powershell/tasks'], customerResponsibility: 'Verify before deploying; control the agent\'s install folder permissions as the installer sets them.' },
+            'mfa-portal': { status: 'implemented', implementation: 'Portal and Connector images and the chart signed with cosign on release tags, both images\' SBOMs attested, GPG-signed checksums when the key is set. No SLSA provenance attestation.', evidence: [CI.rsa, RELEASES_DOC, RSA + 'README.md (section "Releases")'], customerResponsibility: 'Verify before deploying.' },
+        },
+    },
+    {
+        id: 'SI-7(1)',
+        family: 'SI',
+        title: 'Software, Firmware, and Information Integrity | Integrity Checks',
+        products: {
+            certalert: { status: 'partial', implementation: 'Integrity checks are available at install time (cosign verify, cosign verify-attestation, gh attestation verify, gpg --verify, sha256sum -c) and for the audit trail at any time (Verify integrity, verify_chain.py). There is no runtime self-check of the deployed binaries; that is the platform\'s (image digests, admission policy).', evidence: [RELEASES_DOC, CA + 'src/main/java/com/winllc/certalert/audit/AuditVerifier.java'], customerResponsibility: 'Pin deployments by digest and enforce signature verification with an admission controller where available.' },
+            'directory-portal': { status: 'partial', implementation: 'As for CertAlert, without the provenance check.', evidence: [RELEASES_DOC, DSP_SRC + 'audit/AuditStore.java'], customerResponsibility: 'As for CertAlert.' },
+            readyroom: { status: 'partial', implementation: 'As for CertAlert, without the provenance check.', evidence: [RELEASES_DOC, RR_SRC + 'audit/AuditChainHead.java'], customerResponsibility: 'As for CertAlert.' },
+            'mfa-portal': { status: 'partial', implementation: 'As for CertAlert, without the provenance check.', evidence: [RELEASES_DOC, RSA_SRC + 'audit/AuditVerifier.java'], customerResponsibility: 'As for CertAlert.' },
+        },
+    },
+    {
+        id: 'SI-10',
+        family: 'SI',
+        title: 'Information Input Validation',
+        products: {
+            certalert: { status: 'implemented', implementation: 'Request bodies are validated with Jakarta Bean Validation on the DTOs; CSRF tokens on every state-changing request; webhook and revocation destinations pass an address guard (no link-local, metadata or, by default, private addresses; at most three redirects; size and time limits); CSV and XLSX exports neutralise cells that a spreadsheet would run as formulas; LDAP values are escaped.', evidence: [CA + 'src/main/java/com/winllc/certalert/web/dto/ProjectRequest.java', CA + 'src/main/java/com/winllc/certalert/webhook/WebhookAddressGuard.java', CA + 'src/main/java/com/winllc/certalert/export/CsvTableWriter.java', ca('security')] },
+            'directory-portal': { status: 'implemented', implementation: 'FormValidator re-checks every write on the server (required fields, single-value rules, options, formats, patterns); LDAP filters are built with the UnboundID filter API and DNs with RFC 4514 escaping; admin-supplied filters and DNs are validated (@LdapFilter, @ValidDn); user regular expressions run with a time budget; the X-DSP-Request header check replaces CSRF tokens; webhook URLs pass UrlGuard; CSV export neutralises formulas.', evidence: [DSP_SRC + 'service/FormValidator.java', DSP_SRC + 'web/validation/LdapFilter.java', DSP_SRC + 'web/validation/ValidDn.java', DSP_SRC + 'webhooks/UrlGuard.java', DSP_SRC + 'transfer/Csv.java', dsp('security')] },
+            readyroom: { status: 'implemented', implementation: 'CSRF on every POST, PUT and DELETE except the agent\'s JSON-only check-in calls; LDAP search terms escaped; webhook addresses checked against WebhookAddressPolicy with no redirects; CSV and XLSX exports neutralise formula cells; the Kerberos account name must match exactly one directory user; a check-in date range is capped at 366 days.', evidence: [RR_SRC + 'config/SecurityConfig.java', RR_SRC + 'webhook/WebhookAddressPolicy.java', RR_SRC + 'export/CsvTableWriter.java', rr('security')] },
+            'mfa-portal': { status: 'implemented', implementation: 'Form validators for PINs, sites, Trusted Agents and appointment requests; CSRF on every non-GET; the Hessian endpoint rebuilds only allow-listed classes (deny-all default) and Authentication Manager\'s replies pass a JEP 290 filter with depth, reference, array and size limits; webhook destinations pass SsrfGuard; the audit CSV neutralises formula cells; user IDs and serials are escaped before logging and CR/LF are encoded.', evidence: [RSA_SRC + 'validators/PinFormValidator.java', RSA_CONN + 'security/AllowListHessianServiceExporter.java', RSA_CONN + 'security/AuthManagerReplyFilter.java', RSA_SRC + 'webhook/SsrfGuard.java', RSA_SRC + 'audit/AuditAdminController.java', rsa('security')] },
+        },
+    },
+    {
+        id: 'SI-11',
+        family: 'SI',
+        title: 'Error Handling',
+        products: {
+            certalert: { status: 'implemented', implementation: 'server.error.include-message: never; API refusals are problem-detail bodies without stack traces; sign-in failures give no cause; log lines from sign-ins are kept to one line (LogSafe) so request data cannot forge entries.', evidence: [CA + 'src/main/resources/application.yml', CA + 'src/main/java/com/winllc/certalert/observability/LogSafe.java', ca('security')] },
+            'directory-portal': { status: 'implemented', implementation: 'JSON error bodies with codes, no stack traces; one sign-in failure message; the audit page says when a search stopped at its scan limit.', evidence: [DSP_SRC + 'config/JsonErrors.java', dsp('security')] },
+            readyroom: { status: 'implemented', implementation: 'API errors are structured (ApiError) and pages show the Unauthorized or error page; refused logouts are collapsed into one audited event per address and minute; DN values are wrapped in LogSafe.', evidence: [RR_SRC + 'api/ApiError.java', RR_SRC + 'api/ApiExceptionHandler.java', rr('security')] },
+            'mfa-portal': { status: 'implemented', implementation: 'Uniform answers on sign-in and every anonymous step, padded to a uniform response time, with the cause only in the audit trail; Tomcat error pages in the Connector show neither stack traces nor the server version; CR and LF in log messages are escaped.', evidence: [RSA_SRC + 'ratelimit/UniformResponses.java', RSA_SRC + 'ratelimit/SelfServiceFailures.java', RSA_CONN + 'logging/CrlfSafePatternLayout.java', rsa('security')] },
+        },
+    },
+    {
+        id: 'SI-12',
+        family: 'SI',
+        title: 'Information Management and Retention',
+        products: {
+            certalert: { status: 'partial', implementation: 'Audit retention is configurable (AU-11) and certificate clean-up and prune jobs remove stale directory data on the administrator\'s instruction; the inventory itself has no retention schedule beyond that.', evidence: [CA + 'src/main/java/com/winllc/certalert/audit/AuditRetention.java', ca('admin-guide')], customerResponsibility: 'Set retention to your records schedule.' },
+            'directory-portal': { status: 'partial', implementation: 'Audit retention is configurable; the portal stores directory data only transiently, with configuration and analysis results on disk under the customer\'s retention.', evidence: [DSP_SRC + 'audit/AuditLifecycle.java', dsp('operator-guide')], customerResponsibility: 'Set retention to your records schedule.' },
+            readyroom: { status: 'implemented', implementation: 'A retention job purges attendance records past the configured period with roll-ups, each run audited as data.purged and serialised across instances; a person\'s data can be exported and erased (person.erased), erasure working even while read-only; the privacy page states what is stored, where, for how long and who sees it.', evidence: [RR_SRC + 'service/RetentionService.java', rr('privacy'), rr('admin-guide')], customerResponsibility: 'Set the retention period and visibility policy.' },
+            'mfa-portal': { status: 'partial', implementation: 'Audit retention is configurable; help-desk requests expire; expired unassigned tokens are taken back by a job. Other records (sites, shipments, appointments) have no retention schedule in the product.', evidence: [RSA_SRC + 'audit/AuditRetention.java', RSA_SRC + 'helpdesk/HelpDeskRequestStatus.java', rsa('admin-guide')], customerResponsibility: 'Set retention to your records schedule.' },
+        },
+    },
+    {
+        id: 'SI-16',
+        family: 'SI',
+        title: 'Memory Protection',
+        products: {
+            certalert: { status: 'inherited', implementation: 'Memory safety is the Java runtime\'s; the kernel\'s and runtime\'s protections apply, and the chart forbids privilege escalation and drops capabilities. Deserialization of stored sessions and of webhook deliveries is confined to allow-listed types.', evidence: [CA + 'src/main/java/com/winllc/certalert/session/SessionAttributeSerialization.java', CA + 'deploy/helm/cert-alert/values.yaml'] },
+            'directory-portal': { status: 'inherited', implementation: 'As for CertAlert; the native package\'s systemd unit adds a system-call filter and address-family restrictions.', evidence: [DSP + 'deploy/package/native/directory-services-portal.service'] },
+            readyroom: { status: 'inherited', implementation: 'As for CertAlert.', evidence: [RR + 'deploy/helm/readyroom/values.yaml'] },
+            'mfa-portal': { status: 'inherited', implementation: 'As for CertAlert; the Connector reads Authentication Manager\'s replies through a JEP 290 filter and refuses to start on a JVM without serialization filters.', evidence: [RSA_CONN + 'security/JdkSerialFilter.java', RSA + 'deploy/helm/rsa-operations-portal/values.yaml'] },
+        },
+    },
+    // ------------------------------------------------------------------ SR
+    {
+        id: 'SR-2',
+        family: 'SR',
+        title: 'Supply Chain Risk Management Plan',
+        products: {
+            certalert: { status: 'partial', implementation: 'ENS\'s practice is written in the software supply-chain security document of this pack: component sources, base-image policy, build integrity, signing, release channels and verification. A plan with named owners and review dates beyond that document does not yet exist.', evidence: ['ens-products-page: compliance/supply-chain/software-supply-chain-security.md', FIPS_DOC], customerResponsibility: 'Include the products in your own supply chain risk management plan.' },
+            'directory-portal': { status: 'partial', implementation: 'As for CertAlert.', evidence: ['ens-products-page: compliance/supply-chain/software-supply-chain-security.md'], customerResponsibility: 'As for CertAlert.' },
+            readyroom: { status: 'partial', implementation: 'As for CertAlert.', evidence: ['ens-products-page: compliance/supply-chain/software-supply-chain-security.md'], customerResponsibility: 'As for CertAlert.' },
+            'mfa-portal': { status: 'partial', implementation: 'As for CertAlert, with the vendored RSA SDK as a named risk.', evidence: ['ens-products-page: compliance/supply-chain/software-supply-chain-security.md', RSA + 'README.md (section "Dependency Constraints")'], customerResponsibility: 'As for CertAlert.' },
+        },
+    },
+    {
+        id: 'SR-3',
+        family: 'SR',
+        title: 'Supply Chain Controls and Processes',
+        products: {
+            certalert: { status: 'implemented', implementation: 'Dependencies come from Maven Central through Gradle with versions declared in the build; base images from Red Hat\'s registry by digest; GitHub Actions by commit SHA; Trivy and cosign downloaded by version with a checksum check; weekly Dependabot review; every pull request builds the full bundle as a dry run.', evidence: [CA + 'build.gradle.kts', CA + 'Dockerfile', CI.ca, CA + '.github/dependabot.yml'] },
+            'directory-portal': { status: 'implemented', implementation: 'Maven Central and npm (package-lock.json) with npm audit in CI; base images by digest; Actions by SHA; weekly Dependabot.', evidence: [DSP + 'backend/pom.xml', DSP + 'package-lock.json', CI.dsp, DSP + '.github/dependabot.yml'] },
+            readyroom: { status: 'implemented', implementation: 'Maven Central through Gradle; base images by digest; Actions by SHA; weekly Dependabot with a rule keeping the build JDK on Java 21.', evidence: [RR + 'build.gradle', RR + 'Dockerfile', CI.rr, RR + '.github/dependabot.yml'] },
+            'mfa-portal': { status: 'partial', implementation: 'Maven Central through the Maven reactor; base images by digest through build arguments updated by hand; Actions by SHA; weekly Dependabot. The RSA Authentication Manager SDK jars (am-client 8.8 and the libraries RSA ships with it) are vendored under Git LFS, identical copies in three modules, and cannot be updated independently of RSA.', evidence: [RSA + 'pom.xml', RSA + '.gitattributes', RSA + 'rsaapp-connector/rsa-lib', RSA + '.github/dependabot.yml', RSA + 'README.md (section "Dependency Constraints")'] },
+        },
+    },
+    {
+        id: 'SR-4',
+        family: 'SR',
+        title: 'Provenance',
+        products: {
+            certalert: { status: 'implemented', implementation: 'The image carries a SLSA build provenance attestation naming the workflow, commit and runner that built it, signed through Sigstore and recorded on the repository; the SBOM attestation and cosign signature are bound to the image digest; the release bundle is built from the same tested images and its checksums are GPG-signed.', evidence: [CI.ca, RELEASES_DOC] },
+            'directory-portal': { status: 'partial', implementation: 'Cosign signatures and SBOM attestations bind the images and chart to the release workflow\'s identity (certificate identity https://github.com/winllc/directory-services-portal/.github/workflows/*). There is no SLSA provenance attestation in this repository.', evidence: [CI.dsp, RELEASES_DOC] },
+            readyroom: { status: 'partial', implementation: 'As for the Directory Services Portal, with the identity under winllc/in-n-out-work; no SLSA provenance attestation.', evidence: [CI.rr, RELEASES_DOC] },
+            'mfa-portal': { status: 'partial', implementation: 'As for the Directory Services Portal, with the identity under winllc/rsa-operations-portal; no SLSA provenance attestation. The provenance of the RSA SDK jars is RSA\'s distribution, vendored by ENS.', evidence: [CI.rsa, RELEASES_DOC, RSA + 'rsaapp-connector/rsa-lib'] },
+        },
+    },
+    {
+        id: 'SR-10',
+        family: 'SR',
+        title: 'Inspection of Systems or Components',
+        products: {
+            certalert: { status: 'implemented', implementation: 'Every image build is scanned with Trivy before it is published; the bundle is installed, upgraded, backed up and restored in CI; a customer can inspect the SBOM, signature, attestations and checksums of a release before installing it.', evidence: [CI.ca, RELEASES_DOC], customerResponsibility: 'Inspect releases before deployment using the documented verification.' },
+            'directory-portal': { status: 'implemented', implementation: 'As for CertAlert (both images; bundle installs on podman-compose 1.0.6 and 1.6.0).', evidence: [CI.dsp, RELEASES_DOC], customerResponsibility: 'Inspect releases before deployment.' },
+            readyroom: { status: 'implemented', implementation: 'As for CertAlert.', evidence: [CI.rr, RELEASES_DOC], customerResponsibility: 'Inspect releases before deployment.' },
+            'mfa-portal': { status: 'implemented', implementation: 'As for CertAlert (both images; compose and podman-bundle installs). The accepted-CVE list in .trivyignore was verified at run time on 2026-10-18 by class-loading analysis of the demo stack, as its comments record.', evidence: [CI.rsa, RSA + '.trivyignore', RELEASES_DOC], customerResponsibility: 'Inspect releases before deployment.' },
+        },
+    },
+    {
+        id: 'SR-11',
+        family: 'SR',
+        title: 'Component Authenticity',
+        products: {
+            certalert: { status: 'implemented', implementation: 'A customer verifies the image and chart with cosign against the workflow identity and GitHub\'s OIDC issuer, the provenance with gh attestation verify, and the download with gpg --verify on SHA256SUMS.asc and sha256sum -c. The public GPG key is linked from the Downloads page when configured; its fingerprint must be checked out of band. Releases reach customers only through the licensing portal\'s private bucket with short-lived links.', evidence: [RELEASES_DOC, 'ens-products-page: src/pages/trust.astro', CI.ca], customerResponsibility: 'Verify every release; obtain the fingerprint from ENS separately.' },
+            'directory-portal': { status: 'implemented', implementation: 'As for CertAlert, without the provenance step.', evidence: [RELEASES_DOC, dsp('security')], customerResponsibility: 'Verify every release.' },
+            readyroom: { status: 'implemented', implementation: 'As for CertAlert, without the provenance step.', evidence: [RELEASES_DOC], customerResponsibility: 'Verify every release.' },
+            'mfa-portal': { status: 'implemented', implementation: 'As for CertAlert, without the provenance step.', evidence: [RELEASES_DOC, RSA + 'README.md (section "Releases")'], customerResponsibility: 'Verify every release.' },
+        },
+    },
+];
