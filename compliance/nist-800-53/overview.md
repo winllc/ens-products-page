@@ -44,8 +44,6 @@ The CSV and JSON files carry the same rows. The CSV has one line per control and
 | `inherited` | The platform the product runs on meets the control: the Kubernetes or container runtime, the host operating system, the Java runtime, the database or the directory. |
 | `not-applicable` | The control does not apply to application software of this kind, with the reason given. |
 
-A reviewer should treat `customer` and `inherited` rows as questions for their own environment, and `partial` rows as the honest list of what to compensate for or accept.
-
 ## Shared responsibility
 
 ENS Solutions supplies the software: the container images, Helm charts and release packages, the documentation, the audit trail format, the vulnerability scanning and signing of what it ships, and the fixes. The customer supplies everything the software runs on and talks to, and the procedures around it:
@@ -59,11 +57,11 @@ ENS Solutions supplies the software: the container images, Helm charts and relea
 | Database | Customer | PostgreSQL or MySQL availability, backups where the application's scripts are not used, encryption at rest, TLS |
 | Procedures | Customer | Audit review, incident response, contingency plan, risk assessment, configuration approval, verification of releases before deployment |
 
-The Helm charts, release packages and documentation ship secure defaults where a default can be secure, and a per-product DISA STIG settings table lists the settings that need a decision (the notice-and-consent banner, administrator idle timeout, concurrent sessions, revocation mode, Secure cookie, audit forwarding). Several of those are off by default on purpose, because they break installations that do not need them; the matrix says so in each row rather than counting them as implemented.
+A per-product DISA STIG settings table lists the settings that need a decision (the notice-and-consent banner, administrator idle timeout, concurrent sessions, revocation mode, Secure cookie, audit forwarding). Several are off by default on purpose; the matrix says so in each row rather than counting them as implemented.
 
 ## The baseline addressed
 
-The matrix is written against the Rev. 5 moderate baseline. The controls were chosen by asking, for each family, which controls the application layer can satisfy, weaken or support. Where a control enhancement matters to buyers and the software has something specific to say, the enhancement is a row of its own: AC-6(9) (logging privileged functions), IA-2(1) (multi-factor for privileged accounts), SC-8(1) (cryptographic protection in transit), SC-28(1) (cryptographic protection at rest) and SI-7(1) (integrity checks). A buyer working to a high baseline or an overlay will find the same rows useful and the same gaps; nothing in the matrix is specific to moderate except the selection.
+The matrix is written against the Rev. 5 moderate baseline, choosing in each family the controls the application layer can satisfy, weaken or support. Five enhancements have rows of their own because the software has something specific to say: AC-6(9), IA-2(1), SC-8(1), SC-28(1) and SI-7(1). Nothing in the matrix is specific to moderate except the selection; a high-baseline reviewer finds the same rows and the same gaps.
 
 ## Known gaps
 
@@ -111,23 +109,16 @@ These are stated plainly here so that a reviewer does not have to find them row 
 
 The matrix and this pack are available to accounts an ENS administrator has authorized, from the account's compliance page on the licensing portal. For anything the rows point at:
 
-1. **Source files and workflows** are in the product repositories at the revisions named above. Where a customer's agreement includes source access, the paths resolve directly; otherwise ask ENS for the file or an engineer walk-through.
-2. **Documentation pages** are public at `https://winllc.github.io/ens-apps-documentation/`.
-3. **Release artifacts** (SBOMs, signatures, attestations, checksums) come with every release on the Downloads page; verification commands are in the supply-chain document of this pack and on the documentation site's releases page.
-4. **Test and scan outputs** (CI run logs, Trivy reports, axe-core reports, the accepted-risk list) can be provided for a named release on request.
-5. **Draft accessibility conformance reports** are provided on request for a procurement that needs them, marked as drafts.
+1. **Source files and workflows**: in the product repositories at the revisions named above; where the agreement does not include source access, ask ENS for the file or an engineer walk-through.
+2. **Documentation pages**: public at `https://winllc.github.io/ens-apps-documentation/`.
+3. **Release artifacts** (SBOMs, signatures, attestations, checksums): with every release on the Downloads page; verification commands are in the supply-chain document of this pack.
+4. **Test and scan outputs** and the **draft accessibility conformance reports**: on request, for a named release.
 
-Send requests through the contact page of the product site or to the support address in the support policy, naming the product, the release and the control ids. Security vulnerabilities go to the disclosure address in `/.well-known/security.txt`, not to the evidence channel.
+Send requests through the product site's contact page or the support address, naming the product, release and control ids. Security vulnerabilities go to the disclosure address in `/.well-known/security.txt`.
 
 ## Evidence index
 
-Repositories (read at the revisions in the document control table):
-
-- `cert-alert`: `src/main/java/com/winllc/certalert/**`, `.github/workflows/ci.yml`, `.github/workflows/codeql.yml`, `.github/dependabot.yml`, `.trivyignore`, `Dockerfile`, `deploy/helm/cert-alert/`, `deploy/release/`, `docs/accessibility/`
-- `directory-services-portal`: `backend/src/main/java/com/winllc/dsp/**`, `web/`, `.github/workflows/ci.yml`, `.github/workflows/codeql.yml`, `.github/dependabot.yml`, `.trivyignore`, `backend/Dockerfile`, `web/Dockerfile`, `deploy/helm/directory-services-portal/`, `deploy/package/`, `docs/accessibility/`
-- `in-n-out-work` (ReadyRoom): `src/main/java/com/winllc/innoutwork/**`, `powershell/`, `.github/workflows/ci.yml`, `.github/workflows/codeql.yml`, `.github/dependabot.yml`, `.trivyignore`, `Dockerfile`, `deploy/helm/readyroom/`, `deploy/bundle/`, `docs/accessibility/`
-- `rsa-operations-portal`: `rsaapp-portal/src/main/java/com/winllc/rsaapp/portal/**`, `rsaapp-connector/src/main/java/com/winllc/rsaapp/connector/**`, `rsaapp-connector/rsa-lib/`, `.github/workflows/ci.yml`, `.github/dependabot.yml`, `.trivyignore`, `rsaapp-portal/Dockerfile`, `rsaapp-connector/Dockerfile`, `deploy/helm/rsa-operations-portal/`, `deploy/release/`, `util/`, `docs/accessibility/`
-- `ens-products-page`: `public/.well-known/security.txt`, `src/pages/trust.astro`, `src/pages/support.astro`, `src/data/pricing.ts`, `src/data/compliance/controls.ts`
-- `ens-apps-documentation`: `tools/audit/verify_chain.py`, `tools/splunk/TA-ens-audit`
-
-Documentation site (`https://winllc.github.io/ens-apps-documentation/`): `audit-logging/`, `fips-and-stig/`, `releases/`, `licensing/`, `availability-and-sizing/`, and for each product the `security/`, `fips-and-stig/`, `single-sign-on/`, `availability-and-sizing/`, `operator-guide/`, `admin-guide/`, `accessibility/` and, where present, `architecture/`, `webhooks/`, `api-reference/`, `privacy/`, `windows-client/`, `rsa-integration/` and `help-desk/` pages.
+- Repositories, at the revisions in the document control table: `cert-alert`, `directory-services-portal`, `in-n-out-work` (ReadyRoom) and `rsa-operations-portal`, each cited by path in the matrix rows: the security, audit, session, SSO, X.509, API, webhook and license packages under `src/main/java`, `.github/workflows/ci.yml` and `codeql.yml`, `.github/dependabot.yml`, `.trivyignore`, the Dockerfiles, the Helm charts under `deploy/helm/`, the release packages under `deploy/`, and `docs/accessibility/`.
+- `ens-products-page`: `public/.well-known/security.txt`, `src/pages/trust.astro`, `src/pages/support.astro`, `src/data/pricing.ts`, `src/data/compliance/controls.ts`.
+- `ens-apps-documentation`: `tools/audit/verify_chain.py`, `tools/splunk/TA-ens-audit`.
+- Documentation site, `https://winllc.github.io/ens-apps-documentation/`: `audit-logging/`, `fips-and-stig/`, `releases/`, `licensing/`, `availability-and-sizing/`, and each product's `security/`, `fips-and-stig/`, `single-sign-on/`, `availability-and-sizing/`, `operator-guide/`, `admin-guide/` and `accessibility/` pages.
