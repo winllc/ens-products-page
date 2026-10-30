@@ -9,6 +9,7 @@ import { products, type ProductId } from '../../../data/products';
 import AccountLayout from '../../../layouts/AccountLayout.astro';
 import { AccountError, accountById, isAdmin, setDisabled, setRole } from '../../../server/accounts';
 import { auditFor } from '../../../server/audit';
+import { ComplianceError, grant as grantCompliance, revoke as revokeCompliance } from '../../../server/compliance';
 import { dateOnly, form, requireAdmin, withNotice } from '../../../server/http';
 import { issueLicense, LicenseActionError, licensesOf } from '../../../server/licenses';
 
@@ -61,14 +62,21 @@ if (Astro.request.method === 'POST') {
             case 'disable':
                 setDisabled(admin, owner, get('disabled') === 'true');
                 return Astro.redirect(withNotice(here, 'account-updated'), 303);
+            case 'compliance-grant':
+                grantCompliance(admin, owner);
+                return Astro.redirect(withNotice(here, 'compliance-granted'), 303);
+            case 'compliance-revoke':
+                revokeCompliance(admin, owner);
+                return Astro.redirect(withNotice(here, 'compliance-revoked'), 303);
         }
     } catch (err) {
-        if (!(err instanceof LicenseActionError || err instanceof AccountError)) throw err;
+        if (!(err instanceof LicenseActionError || err instanceof AccountError || err instanceof ComplianceError)) throw err;
         error = err.message;
     }
 }
 
 const licenses = licensesOf(owner.id);
+const grantedBy = owner.compliance_access_by ? accountById(owner.compliance_access_by) : null;
 const today = new Date().toISOString().slice(0, 10);
 // Features sold only in the top band (roadmap features are never issued). None today.
 const enterpriseFeatures = sellableEnterpriseFeatures();
@@ -82,6 +90,24 @@ const enterpriseFeatures = sellableEnterpriseFeatures();
         <div><dt>Joined</dt><dd>{dateOnly(owner.created_at)}</dd></div>
         <div><dt>Last sign-in</dt><dd>{dateOnly(owner.last_login_at)}</dd></div>
         <div><dt>Role</dt><dd>{isAdmin(owner) ? 'Administrator' : 'Customer'}{owner.disabled_at && <span class="pill pill--revoked"> Disabled</span>}</dd></div>
+        <div>
+            <dt>Compliance documentation</dt>
+            <dd>
+                {isAdmin(owner) ? (
+                    <>Administrator: sees everything</>
+                ) : owner.compliance_access_at ? (
+                    <>Granted {dateOnly(owner.compliance_access_at)}{grantedBy && <span class="muted small"> by {grantedBy.email}</span>}{!owner.email_verified_at && <span class="muted small"> (works once the email is confirmed)</span>}</>
+                ) : (
+                    <span class="muted">Not granted</span>
+                )}
+                {!isAdmin(owner) && (
+                    <form method="post" class="inline-form">
+                        <input type="hidden" name="action" value={owner.compliance_access_at ? 'compliance-revoke' : 'compliance-grant'}>
+                        <button class="btn btn--ghost btn--small" type="submit">{owner.compliance_access_at ? 'Revoke' : 'Grant'}</button>
+                    </form>
+                )}
+            </dd>
+        </div>
     </dl>
 
     <h2 class="section-gap">Licenses</h2>

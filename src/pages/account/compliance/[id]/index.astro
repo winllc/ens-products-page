@@ -1,0 +1,84 @@
+---
+export const prerender = false;
+
+/*
+ * One artifact: the document rendered (its first Markdown file), its files,
+ * version, date and covered products. Unknown, or unpublished for a
+ * customer: 404. Signed in without access: 403, recorded.
+ */
+
+import { artifactKindLabels } from '../../../../data/compliance/kinds';
+import { products } from '../../../../data/products';
+import AccountLayout from '../../../../layouts/AccountLayout.astro';
+import { formatBytes } from '../../../../lib/releases';
+import { recordDenied } from '../../../../server/audit';
+import { canRead, documentOf, fileSize, visibleArtifact } from '../../../../server/compliance';
+import { complianceDocument } from '../../../../server/compliance-render';
+import { requireAccount } from '../../../../server/http';
+
+const account = requireAccount(Astro);
+if (account instanceof Response) return account;
+
+if (!canRead(account)) {
+    recordDenied({ method: Astro.request.method, path: Astro.url.pathname, reason: 'compliance_not_granted' });
+    return new Response('The compliance documentation pack is not enabled for this account', { status: 403 });
+}
+
+const artifact = visibleArtifact(account, Astro.params.id ?? '');
+if (!artifact) return new Response('Not found', { status: 404 });
+
+const doc = documentOf(artifact);
+const rendered = doc ? complianceDocument(doc.path) : undefined;
+const Content = rendered?.Content;
+const covers = artifact.products === 'all' ? 'All products' : artifact.products.map((id) => products.find((x) => x.id === id)?.name ?? id).join(', ');
+---
+<AccountLayout title={artifact.title} eyebrow={`Compliance · ${artifactKindLabels[artifact.kind]}`} section="compliance">
+    <p slot="lede" class="lede">
+        <a href="/account/compliance">&larr; All documentation</a>
+        {!artifact.published && <span class="pill pill--unpublished">Not published</span>}
+    </p>
+
+    <p>{artifact.summary}</p>
+    <dl class="data-list">
+        <div><dt>Version</dt><dd>{artifact.version}</dd></div>
+        <div><dt>Revised</dt><dd>{artifact.date}</dd></div>
+        <div><dt>Covers</dt><dd>{covers}</dd></div>
+    </dl>
+
+    <h2 class="section-gap">Files</h2>
+    <div class="table-scroll">
+        <table class="release-files">
+            <caption class="visually-hidden">Files of {artifact.title}</caption>
+            <thead>
+            <tr>
+                <th scope="col">File</th>
+                <th scope="col">What it is</th>
+                <th scope="col" class="num">Size</th>
+            </tr>
+            </thead>
+            <tbody>
+            {artifact.files.map((f) => {
+                const size = fileSize(f);
+                return (
+                    <tr>
+                        <th scope="row"><a href={`/account/compliance/${artifact.id}/${f.name}`}>{f.name}</a></th>
+                        <td>{f.title}</td>
+                        <td class="num">{size === null ? <span class="muted">—</span> : formatBytes(size)}</td>
+                    </tr>
+                );
+            })}
+            </tbody>
+        </table>
+    </div>
+    {artifact.kind === 'nist-800-53' && (
+        <p><a class="btn btn--ghost" href="/account/compliance/controls">Browse the control matrix</a></p>
+    )}
+
+    {Content ? (
+        <article class="compliance-doc section-gap">
+            <Content />
+        </article>
+    ) : doc ? (
+        <p class="notice notice--error section-gap">The document itself is missing from this build; download the files above instead.</p>
+    ) : null}
+</AccountLayout>

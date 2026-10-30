@@ -65,7 +65,12 @@ export type AuditAction =
     | 'license.reinstated'
     | 'license.resigned'
     | 'license.extended'
-    | 'release.downloaded';
+    | 'release.downloaded'
+    | 'compliance.granted'
+    | 'compliance.revoked'
+    | 'compliance.published'
+    | 'compliance.unpublished'
+    | 'compliance.downloaded';
 
 /* ---- Request context ------------------------------------------------------ */
 
@@ -104,7 +109,9 @@ export function actorOf(account: Pick<Account, 'email' | 'name' | 'role' | 'emai
 function accountRow(id: string): Account | null {
     return (
         (db()
-            .prepare('SELECT id, email, name, organization, phone, role, email_verified_at, disabled_at, created_at, last_login_at FROM accounts WHERE id = ?')
+            .prepare(
+                'SELECT id, email, name, organization, phone, role, email_verified_at, disabled_at, created_at, last_login_at, compliance_access_at, compliance_access_by FROM accounts WHERE id = ?',
+            )
             .get(id) as Account | undefined) ?? null
     );
 }
@@ -412,9 +419,9 @@ interface Row {
     hash: string;
 }
 
-/** What a customer sees in their own history: their account, licenses and downloads, sign-ins. */
+/** What a customer sees in their own history: their account, licenses and downloads, compliance access, sign-ins. */
 const CUSTOMER_VISIBLE = (Object.keys(ACTIONS) as string[]).filter(
-    (a) => a.startsWith('account.') || a.startsWith('license.') || a.startsWith('release.') || a.startsWith('auth.'),
+    (a) => a.startsWith('account.') || a.startsWith('license.') || a.startsWith('release.') || a.startsWith('auth.') || a.startsWith('compliance.'),
 );
 
 export function labelFor(action: string, outcome: Outcome): string {

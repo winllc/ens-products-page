@@ -41,6 +41,11 @@ jobs:
           if grep -rq '<!--\(NO\)\?DEMO:' dist-rendered; then exit 1; fi
           if grep -rq '_DEMO_URL}' dist-rendered; then exit 1; fi
           grep -q 'href="https://winllc.github.io/ens-apps-documentation/cert-alert/install/"' dist-rendered/products/certalert.html
+          # Every product page carries the compliance documentation pack section, linking the portal.
+          for p in certalert readyroom mfa-portal directory-portal; do
+            grep -q 'id="artifacts-heading"' dist-rendered/products/$p.html
+            grep -q 'href="/account/compliance"' dist-rendered/products/$p.html
+          done
           # The trust and support pages, security.txt, robots.txt and the sitemap are there,
           # and the sitemap lists the pages by the address their canonical link gives.
           grep -q 'id="disclosure"' dist-rendered/trust.html
@@ -61,6 +66,8 @@ jobs:
           curl -fsS http://127.0.0.1:4321/api/licensing/keys | grep -q Ed25519
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4321/account)" = 303
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4321/account/downloads)" = 303
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4321/account/compliance)" = 303
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4321/account/compliance/package.zip)" = 303
           # The audit pull API wants a bearer token; the service records its own start.
           test "$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:4321/api/audit/events)" = 401
 

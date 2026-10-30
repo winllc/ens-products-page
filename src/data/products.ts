@@ -151,6 +151,7 @@ export const contactTopics: Readonly<Record<string, string>> = {
     ...Object.fromEntries(products.map((p) => [p.id, p.name])),
     pricing: 'Pricing and quotes',
     pilot: 'Paid pilot',
+    compliance: 'Compliance documentation',
 };
 
 /**

@@ -22,6 +22,10 @@ COPY astro.config.mjs tsconfig.json vitest.config.ts ./
 COPY public/ public/
 COPY src/ src/
 COPY licensing/fixtures/ licensing/fixtures/
+# The compliance documentation pack is bundled into the server build, and the
+# build step writes the portal's own SBOM into it first (scripts/sbom.mjs).
+COPY compliance/ compliance/
+COPY scripts/sbom.mjs scripts/sbom.mjs
 
 # Pricing and licensing are tested before anything is built from them.
 RUN npm test && npm run build

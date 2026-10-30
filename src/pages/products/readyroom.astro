@@ -4,6 +4,7 @@ import FactTable from '../../components/FactTable.astro';
 import ProductPricing from '../../components/ProductPricing.astro';
 import { docsUrl } from '../../data/site';
 import { formatUSD, startingPrice } from '../../lib/pricing';
+import CompliancePack from '../../components/CompliancePack.astro';
 import ProductLayout from '../../layouts/ProductLayout.astro';
 
 const docs = (page: string) => docsUrl(`readyroom/${page}`);
@@ -22,6 +23,7 @@ const docs = (page: string) => docsUrl(`readyroom/${page}`);
         { id: 'security-heading', label: 'Security' },
         { id: 'platform-heading', label: 'Security and integrations' },
         { id: 'scope-heading', label: 'Today and not yet' },
+        { id: 'artifacts-heading', label: 'Documentation pack' },
         { id: 'tech-heading', label: 'Requirements' },
         { id: 'pricing-heading', label: 'Pricing' },
     ]}
@@ -428,6 +430,8 @@ const docs = (page: string) => docsUrl(`readyroom/${page}`);
         />
     </div>
 </section>
+
+<CompliancePack product="readyroom" />
 
 <section class="section" aria-labelledby="tech-heading">
     <div class="wrap">

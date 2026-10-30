@@ -7,3 +7,5 @@ dist-rendered/
 .astro/
 /data/
 licensing/java/target/
+compliance/sbom/generated/*
+!compliance/sbom/generated/.gitkeep

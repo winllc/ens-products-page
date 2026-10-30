@@ -5,6 +5,7 @@ import ProductPricing from '../../components/ProductPricing.astro';
 import { enterpriseCertificatePlatformRange } from '../../data/pricing';
 import { docsUrl } from '../../data/site';
 import { formatUSD } from '../../lib/pricing';
+import CompliancePack from '../../components/CompliancePack.astro';
 import ProductLayout from '../../layouts/ProductLayout.astro';
 
 const docs = (page: string) => docsUrl(`cert-alert/${page}`);
@@ -21,6 +22,7 @@ const docs = (page: string) => docsUrl(`cert-alert/${page}`);
         { id: 'security-heading', label: 'Accredited networks' },
         { id: 'platform-heading', label: 'Security and integrations' },
         { id: 'scope-heading', label: 'Today and not yet' },
+        { id: 'artifacts-heading', label: 'Documentation pack' },
         { id: 'tech-heading', label: 'Requirements' },
         { id: 'pricing-heading', label: 'Pricing' },
     ]}
@@ -340,6 +342,8 @@ const docs = (page: string) => docsUrl(`cert-alert/${page}`);
         />
     </div>
 </section>
+
+<CompliancePack product="certalert" />
 
 <section class="section" aria-labelledby="tech-heading">
     <div class="wrap">

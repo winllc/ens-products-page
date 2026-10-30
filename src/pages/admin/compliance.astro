@@ -1,0 +1,159 @@
+---
+export const prerender = false;
+
+/*
+ * The compliance documentation pack, for ENS staff: every artifact in the
+ * manifest with its publish state and download count, and the accounts that
+ * have access, with who granted it and when. Publishing and revoking are
+ * form posts; Astro's origin check is the CSRF guard, as on the other admin
+ * forms.
+ */
+
+import { artifactKindLabels } from '../../data/compliance/kinds';
+import { complianceArtifacts } from '../../data/compliance/manifest';
+import { products } from '../../data/products';
+import AccountLayout from '../../layouts/AccountLayout.astro';
+import { accountById } from '../../server/accounts';
+import { ComplianceError, PACKAGE_NAME, accountsWithAccess, downloadCounts, publishedState, publish, revoke, unpublish } from '../../server/compliance';
+import { dateOnly, form, requireAdmin, withNotice } from '../../server/http';
+
+const admin = requireAdmin(Astro);
+if (admin instanceof Response) return admin;
+
+let error: string | null = null;
+if (Astro.request.method === 'POST') {
+    const get = await form(Astro);
+    try {
+        switch (get('action')) {
+            case 'publish':
+                publish(admin, get('id'));
+                return Astro.redirect(withNotice('/admin/compliance', 'compliance-published'), 303);
+            case 'unpublish':
+                unpublish(admin, get('id'));
+                return Astro.redirect(withNotice('/admin/compliance', 'compliance-unpublished'), 303);
+            case 'revoke': {
+                const target = accountById(get('account'));
+                if (!target) return new Response('Not found', { status: 404 });
+                revoke(admin, target);
+                return Astro.redirect(withNotice('/admin/compliance', 'compliance-revoked'), 303);
+            }
+        }
+    } catch (err) {
+        if (!(err instanceof ComplianceError)) throw err;
+        error = err.message;
+    }
+}
+
+const state = publishedState();
+const counts = downloadCounts();
+const holders = accountsWithAccess();
+const publishedBy = (id: string) => {
+    const by = state.get(id)?.published_by;
+    return by ? (accountById(by)?.email ?? by) : null;
+};
+const when = (iso: string | null) => (iso ? iso.replace('T', ' ').slice(0, 16) + ' UTC' : '—');
+const covers = (p: (typeof complianceArtifacts)[number]['products']) =>
+    p === 'all' ? 'All products' : p.map((id) => products.find((x) => x.id === id)?.name ?? id).join(', ');
+---
+<AccountLayout title="Compliance documentation" eyebrow="Administration" section="admin-compliance" error={error}>
+    <p slot="lede" class="lede">
+        What the pack holds and who can read it. An artifact reaches customers with access once it is
+        published; you see every artifact at <a href="/account/compliance">/account/compliance</a> either way.
+    </p>
+
+    <h2>Artifacts</h2>
+    {complianceArtifacts.length === 0 ? (
+        <p class="muted">The manifest is empty: nothing to publish yet.</p>
+    ) : (
+        <div class="table-scroll">
+            <table class="license-table">
+                <caption class="visually-hidden">Compliance artifacts</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Artifact</th>
+                    <th scope="col">Covers</th>
+                    <th scope="col">Version</th>
+                    <th scope="col">Status</th>
+                    <th scope="col" class="num">Downloads</th>
+                    <th scope="col"><span class="visually-hidden">Actions</span></th>
+                </tr>
+                </thead>
+                <tbody>
+                {complianceArtifacts.map((a) => {
+                    const published = state.get(a.id)?.published_at ?? null;
+                    return (
+                        <tr>
+                            <th scope="row">
+                                <a href={`/account/compliance/${a.id}`}>{a.title}</a>
+                                <span class="th-note">{artifactKindLabels[a.kind]} &middot; <span class="mono">{a.id}</span> &middot; {a.files.length} {a.files.length === 1 ? 'file' : 'files'}</span>
+                            </th>
+                            <td>{covers(a.products)}</td>
+                            <td>{a.version}<span class="th-note">{a.date}</span></td>
+                            <td>
+                                {published ? (
+                                    <><span class="pill pill--valid">Published</span><span class="th-note">{dateOnly(published)}{publishedBy(a.id) && <> by {publishedBy(a.id)}</>}</span></>
+                                ) : (
+                                    <span class="pill pill--unpublished">Not published</span>
+                                )}
+                            </td>
+                            <td class="num">{counts.get(a.id) ?? 0}</td>
+                            <td class="num">
+                                <form method="post" class="inline-form">
+                                    <input type="hidden" name="action" value={published ? 'unpublish' : 'publish'}>
+                                    <input type="hidden" name="id" value={a.id}>
+                                    <button class:list={['btn', 'btn--small', published ? 'btn--ghost' : 'btn--primary']} type="submit">{published ? 'Unpublish' : 'Publish'}</button>
+                                </form>
+                            </td>
+                        </tr>
+                    );
+                })}
+                </tbody>
+            </table>
+        </div>
+    )}
+    <p class="muted small">
+        Downloads are counted from the audit log (<span class="mono">compliance.downloaded</span>); the whole-pack ZIP has
+        been downloaded {counts.get('package') ?? 0} {counts.get('package') === 1 ? 'time' : 'times'} (<span class="mono">{PACKAGE_NAME}</span>).
+    </p>
+
+    <h2 class="section-gap">Accounts with access</h2>
+    <p class="muted small">Grant access from an account's page under <a href="/admin/accounts">Accounts</a>. Access only works while the account is enabled and its email confirmed.</p>
+    {holders.length === 0 ? (
+        <p class="muted">No account has been granted access yet.</p>
+    ) : (
+        <div class="table-scroll">
+            <table class="license-table">
+                <caption class="visually-hidden">Accounts with access to the compliance documentation</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Account</th>
+                    <th scope="col">Organization</th>
+                    <th scope="col">Granted</th>
+                    <th scope="col">By</th>
+                    <th scope="col"><span class="visually-hidden">Actions</span></th>
+                </tr>
+                </thead>
+                <tbody>
+                {holders.map((h) => (
+                    <tr>
+                        <th scope="row">
+                            <a href={`/admin/accounts/${h.id}`}>{h.name}</a>
+                            <span class="th-note">{h.email}{h.disabled_at && <> &middot; <span class="pill pill--revoked">Disabled</span></>}{!h.email_verified_at && <> &middot; <span class="pill pill--not-yet-valid">Unconfirmed</span></>}</span>
+                        </th>
+                        <td>{h.organization || <span class="muted">—</span>}</td>
+                        <td><time datetime={h.compliance_access_at ?? undefined}>{when(h.compliance_access_at)}</time></td>
+                        <td>{h.granted_by_email ?? <span class="muted">—</span>}</td>
+                        <td class="num">
+                            <form method="post" class="inline-form">
+                                <input type="hidden" name="action" value="revoke">
+                                <input type="hidden" name="account" value={h.id}>
+                                <button class="btn btn--ghost btn--small" type="submit">Revoke</button>
+                            </form>
+                        </td>
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+        </div>
+    )}
+</AccountLayout>

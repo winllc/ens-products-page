@@ -12,7 +12,18 @@ interface Props {
     title: string;
     heading?: string;
     eyebrow?: string;
-    section?: 'licenses' | 'downloads' | 'settings' | 'check' | 'admin' | 'admin-accounts' | 'admin-licenses' | 'admin-leads' | 'admin-audit';
+    section?:
+        | 'licenses'
+        | 'downloads'
+        | 'compliance'
+        | 'settings'
+        | 'check'
+        | 'admin'
+        | 'admin-accounts'
+        | 'admin-licenses'
+        | 'admin-compliance'
+        | 'admin-leads'
+        | 'admin-audit';
     /** Narrow single-column layout, for sign-in and sign-up forms. */
     narrow?: boolean;
     error?: string | null;
@@ -37,6 +48,7 @@ const inAdmin = section?.startsWith('admin');
                             <a href="/admin" aria-current={section === 'admin' ? 'page' : undefined}>Overview</a>
                             <a href="/admin/licenses" aria-current={section === 'admin-licenses' ? 'page' : undefined}>Licenses</a>
                             <a href="/admin/accounts" aria-current={section === 'admin-accounts' ? 'page' : undefined}>Accounts</a>
+                            <a href="/admin/compliance" aria-current={section === 'admin-compliance' ? 'page' : undefined}>Compliance</a>
                             <a href="/admin/leads" aria-current={section === 'admin-leads' ? 'page' : undefined}>Leads</a>
                             <a href="/admin/audit" aria-current={section === 'admin-audit' ? 'page' : undefined}>Audit log</a>
                             <a href="/account">My account</a>
@@ -45,6 +57,7 @@ const inAdmin = section?.startsWith('admin');
                         <>
                             <a href="/account" aria-current={section === 'licenses' ? 'page' : undefined}>Licenses</a>
                             <a href="/account/downloads" aria-current={section === 'downloads' ? 'page' : undefined}>Downloads</a>
+                            <a href="/account/compliance" aria-current={section === 'compliance' ? 'page' : undefined}>Compliance</a>
                             <a href="/account/check" aria-current={section === 'check' ? 'page' : undefined}>Check a file</a>
                             <a href="/account/settings" aria-current={section === 'settings' ? 'page' : undefined}>Settings</a>
                             {admin && <a href="/admin">Administration</a>}
