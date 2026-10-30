@@ -204,7 +204,7 @@ export function artifactsFor(product: ProductId, manifest: Manifest = compliance
 
 /* ---- Generated files ------------------------------------------------------------- */
 
-const CSV_BOM = '﻿';
+const CSV_BOM = '\uFEFF';
 
 /** RFC 4180: a field is quoted when it holds a quote, a comma or a line break, with quotes doubled. */
 export function csvField(v: string | null | undefined): string {
