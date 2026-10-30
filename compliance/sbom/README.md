@@ -57,7 +57,7 @@ Use the image name and repository from the table on the documentation site's rel
 
 ## The licensing portal's own SBOM
 
-The licensing portal and product site are one Node.js application (Astro). Its SBOM, `ens-products-page.spdx.json` in this artifact, is generated at every build of the portal from the application's locked dependencies, so the file an account downloads describes the build that served it. It is regenerated, not hand-maintained, and carries the build's version and date inside the SPDX document. It is not attested with cosign; the portal is not delivered to customers as an image.
+The licensing portal and product site are one Node.js application (Astro). Its SBOM, `ens-products-page.spdx.json` in this artifact, is generated at every build of the portal from the application's locked dependencies, so the file an account downloads describes the build that served it. It is regenerated at each build, not hand-maintained. It is not attested with cosign; the portal is not delivered to customers as an image.
 
 ## Requesting an SBOM for a specific release
 

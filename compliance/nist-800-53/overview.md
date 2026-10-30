@@ -18,7 +18,6 @@ This document accompanies the control matrix ENS Solutions publishes for its fou
 | Owner | ENS Solutions, LLC |
 | Review cycle | Annual, and at each major release of any product |
 | Applies to | CertAlert, `main` at e21a31a (after v0.0.2); Directory Services Portal, `main` at 5b04576 (v0.0.5); ReadyRoom (repository `in-n-out-work`), `main` at 84553c6 (v0.0.5); RSA Operations Portal, `main` at 183b562 (after v0.0.1); documentation site `master` at ab820d1 |
-| Files | `nist-800-53-controls.csv`, `nist-800-53-controls.json` (generated from the same matrix) and this document |
 
 ## What the matrix is
 
@@ -31,7 +30,7 @@ Each control has one row per product (IA-3, device authentication, has rows only
 - **Evidence**: repository paths, prefixed with the repository name (`cert-alert: src/main/java/com/winllc/certalert/security/ReadOnlyRoleFilter.java`), CI workflow files, and documentation URLs under `https://winllc.github.io/ens-apps-documentation/`. A path such as `README.md (section "Releases")` names a heading in that file.
 - **Customer responsibility**: what the operating organization must do, when the control depends on it.
 
-The CSV and JSON files carry the same rows. The CSV has one line per control and product; the JSON keeps the nested structure (control, then product) and is the better input for a tool.
+The CSV has one line per control and product; the JSON keeps the nested structure and suits a tool.
 
 ## The status vocabulary
 
@@ -65,7 +64,7 @@ The matrix is written against the Rev. 5 moderate baseline, choosing in each fam
 
 ## Known gaps
 
-These are stated plainly here so that a reviewer does not have to find them row by row.
+Stated here so that a reviewer need not find them row by row.
 
 **Suite-wide**
 
@@ -75,7 +74,7 @@ These are stated plainly here so that a reviewer does not have to find them row 
 - **No written ENS secure-development standard, supply chain risk management plan or customer security-advisory channel** exists beyond the documents in this pack and the trust and support pages. The SA-15, SR-2 and SI-5 rows are `partial` for that reason.
 - **Repository protections are not visible in the code.** Whether branch protection, required reviews and multi-factor authentication are enforced on the GitHub organization is a setting ENS confirms separately; the matrix does not claim it.
 - **GPG signing of release checksums is optional** in every pipeline: `SHA256SUMS.asc` exists only when the signing key is configured on the repository, and no public key fingerprint is published yet. Cosign signatures and SBOM attestations do not depend on that key.
-- **Hash-chained, not signed.** The audit trail proves tampering, not origin, to a third party (AU-10 is `partial`).
+- **Hash-chained, not signed.** The audit trail proves tampering, not origin (AU-10 is `partial`).
 
 **CertAlert**
 
