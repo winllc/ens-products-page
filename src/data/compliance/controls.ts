@@ -980,3 +980,375 @@ export const controls: readonly Control[] = [
             },
         },
     },
+    // ------------------------------------------------------------------ IA
+    {
+        id: 'IA-2',
+        family: 'IA',
+        title: 'Identification and Authentication (Organizational Users)',
+        products: {
+            certalert: {
+                status: 'implemented',
+                implementation: 'Three methods: an X.509 client certificate (CAC/PIV) matched by SHA-256 fingerprint to the certificate the directory publishes for the person, with issuer and live revocation checks; the directory password by LDAP bind; and OpenID Connect or SAML 2.0 single sign-on whose asserted identity must match exactly one directory entry. No passwords are stored.',
+                evidence: [CA_SEC + 'X509DirectoryUserDetailsService.java', CA_SEC + 'ClientCertificateChecks.java', CA_SEC + 'DirectoryAuthenticationConfig.java', CA_SEC + 'sso/SsoSignIn.java', ca('security'), ca('single-sign-on')],
+                customerResponsibility: 'Operate the directory, PKI and identity provider the sign-in relies on.',
+            },
+            'directory-portal': {
+                status: 'implemented',
+                implementation: 'Password sign-in by LDAP bind after a service-account search that must match exactly one entry; X.509 client certificates with validity, key-usage, issuer, chain and revocation checks mapped to exactly one directory user; OIDC and SAML 2.0 single sign-on. PASSWORD_LOGIN_ENABLED=false gives certificate-only sign-in.',
+                evidence: [DSP_SRC + 'service/AuthService.java', DSP_SRC + 'x509/X509AuthService.java', DSP_SRC + 'x509/CertificateValidator.java', DSP_SRC + 'sso/SsoSignIn.java', dsp('security'), dsp('single-sign-on')],
+                customerResponsibility: 'Operate the directory, PKI and identity provider.',
+            },
+            readyroom: {
+                status: 'implemented',
+                implementation: 'Client certificates (mutual TLS) mapped to a directory user by DN or an LDAP filter with issuer and revocation checks; LDAP username and password; OIDC and SAML 2.0 single sign-on; and, for the three workstation check-in calls only, Kerberos tickets validated against the keytab.',
+                evidence: [RR_SRC + 'security/x509/X509SignIn.java', RR_SRC + 'security/x509/RevocationChecker.java', RR_SRC + 'security/NegotiateAuthenticationFilter.java', RR_SRC + 'security/sso/SsoSignIn.java', rr('security'), rr('single-sign-on')],
+                customerResponsibility: 'Operate the directory, PKI, Active Directory and identity provider.',
+            },
+            'mfa-portal': {
+                status: 'implemented',
+                implementation: 'Users sign in with their Authentication Manager user ID and SecurID passcode (PIN plus tokencode), checked by Authentication Manager through the Connector, with next-tokencode and new-PIN prompts handled; operators may start with OIDC or SAML single sign-on and must then enter the SecurID passcode of the same user ID. The Portal keeps no passwords and does no CAC sign-in of its own.',
+                evidence: [RSA_SRC + 'security/CustomAuthenticationProvider.java', RSA_SRC + 'security/AdditionalPrompts.java', RSA_SRC + 'sso/SsoSignIn.java', rsa('security'), rsa('single-sign-on')],
+                customerResponsibility: 'Operate Authentication Manager and the identity provider.',
+            },
+        },
+    },
+    {
+        id: 'IA-2(1)',
+        family: 'IA',
+        title: 'Identification and Authentication | Multi-factor Authentication to Privileged Accounts',
+        products: {
+            certalert: {
+                status: 'partial',
+                implementation: 'Smart-card sign-in and single sign-on through an identity provider that enforces MFA are multi-factor; the directory-password path alone is single-factor. Certificate-only sign-in is available (cert-alert.security.ldap.enabled: false), and an identity provider\'s groups can confine the administrator role to its sessions.',
+                evidence: [CA_SEC + 'SecurityConfig.java', ca('fips-and-stig'), ca('single-sign-on')],
+                customerResponsibility: 'Disable the password path or require MFA at the identity provider for administrators.',
+            },
+            'directory-portal': {
+                status: 'partial',
+                implementation: 'Smart-card sign-in and provider-enforced MFA through SSO are multi-factor; the password path is single-factor. PASSWORD_LOGIN_ENABLED=false removes it; SSO_*_ADMIN_GROUPS can confine the administrator role to provider sessions bounded by SSO_IDP_ADMIN_SESSION_LIFETIME.',
+                evidence: [DSP_SRC + 'config/SecurityConfig.java', DSP_SRC + 'sso/SsoSecurity.java', dsp('security')],
+                customerResponsibility: 'Disable the password path or require MFA at the identity provider for administrators.',
+            },
+            readyroom: {
+                status: 'partial',
+                implementation: 'Certificate sign-in and provider-enforced MFA through SSO are multi-factor; the LDAP password path is single-factor and cannot be switched off on its own in this release.',
+                evidence: [RR_SRC + 'config/SecurityConfig.java', rr('security')],
+                customerResponsibility: 'Require MFA at the identity provider, or issue administrators certificates and restrict password sign-in by directory policy.',
+            },
+            'mfa-portal': {
+                status: 'implemented',
+                implementation: 'Every sign-in is a SecurID passcode (something known plus something held), and with ENS_SSO_REQUIRE_FOR_ADMIN_ROLES at its default the roles mapped from identity-provider groups come only through the provider, so its conditional access cannot be bypassed with a passcode alone.',
+                evidence: [RSA_SRC + 'security/CustomAuthenticationProvider.java', RSA_SRC + 'sso/SsoSettings.java', rsa('single-sign-on')],
+            },
+        },
+    },
+    {
+        id: 'IA-3',
+        family: 'IA',
+        title: 'Device Identification and Authentication',
+        products: {
+            readyroom: {
+                status: 'implemented',
+                implementation: 'The Windows workstation agent authenticates its check-in, lock and unlock calls with the user\'s client certificate or a Kerberos ticket; computer accounts (names ending in $) and service principals are rejected, so the record is tied to a person, and the logout call accepts only an unused, recent check-in sessionId.',
+                evidence: [RR_SRC + 'config/WindowsAuthSecurityConfig.java', RR_SRC + 'security/x509/CertificateCredentialsFilter.java', RR_SRC + 'rest/CheckInOutRestService.java', rr('security'), rr('windows-client')],
+                customerResponsibility: 'Domain-join workstations and issue the user certificates or keytab.',
+            },
+            'mfa-portal': {
+                status: 'implemented',
+                implementation: 'The Connector authenticates the Portal by mutual TLS (a client certificate from CONNECTOR_TLS_CLIENT_CA) and a shared secret on every request, and the Connector authenticates Authentication Manager by its certificate chain and host name.',
+                evidence: [RSA_CONN + 'security/ConnectorAuthFilter.java', RSA_CONN + 'security/MutualTlsCheck.java', RSA_CONN + 'security/HostnameCheckingSocketFactory.java', rsa('security')],
+            },
+        },
+    },
+    {
+        id: 'IA-4',
+        family: 'IA',
+        title: 'Identifier Management',
+        products: {
+            certalert: {
+                status: 'customer',
+                implementation: 'Identifiers are the directory\'s (uid and entry DN). CertAlert matches administrators by uid or DN only, never by e-mail address or display name, because those can be edited or shared.',
+                evidence: [CA_SEC + 'AdminIdentifierCheck.java', ca('security')],
+                customerResponsibility: 'Manage identifiers in the directory; map SSO on a claim people cannot change.',
+            },
+            'directory-portal': {
+                status: 'customer',
+                implementation: 'Identifiers are the directory\'s; SSO identities map through SSO_*_USER_FILTER and the startup check warns when the OIDC username claim is mutable.',
+                evidence: [DSP_SRC + 'config/StartupChecks.java', dsp('security')],
+                customerResponsibility: 'Manage identifiers in the directory; use an immutable SSO claim.',
+            },
+            readyroom: {
+                status: 'customer',
+                implementation: 'Identifiers are directory DNs; certificates, tickets and SSO identities each resolve to exactly one directory user or sign in nobody.',
+                evidence: [RR_SRC + 'security/sso/SsoUserMapper.java', RR_SRC + 'security/x509/CertificateIdentity.java', rr('security')],
+                customerResponsibility: 'Manage identifiers in the directory.',
+            },
+            'mfa-portal': {
+                status: 'customer',
+                implementation: 'Identifiers are Authentication Manager user IDs and principal GUIDs; the SSO identity must name the same user ID that then enters the passcode.',
+                evidence: [RSA_SRC + 'sso/SsoIdentity.java', rsa('single-sign-on')],
+                customerResponsibility: 'Manage identifiers in Authentication Manager.',
+            },
+        },
+    },
+    {
+        id: 'IA-5',
+        family: 'IA',
+        title: 'Authenticator Management',
+        products: {
+            certalert: {
+                status: 'customer',
+                implementation: 'Passwords live in the directory and are verified by bind, never stored; certificates are the PKI\'s and are checked for issuer, validity and revocation. CertAlert manages only API tokens: created with scopes and an expiry (a year at most by default), stored as SHA-256, shown once, revocable.',
+                evidence: [CA + 'src/main/java/com/winllc/certalert/api/ApiTokens.java', CA_SEC + 'ClientCertificateChecks.java', ca('api-reference')],
+                customerResponsibility: 'Password policy, certificate issuance and revocation.',
+            },
+            'directory-portal': {
+                status: 'customer',
+                implementation: 'Passwords are verified by LDAP bind and never stored; empty passwords are rejected before any bind; the portal offers no password change or reset. API tokens are 32 random bytes kept as SHA-256, scoped and expiring.',
+                evidence: [DSP_SRC + 'service/AuthService.java', DSP_SRC + 'integration/ApiTokens.java', dsp('security')],
+                customerResponsibility: 'Password policy and resets in the directory; certificate issuance and revocation.',
+            },
+            readyroom: {
+                status: 'customer',
+                implementation: 'Passwords are verified by bind on a dedicated connection so a change takes effect at once; the keytab for Kerberos is the customer\'s and is treated as a password; API and pull tokens are SHA-256 hashed and expiring.',
+                evidence: [RR_SRC + 'api/ApiTokenService.java', RR_SRC + 'audit/AuditTokenService.java', rr('security')],
+                customerResponsibility: 'Password policy, certificates and the keytab.',
+            },
+            'mfa-portal': {
+                status: 'customer',
+                implementation: 'SecurID PINs and tokens are Authentication Manager\'s; the Portal\'s PIN reset and token swap flows prove identity first (certificate, Windows password plus serial, or an e-mailed link plus tokencode) and are rate-limited; help-desk e-mailed codes are kept only as an HMAC. API tokens are SHA-256 hashed, scoped and expiring.',
+                evidence: [RSA_SRC + 'helpdesk/EmailCodeVerification.java', RSA_SRC + 'api/ApiTokens.java', rsa('user-guide'), rsa('help-desk')],
+                customerResponsibility: 'Token and PIN policy in Authentication Manager.',
+            },
+        },
+    },
+    {
+        id: 'IA-6',
+        family: 'IA',
+        title: 'Authentication Feedback',
+        products: {
+            certalert: {
+                status: 'implemented',
+                implementation: 'A failed sign-in returns to the form without saying why; the reason goes to the audit trail. Password fields are standard masked inputs.',
+                evidence: [CA_SEC + 'SecurityConfig.java', CA + 'src/main/java/com/winllc/certalert/audit/AuthenticationAudit.java'],
+            },
+            'directory-portal': {
+                status: 'implemented',
+                implementation: 'Failures give one message; lockout answers 429; reasons are in the audit trail.',
+                evidence: [DSP_SRC + 'service/AuthService.java', dsp('security')],
+            },
+            readyroom: {
+                status: 'implemented',
+                implementation: 'Failed sign-ins go to /login?error with no cause; the reason is audited.',
+                evidence: [RR_SRC + 'config/SecurityConfig.java', rr('security')],
+            },
+            'mfa-portal': {
+                status: 'implemented',
+                implementation: 'Sign-in and every public self-service step give one answer whatever the cause (unknown user, wrong passcode, locked account), padded to a uniform response time; the cause is recorded only in the audit trail.',
+                evidence: [RSA_SRC + 'ratelimit/UniformResponses.java', RSA_SRC + 'security/CustomAuthenticationFailureHandler.java', rsa('security')],
+            },
+        },
+    },
+    {
+        id: 'IA-8',
+        family: 'IA',
+        title: 'Identification and Authentication (Non-organizational Users)',
+        products: {
+            certalert: {
+                status: 'not-applicable',
+                implementation: 'Every user must be a directory entry; there is no access for people outside the organization\'s directory.',
+                evidence: [ca('security')],
+            },
+            'directory-portal': {
+                status: 'not-applicable',
+                implementation: 'Every user must be a directory entry.',
+                evidence: [dsp('security')],
+            },
+            readyroom: {
+                status: 'not-applicable',
+                implementation: 'Every user must be a directory entry.',
+                evidence: [rr('security')],
+            },
+            'mfa-portal': {
+                status: 'implemented',
+                implementation: 'The anonymous self-service pages (Test My Token, PIN reset, registration, exemption and appointment requests) identify a visitor by Authentication Manager user ID or token serial and prove it with a tokencode, certificate, Windows password or e-mailed link before anything changes, under rate limits and uniform answers.',
+                evidence: [RSA_SRC + 'controller/UserPinResetController.java', RSA_SRC + 'ratelimit/RateLimitFilter.java', rsa('user-guide'), rsa('security')],
+            },
+        },
+    },
+    {
+        id: 'IA-11',
+        family: 'IA',
+        title: 'Re-authentication',
+        products: {
+            certalert: {
+                status: 'implemented',
+                implementation: 'The absolute session lifetime (12h default) forces a new sign-in whatever the activity; certificate sign-ins are re-evaluated (issuer, revocation) on every request that presents a certificate.',
+                evidence: [CA_SEC + 'SessionPolicyFilter.java', ca('security')],
+            },
+            'directory-portal': {
+                status: 'implemented',
+                implementation: 'Absolute lifetime (12h default); administrator sessions from an identity provider are bounded by SSO_IDP_ADMIN_SESSION_LIFETIME; groups are re-read every 5 minutes.',
+                evidence: [DSP_SRC + 'config/SessionControlFilter.java', dsp('security')],
+            },
+            readyroom: {
+                status: 'implemented',
+                implementation: 'Absolute lifetime (12h default); API tokens re-check the creator\'s directory status on every call.',
+                evidence: [RR_SRC + 'security/SessionControlFilter.java', rr('security')],
+            },
+            'mfa-portal': {
+                status: 'implemented',
+                implementation: 'Absolute lifetime (12h default); after a role change the user must sign in again; an ended Authentication Manager session signs the user out.',
+                evidence: [RSA_SRC + 'session/TimedOutSessions.java', rsa('security')],
+            },
+        },
+    },
+    // ------------------------------------------------------------------ IR
+    {
+        id: 'IR-4',
+        family: 'IR',
+        title: 'Incident Handling',
+        products: {
+            certalert: {
+                status: 'customer',
+                implementation: 'Incident handling is the operating organization\'s. ENS supports it with the audit trail, SIEM forwarding and the support policy: P1 to P4 severities, first response within the tier\'s target, a P1 worked continuously within the tier\'s hours, and a written cause summary within five business days of a P1\'s resolution.',
+                evidence: ['ens-products-page: src/pages/support.astro', 'ens-products-page: src/data/pricing.ts', AUDIT_DOC],
+                customerResponsibility: 'Run your incident response process; report product defects through support.',
+            },
+            'directory-portal': { status: 'customer', implementation: 'As for CertAlert.', evidence: ['ens-products-page: src/pages/support.astro', AUDIT_DOC], customerResponsibility: 'Run your incident response process.' },
+            readyroom: { status: 'customer', implementation: 'As for CertAlert.', evidence: ['ens-products-page: src/pages/support.astro', AUDIT_DOC], customerResponsibility: 'Run your incident response process.' },
+            'mfa-portal': { status: 'customer', implementation: 'As for CertAlert.', evidence: ['ens-products-page: src/pages/support.astro', AUDIT_DOC], customerResponsibility: 'Run your incident response process.' },
+        },
+    },
+    {
+        id: 'IR-6',
+        family: 'IR',
+        title: 'Incident Reporting',
+        products: {
+            certalert: {
+                status: 'implemented',
+                implementation: 'Vulnerabilities in the products, the licensing portal or the product site are reported to info@ens-solutions.com, published in /.well-known/security.txt (RFC 9116) and on the trust page, which states the acknowledgement target of three business days and the disclosure expectations. Fixes reach customers as releases through the Downloads page.',
+                evidence: ['ens-products-page: public/.well-known/security.txt', 'ens-products-page: src/pages/trust.astro', 'ens-products-page: compliance/vulnerability-management-policy.md'],
+                customerResponsibility: 'Report incidents involving your deployment to your own authorities; report suspected product vulnerabilities to ENS.',
+            },
+            'directory-portal': { status: 'implemented', implementation: 'As for CertAlert.', evidence: ['ens-products-page: public/.well-known/security.txt', 'ens-products-page: src/pages/trust.astro'] },
+            readyroom: { status: 'implemented', implementation: 'As for CertAlert.', evidence: ['ens-products-page: public/.well-known/security.txt', 'ens-products-page: src/pages/trust.astro'] },
+            'mfa-portal': { status: 'implemented', implementation: 'As for CertAlert.', evidence: ['ens-products-page: public/.well-known/security.txt', 'ens-products-page: src/pages/trust.astro'] },
+        },
+    },
+    {
+        id: 'IR-8',
+        family: 'IR',
+        title: 'Incident Response Plan',
+        products: {
+            certalert: { status: 'customer', implementation: 'The plan is the operating organization\'s; ENS\'s part is the vulnerability management policy in this pack and the support policy.', evidence: ['ens-products-page: compliance/vulnerability-management-policy.md', 'ens-products-page: src/pages/support.astro'], customerResponsibility: 'Maintain the plan and name ENS support as the vendor contact.' },
+            'directory-portal': { status: 'customer', implementation: 'As for CertAlert.', evidence: ['ens-products-page: compliance/vulnerability-management-policy.md'], customerResponsibility: 'Maintain the plan.' },
+            readyroom: { status: 'customer', implementation: 'As for CertAlert.', evidence: ['ens-products-page: compliance/vulnerability-management-policy.md'], customerResponsibility: 'Maintain the plan.' },
+            'mfa-portal': { status: 'customer', implementation: 'As for CertAlert.', evidence: ['ens-products-page: compliance/vulnerability-management-policy.md'], customerResponsibility: 'Maintain the plan.' },
+        },
+    },
+    // ------------------------------------------------------------------ MA
+    {
+        id: 'MA-2',
+        family: 'MA',
+        title: 'Controlled Maintenance',
+        products: {
+            certalert: {
+                status: 'customer',
+                implementation: 'Maintenance of the installation (upgrades, database maintenance, host patching) is the customer\'s. The release package\'s upgrade.sh carries settings and license across and dumps the database first; the chart\'s pre-upgrade hook does the same; every scheduled job run and settings change is audited.',
+                evidence: [CA + 'deploy/release/upgrade.sh', CA + 'deploy/helm/cert-alert/templates/upgrade-backup.yaml', ca('operator-guide')],
+                customerResponsibility: 'Schedule, approve and record maintenance; patch the host and database.',
+            },
+            'directory-portal': { status: 'customer', implementation: 'As above, with the Docker package\'s upgrade.sh and the native package\'s install.sh.', evidence: [DSP + 'deploy/package/docker/upgrade.sh', DSP + 'deploy/package/native/install.sh', dsp('operator-guide')], customerResponsibility: 'Schedule, approve and record maintenance.' },
+            readyroom: { status: 'customer', implementation: 'As above, with the bundle\'s upgrade.sh (run ./backup.sh first).', evidence: [RR + 'deploy/bundle/upgrade.sh', rr('operator-guide')], customerResponsibility: 'Schedule, approve and record maintenance; re-run the agent installer on workstations after a client upgrade.' },
+            'mfa-portal': { status: 'customer', implementation: 'As above, with the release package\'s upgrade.sh, which backs up, splits legacy settings files and moves passwords out of JAVA_OPTS.', evidence: [RSA + 'deploy/release/upgrade.sh', rsa('operator-guide')], customerResponsibility: 'Schedule, approve and record maintenance.' },
+        },
+    },
+    {
+        id: 'MA-4',
+        family: 'MA',
+        title: 'Nonlocal Maintenance',
+        products: {
+            certalert: { status: 'customer', implementation: 'ENS has no remote access to any installation; the products make no connection to ENS and report no usage. Any remote maintenance session is one the customer arranges under its own controls.', evidence: [ca('security'), 'ens-products-page: src/pages/trust.astro'], customerResponsibility: 'Control and record any remote session you grant.' },
+            'directory-portal': { status: 'customer', implementation: 'As for CertAlert.', evidence: [dsp('security')], customerResponsibility: 'Control and record any remote session you grant.' },
+            readyroom: { status: 'customer', implementation: 'As for CertAlert.', evidence: [rr('security')], customerResponsibility: 'Control and record any remote session you grant.' },
+            'mfa-portal': { status: 'customer', implementation: 'As for CertAlert.', evidence: [rsa('security')], customerResponsibility: 'Control and record any remote session you grant.' },
+        },
+    },
+    // ------------------------------------------------------------------ PL
+    {
+        id: 'PL-2',
+        family: 'PL',
+        title: 'System Security and Privacy Plans',
+        products: {
+            certalert: { status: 'customer', implementation: 'The system security plan is the customer\'s. This matrix, the security page, the architecture page and the outbound-connections table are written to be pasted into it.', evidence: [ca('architecture'), ca('security'), 'ens-products-page: compliance/nist-800-53/overview.md'], customerResponsibility: 'Write the plan; cite this matrix for the application layer.' },
+            'directory-portal': { status: 'customer', implementation: 'As for CertAlert.', evidence: [dsp('architecture'), dsp('security')], customerResponsibility: 'Write the plan.' },
+            readyroom: { status: 'customer', implementation: 'As for CertAlert; ReadyRoom also has a privacy page written for a DPIA.', evidence: [rr('security'), rr('privacy')], customerResponsibility: 'Write the plan and, where personal data law applies, the DPIA.' },
+            'mfa-portal': { status: 'customer', implementation: 'As for CertAlert.', evidence: [rsa('architecture'), rsa('security')], customerResponsibility: 'Write the plan.' },
+        },
+    },
+    {
+        id: 'PL-4',
+        family: 'PL',
+        title: 'Rules of Behavior',
+        products: {
+            certalert: { status: 'customer', implementation: 'The consent banner presents the organization\'s rules before sign-in and records each acknowledgement (AC-8); the rules themselves are the customer\'s.', evidence: [CA_SEC + 'ConsentBanner.java', ca('security')], customerResponsibility: 'Supply the banner text where the DoD default does not apply.' },
+            'directory-portal': { status: 'customer', implementation: 'As for CertAlert.', evidence: [DSP_SRC + 'service/ConsentService.java'], customerResponsibility: 'Supply the banner text.' },
+            readyroom: { status: 'customer', implementation: 'As for CertAlert; the profile notes field also warns against classified or personal data.', evidence: [RR_SRC + 'security/ConsentBanner.java', rr('security')], customerResponsibility: 'Supply the banner text.' },
+            'mfa-portal': { status: 'customer', implementation: 'As for CertAlert.', evidence: [RSA_SRC + 'security/ConsentBanner.java'], customerResponsibility: 'Supply the banner text.' },
+        },
+    },
+    {
+        id: 'PL-8',
+        family: 'PL',
+        title: 'Security and Privacy Architectures',
+        products: {
+            certalert: { status: 'implemented', implementation: 'The architecture page and the security page describe the components, the sign-in filter chain, the trust boundaries (directory, PKI, SIEM, identity provider, webhook receivers) and every outbound connection.', evidence: [ca('architecture'), ca('security')] },
+            'directory-portal': { status: 'implemented', implementation: 'The architecture page describes the web tier, the API, the single service account and the shared-database mode; the security page the trust model and network exposure.', evidence: [dsp('architecture'), dsp('security')] },
+            readyroom: { status: 'implemented', implementation: 'The security page carries the authentication flow diagram and the open-endpoint table; the Windows client page the agent\'s side; the privacy page what is stored and who sees it.', evidence: [rr('security'), rr('windows-client'), rr('privacy')] },
+            'mfa-portal': { status: 'implemented', implementation: 'The architecture page describes the Portal, the Connector and Authentication Manager and the two protected hops; the integration page lists exactly which classes each hop accepts.', evidence: [rsa('architecture'), rsa('rsa-integration'), rsa('security')] },
+        },
+    },
+    // ------------------------------------------------------------------ RA
+    {
+        id: 'RA-3',
+        family: 'RA',
+        title: 'Risk Assessment',
+        products: {
+            certalert: { status: 'customer', implementation: 'The risk assessment of a deployment is the customer\'s. ENS\'s inputs are the known gaps stated in the overview (no FIPS-mode run, no third-party penetration test, draft VPAT) and the accepted-risk entries in .trivyignore (three pcre2 CVEs in the base image, expiring 2026-11-17).', evidence: [CA + '.trivyignore', 'ens-products-page: compliance/nist-800-53/overview.md'], customerResponsibility: 'Assess the risk of the deployment; accept or mitigate the stated gaps.' },
+            'directory-portal': { status: 'customer', implementation: 'As for CertAlert; .trivyignore holds no accepted risks at this revision. Single LDAP server without failover is a stated availability gap.', evidence: [DSP + '.trivyignore', 'ens-products-page: compliance/nist-800-53/overview.md'], customerResponsibility: 'Assess the risk of the deployment.' },
+            readyroom: { status: 'customer', implementation: 'As for CertAlert; .trivyignore holds no accepted risks. The unsigned Windows agent and the retired development CA whose keys were published are stated gaps.', evidence: [RR + '.trivyignore', rr('security'), 'ens-products-page: compliance/nist-800-53/overview.md'], customerResponsibility: 'Assess the risk of the deployment, the agent included.' },
+            'mfa-portal': { status: 'customer', implementation: 'As for CertAlert; the Connector carries 23 accepted CVEs in .trivyignore, each with a justification and an expiry of 2027-04-18, on an end-of-life Spring 3.2 stack the RSA SDK requires. The ISSM should read that file and the vulnerability management policy\'s worked example.', evidence: [RSA + '.trivyignore', RSA + 'README.md (section "Dependency Constraints")', 'ens-products-page: compliance/vulnerability-management-policy.md'], customerResponsibility: 'Record the accepted Connector risk in your assessment.' },
+        },
+    },
+    {
+        id: 'RA-5',
+        family: 'RA',
+        title: 'Vulnerability Monitoring and Scanning',
+        products: {
+            certalert: {
+                status: 'implemented',
+                implementation: 'Every image build runs Trivy 0.75.0 (vulnerability scanner, severity HIGH and CRITICAL, --ignore-unfixed, --exit-code 1) and fails on a fixable finding; accepted risks live in .trivyignore with a reason and an exp: date after which Trivy stops ignoring them. CodeQL (java-kotlin, javascript-typescript) runs on push, pull request and weekly (Mondays 04:17 UTC). Dependabot proposes weekly updates for Gradle, Docker digests, GitHub Actions and the a11y npm packages.',
+                evidence: [CI.ca, CA + '.github/workflows/codeql.yml', CA + '.github/dependabot.yml', CA + '.trivyignore'],
+                customerResponsibility: 'Scan the running hosts, cluster and database with your own tooling.',
+            },
+            'directory-portal': {
+                status: 'implemented',
+                implementation: 'Trivy on both images with the same gate; CodeQL (Java and TypeScript) on push, pull request and weekly; npm audit --omit=dev --audit-level=high on every run; Dependabot weekly for Maven, npm, Docker and Actions.',
+                evidence: [CI.dsp, DSP + '.github/workflows/codeql.yml', DSP + '.github/dependabot.yml', DSP + '.trivyignore'],
+                customerResponsibility: 'Scan your hosts and cluster.',
+            },
+            readyroom: {
+                status: 'implemented',
+                implementation: 'Trivy on the image with the same gate; CodeQL (Java and JavaScript) on push, pull request and weekly; Dependabot weekly for Gradle, Docker and Actions.',
+                evidence: [CI.rr, RR + '.github/workflows/codeql.yml', RR + '.github/dependabot.yml', RR + '.trivyignore'],
+                customerResponsibility: 'Scan your hosts and cluster, and the workstations that run the agent.',
+            },
+            'mfa-portal': {
+                status: 'partial',
+                implementation: 'Trivy on both images (Portal and Connector) with the same gate, and Dependabot weekly for Maven, Docker and Actions. There is no CodeQL workflow in this repository, and the base image digest is updated by hand because Dependabot cannot follow the BASE_TAG build argument. The Connector\'s 23 accepted CVEs are listed in .trivyignore with justifications and an expiry of 2027-04-18.',
+                evidence: [CI.rsa, RSA + '.github/dependabot.yml', RSA + '.trivyignore'],
+                customerResponsibility: 'Scan your hosts, cluster and database.',
+            },
+        },
+    },
