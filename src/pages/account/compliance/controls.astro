@@ -1,0 +1,145 @@
+---
+export const prerender = false;
+
+/*
+ * The NIST SP 800-53 Rev. 5 control matrix as a table: family, id and title,
+ * then per product a status and, behind a disclosure, how the control is
+ * met, the evidence and what the customer must do. ?product= narrows it to
+ * one product. The CSV and JSON are the matrix artifact's generated files.
+ */
+
+import { controls } from '../../../data/compliance/controls';
+import { controlStatusLabels } from '../../../data/compliance/kinds';
+import { CONTROL_FAMILIES } from '../../../data/compliance/types';
+import { products, type ProductId } from '../../../data/products';
+import AccountLayout from '../../../layouts/AccountLayout.astro';
+import { recordDenied } from '../../../server/audit';
+import { canRead, visibleArtifacts } from '../../../server/compliance';
+import { requireAccount } from '../../../server/http';
+
+const account = requireAccount(Astro);
+if (account instanceof Response) return account;
+
+if (!canRead(account)) {
+    recordDenied({ method: Astro.request.method, path: Astro.url.pathname, reason: 'compliance_not_granted' });
+    return new Response('The compliance documentation pack is not enabled for this account', { status: 403 });
+}
+
+const wanted = Astro.url.searchParams.get('product') ?? '';
+const only = products.find((p) => p.id === wanted) ?? null;
+const shown = only ? [only] : [...products];
+const rows = controls.filter((c) => shown.some((p) => c.products[p.id]));
+
+// The matrix artifact's own downloads, when the account may see it.
+const matrix = visibleArtifacts(account).find((a) => a.kind === 'nist-800-53');
+const generated = (kind: 'controls-csv' | 'controls-json') => matrix?.files.find((f) => f.source.kind === kind);
+const csv = generated('controls-csv');
+const json = generated('controls-json');
+
+const familyName = (code: string) => CONTROL_FAMILIES[code] ?? code;
+const counts = (id: ProductId) => {
+    const c: Record<string, number> = {};
+    for (const r of rows) {
+        const s = r.products[id]?.status;
+        if (s) c[s] = (c[s] ?? 0) + 1;
+    }
+    return c;
+};
+---
+<AccountLayout title="NIST SP 800-53 control matrix" eyebrow="Compliance" section="compliance">
+    <p slot="lede" class="lede">
+        <a href="/account/compliance">&larr; All documentation</a>
+        {matrix && <> &middot; <a href={`/account/compliance/${matrix.id}`}>{matrix.title}</a>, version {matrix.version}, revised {matrix.date}</>}
+    </p>
+
+    <form class="filter-bar" method="get">
+        <div class="field">
+            <label for="product">Product</label>
+            <select id="product" name="product">
+                <option value="" selected={!only}>All products</option>
+                {products.map((p) => <option value={p.id} selected={only?.id === p.id}>{p.name}</option>)}
+            </select>
+        </div>
+        <button class="btn btn--ghost" type="submit">Show</button>
+        {matrix && csv && <a class="btn btn--ghost" href={`/account/compliance/${matrix.id}/${csv.name}`}>CSV</a>}
+        {matrix && json && <a class="btn btn--ghost" href={`/account/compliance/${matrix.id}/${json.name}`}>JSON</a>}
+    </form>
+
+    <p class="muted small">
+        {rows.length} {rows.length === 1 ? 'control' : 'controls'}
+        {shown.map((p) => {
+            const c = counts(p.id);
+            return (
+                <span class="controls-count">
+                    &middot; {p.name}: {Object.entries(c).map(([s, n]) => `${n} ${controlStatusLabels[s as keyof typeof controlStatusLabels].toLowerCase()}`).join(', ') || 'none'}
+                </span>
+            );
+        })}
+    </p>
+
+    {rows.length === 0 ? (
+        <p class="muted">The control matrix has no entries yet.</p>
+    ) : (
+        <div class="table-scroll">
+            <table class="controls-table">
+                <caption class="visually-hidden">NIST SP 800-53 controls by product</caption>
+                <thead>
+                <tr>
+                    <th scope="col">Family</th>
+                    <th scope="col">Control</th>
+                    {shown.map((p) => <th scope="col">{p.name}</th>)}
+                </tr>
+                </thead>
+                <tbody>
+                {rows.map((c) => (
+                    <tr>
+                        <td><abbr title={familyName(c.family)}>{c.family}</abbr><span class="th-note">{familyName(c.family)}</span></td>
+                        <th scope="row"><span class="mono">{c.id}</span><span class="th-note">{c.title}</span></th>
+                        {shown.map((p) => {
+                            const impl = c.products[p.id];
+                            return (
+                                <td>
+                                    {!impl ? (
+                                        <span class="muted small">Does not apply</span>
+                                    ) : (
+                                        <details class="control-detail">
+                                            <summary>
+                                                <span class:list={['pill', `pill--${impl.status}`]}>{controlStatusLabels[impl.status]}</span>
+                                                <span class="visually-hidden">{c.id} for {p.name}: details</span>
+                                            </summary>
+                                            <p>{impl.implementation}</p>
+                                            {impl.evidence.length > 0 && (
+                                                <>
+                                                    <p class="small muted">Evidence</p>
+                                                    <ul class="small">
+                                                        {impl.evidence.map((e) => (
+                                                            <li>{/^https?:\/\//.test(e) ? <a href={e} rel="noopener">{e}</a> : <span class="mono">{e}</span>}</li>
+                                                        ))}
+                                                    </ul>
+                                                </>
+                                            )}
+                                            {impl.customerResponsibility && (
+                                                <p class="small"><strong>Your responsibility:</strong> {impl.customerResponsibility}</p>
+                                            )}
+                                        </details>
+                                    )}
+                                </td>
+                            );
+                        })}
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+        </div>
+    )}
+
+    <h2 class="section-gap">Reading the statuses</h2>
+    <dl class="data-list">
+        <div><dt><span class="pill pill--implemented">Implemented</span></dt><dd>The product implements the control as described.</dd></div>
+        <div><dt><span class="pill pill--partial">Partial</span></dt><dd>Part of it; the gap is named in the text.</dd></div>
+        <div><dt><span class="pill pill--planned">Planned</span></dt><dd>Not in the product today; on the roadmap, as the text says.</dd></div>
+        <div><dt><span class="pill pill--customer">Customer</span></dt><dd>Your organization meets it: your directory, your platform, your procedures.</dd></div>
+        <div><dt><span class="pill pill--inherited">Inherited</span></dt><dd>Met by the platform the product runs on: Kubernetes, the host, the directory.</dd></div>
+        <div><dt><span class="pill pill--not-applicable">Not applicable</span></dt><dd>Does not apply to application software of this kind.</dd></div>
+    </dl>
+</AccountLayout>

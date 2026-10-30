@@ -277,6 +277,19 @@ const migrations: Migration[] = [
     CREATE INDEX leads_created ON leads(created_at);
     CREATE INDEX leads_status ON leads(status);
     `,
+
+    // 5: the compliance documentation pack. Which accounts an administrator
+    // has granted access (and who granted it), and which artifacts of the
+    // manifest are published to them; administrators see every artifact.
+    `
+    ALTER TABLE accounts ADD COLUMN compliance_access_at TEXT;
+    ALTER TABLE accounts ADD COLUMN compliance_access_by TEXT REFERENCES accounts(id);
+    CREATE TABLE compliance_artifacts (
+        id            TEXT PRIMARY KEY,
+        published_at  TEXT,
+        published_by  TEXT REFERENCES accounts(id)
+    );
+    `,
 ];
 
 let instance: DatabaseSync | null = null;

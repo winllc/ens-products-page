@@ -1,0 +1,51 @@
+---
+/*
+ * The "Documentation pack" section of a product page: what the compliance
+ * documentation pack holds for this product (from the manifest), and how to
+ * get it. Prerendered with the page, so it reads only the manifest, never
+ * the service: the pack itself is behind sign-in at /account/compliance.
+ * With nothing in the manifest for the product the section still renders,
+ * with the sentence and the buttons.
+ */
+import { artifactKindLabels, artifactKinds } from '../data/compliance/kinds';
+import { complianceArtifacts } from '../data/compliance/manifest';
+import type { ProductId } from '../data/products';
+
+interface Props {
+    product: ProductId;
+}
+
+const { product } = Astro.props;
+const items = complianceArtifacts.filter((a) => a.products === 'all' || a.products.includes(product));
+const ordered = artifactKinds.flatMap((k) => items.filter((a) => a.kind === k));
+---
+<section class="section" aria-labelledby="artifacts-heading">
+    <div class="wrap">
+        <h2 id="artifacts-heading">Documentation pack</h2>
+        <p class="lede">
+            For the security reviewer: the documents an accreditation or a supplier review asks for,
+            written from the code and kept with it.
+        </p>
+        {ordered.length > 0 && (
+            <ul class="compliance-pack">
+                {ordered.map((a) => (
+                    <li>
+                        <span class="pill">{artifactKindLabels[a.kind]}</span>
+                        <div>
+                            <strong>{a.title}</strong>
+                            <span class="muted"> &mdash; {a.summary}</span>
+                            <span class="small muted compliance-pack-meta">Version {a.version}, revised {a.date}</span>
+                        </div>
+                    </li>
+                ))}
+            </ul>
+        )}
+        <div class="btn-row">
+            <a class="btn btn--primary" href="/account/compliance">Sign in to download</a>
+            <a class="btn btn--ghost" href="/contact.html?product=compliance">Request access</a>
+        </div>
+        <p class="muted small">
+            Access is granted per account by ENS; administrators of the licensing portal see everything.
+        </p>
+    </div>
+</section>

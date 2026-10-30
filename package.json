@@ -1,5 +1,6 @@
 {
   "name": "ens-products-page",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "description": "Product site for ENS Solutions, LLC",
@@ -8,7 +9,7 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "astro build",
+    "build": "node scripts/sbom.mjs && astro build",
     "render": "SITE_TEMPLATE_DIR=dist/client SITE_OUTPUT_DIR=dist-rendered sh docker/docker-entrypoint.d/30-render-site.sh",
     "check": "astro check",
     "test": "vitest run",

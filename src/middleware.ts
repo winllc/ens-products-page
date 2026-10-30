@@ -50,7 +50,8 @@ export const onRequest = defineMiddleware(async (ctx, next) => {
     };
 
     const response = await withAuditContext(auditCtx, () => next());
-    response.headers.set('Cache-Control', 'no-store');
+    // A route may already say `private, no-store` (the compliance downloads); anything less strict is replaced.
+    if (!response.headers.get('Cache-Control')?.includes('no-store')) response.headers.set('Cache-Control', 'no-store');
     response.headers.set('X-Content-Type-Options', 'nosniff');
     response.headers.set('X-Frame-Options', 'DENY');
     response.headers.set('Referrer-Policy', 'same-origin');

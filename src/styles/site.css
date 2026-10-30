@@ -1469,6 +1469,14 @@ img { max-width: 100%; height: auto; }
 .pill--partial  { background: var(--pending-soft); color: var(--pending); }
 .pill--not-yet  { background: var(--surface-alt);  color: var(--text-muted); }
 
+/* The compliance documentation pack: publish state, and the control matrix's statuses. */
+.pill--unpublished    { background: var(--pending-soft); color: var(--pending); }
+.pill--implemented    { background: var(--ok-soft);      color: var(--ok); }
+.pill--planned        { background: var(--accent-soft);  color: var(--accent); }
+.pill--customer,
+.pill--inherited      { background: var(--surface-alt);  color: var(--text); }
+.pill--not-applicable { background: var(--surface-alt);  color: var(--text-muted); }
+
 .license-table th[scope="row"] { white-space: normal; }
 .license-table th[scope="row"] a { font-weight: 620; }
 .license-table td { vertical-align: middle; }
@@ -2044,3 +2052,42 @@ pre code { background: none; border: 0; padding: 0; font-size: inherit; }
 @media (min-width: 641px) {
     main section[id] { scroll-margin-top: 130px; }
 }
+
+/* ---- Compliance documentation pack ---------------------------------------- */
+
+.compliance-pack,
+.compliance-summary { list-style: none; margin: 1.25rem 0; padding: 0; display: grid; gap: .75rem; }
+.compliance-pack li { display: grid; grid-template-columns: auto 1fr; gap: .75rem; align-items: start; }
+.compliance-pack li .pill { margin-top: .2rem; }
+.compliance-pack-meta { display: block; margin-top: .15rem; }
+.compliance-summary li .pill { margin-right: .5rem; }
+.compliance-group { margin-top: 2.5rem; }
+.compliance-group:first-of-type { margin-top: 0; }
+.compliance-artifact { margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--border); }
+.compliance-artifact h3 { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin-bottom: .35rem; }
+.compliance-artifact p { margin-top: 0; }
+.compliance-artifact .data-list { margin: .75rem 0; }
+.compliance-artifact .table-scroll { margin-top: .5rem; }
+.lede .pill { margin-left: .5rem; vertical-align: middle; }
+
+.controls-table th[scope="row"] { white-space: normal; min-width: 12rem; }
+.controls-table td { vertical-align: top; min-width: 9rem; }
+.controls-count { white-space: nowrap; }
+.control-detail summary { cursor: pointer; list-style: none; }
+.control-detail summary::-webkit-details-marker { display: none; }
+.control-detail summary .pill::after { content: " \25BE"; font-weight: 400; }
+.control-detail[open] summary .pill::after { content: " \25B4"; }
+.control-detail p,
+.control-detail ul { margin: .5rem 0 0; font-size: .9rem; max-width: 36rem; }
+.control-detail ul { padding-left: 1.1rem; }
+.control-detail li { overflow-wrap: anywhere; }
+
+/* A rendered compliance document (Markdown): keep it readable at prose width. */
+.compliance-doc { max-width: 46rem; }
+.compliance-doc h1 { font-size: clamp(1.5rem, 3vw, 1.9rem); margin-top: 0; }
+.compliance-doc h2 { margin-top: 2rem; }
+.compliance-doc h3 { margin-top: 1.5rem; }
+.compliance-doc table { font-size: .92rem; }
+.compliance-doc th, .compliance-doc td { vertical-align: top; }
+.compliance-doc img { max-width: 100%; height: auto; }
+.compliance-doc blockquote { margin: 1rem 0; padding: .25rem 0 .25rem 1rem; border-left: 3px solid var(--border); color: var(--text-muted); }

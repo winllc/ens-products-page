@@ -37,13 +37,18 @@ export interface Account {
     disabled_at: string | null;
     created_at: string;
     last_login_at: string | null;
+    /** When an administrator granted the account the compliance documentation pack; null until then. */
+    compliance_access_at: string | null;
+    /** The account id of the administrator who granted it. */
+    compliance_access_by: string | null;
 }
 
 interface AccountRow extends Account {
     password_hash: string;
 }
 
-const COLUMNS = 'id, email, name, organization, phone, role, email_verified_at, disabled_at, created_at, last_login_at';
+const COLUMNS =
+    'id, email, name, organization, phone, role, email_verified_at, disabled_at, created_at, last_login_at, compliance_access_at, compliance_access_by';
 const HOUR = 60 * 60 * 1000;
 const VERIFY_TTL = 48 * HOUR;
 const RESET_TTL = 1 * HOUR;
@@ -165,6 +170,8 @@ export async function signUp(input: SignUp): Promise<Account | null> {
         disabled_at: null,
         created_at: nowIso(),
         last_login_at: null,
+        compliance_access_at: null,
+        compliance_access_by: null,
     };
     transaction(() => {
         db()

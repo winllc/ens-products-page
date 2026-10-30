@@ -151,6 +151,7 @@ and worked at `/admin/leads` (see [Contact form](#contact-form)).
 | Download evaluation licenses; extend one once by 30 days | Issue subscription, perpetual, pilot or evaluation licenses with order reference |
 | Download any license they hold | Renew (new expiry, or new end of maintenance) |
 | Download releases of the products they're licensed for | Download releases of every product |
+| Read the compliance documentation pack, once granted | Grant the pack per account; publish its artifacts |
 | Bind a license to an installation id | Revoke and reinstate |
 | Name licenses; check a license file | Make administrators; disable accounts |
 | Their own activity history | Full audit log: search, export, verify, SIEM delivery |
@@ -297,9 +298,10 @@ and how to bring it into a SIEM, is on the docs site:
 | Category | Actions |
 |---|---|
 | authentication | `auth.login` (success and failure; on failure the address tried is the actor and `reason` says why), `auth.logout`, `auth.lockout` (rate limit hit on sign-in, sign-up, reset, resend or release downloads), `account.password-changed`, `account.password-reset`, `account.password-reset-requested` |
-| authorization | `access.denied`: every 403 from the service (a non-administrator on `/admin`, a release download without a license for the product), with method, path and reason; repeats within 60 seconds are collapsed into one event with `details.count` |
+| authorization | `access.denied`: every 403 from the service (a non-administrator on `/admin`, a release download without a license for the product, a compliance document without access), with method, path and reason; repeats within 60 seconds are collapsed into one event with `details.count`; `compliance.granted`, `compliance.revoked` |
 | account | `account.created`, `account.verified` (and failed confirmation links), `account.updated` (old and new values), `account.role-changed`, `account.disabled`, `account.enabled` |
-| data | `license.issued`, `license.downloaded`, `license.bound`, `license.renamed`, `license.renewed`, `license.revoked`, `license.reinstated`, `license.resigned`, `release.downloaded` (product, version and file) |
+| data | `license.issued`, `license.downloaded`, `license.bound`, `license.renamed`, `license.renewed`, `license.revoked`, `license.reinstated`, `license.resigned`, `release.downloaded` (product, version and file), `compliance.downloaded` (artifact and file) |
+| configuration | `compliance.published`, `compliance.unpublished` |
 | audit | `audit.exported`, `audit.verified`, `audit.token-created`, `audit.token-revoked`, `audit.pruned`, `audit.delivery-failed`, `audit.delivery-recovered` |
 | system | `system.started`, `system.stopped`, `job.failed` (retention) |
 
@@ -352,6 +354,75 @@ output to stderr saying whether it is on.
   licensing service.
 
 ---
+
+### Compliance documentation pack
+
+The documents a security reviewer asks for before an accreditation or a
+supplier review: the NIST SP 800-53 Rev. 5 control matrix for each product,
+the software bills of materials, and the vulnerability management, secure
+development and supply chain documents. Customers read them at
+**`/account/compliance`**; the public product pages (section "Documentation
+pack") and `/trust.html` only say what the pack holds and link there.
+
+**Where they live.** The documents are Markdown with front matter under
+`compliance/` at the repository root, listed by the manifest
+`src/data/compliance/manifest.ts` (id, kind, title, summary, covered
+products, version, date and files), with the control matrix in
+`src/data/compliance/controls.ts`; `src/data/compliance/types.ts` is the
+contract between them and the service. The build bundles every file under
+`compliance/` into the server (`src/server/compliance-files.ts`, a Vite
+glob), so the licensing image needs no file access at run time and a
+document is exactly what the repository held when the image was built. The
+CSV and JSON of the control matrix and the JSON of the manifest are
+generated on request (`src/server/compliance.ts`): the CSV has one row per
+control and product, RFC 4180 quoting, CRLF line ends and a UTF-8 byte order
+mark so Excel reads it as UTF-8.
+
+**Access.** Per account, granted by an administrator on the account's page
+at `/admin/accounts/<id>` (Grant / Revoke) and listed at `/admin/compliance`
+with who granted it and when. Access holds only while the account is
+enabled and its email confirmed; administrators read everything. Without
+it, `/account/compliance` explains the pack and links the contact form with
+the topic *Compliance documentation* (`/contact.html?product=compliance`);
+a download without it is a `403`, recorded as `access.denied` with reason
+`compliance_not_granted`.
+
+**The publish gate.** An artifact in the manifest reaches customers only
+once an administrator publishes it at `/admin/compliance`; until then only
+administrators see it, marked *Not published*, and a customer's direct
+download of it is a `404`. Unpublishing takes it back. The state is the
+`compliance_artifacts` table (migration 5, with the two access columns on
+`accounts`).
+
+**Pages and routes.** `/account/compliance` (the artifacts by kind, with
+version, date, covered products and files; *Download everything*),
+`/account/compliance/<id>` (the document rendered, its files),
+`/account/compliance/controls` (the control matrix as a table, `?product=`
+to narrow it, CSV and JSON links), `/account/compliance/<id>/<file>` and
+`/account/compliance/package.zip` (the downloads: `Content-Disposition:
+attachment`, the manifest's content type, `Cache-Control: private,
+no-store`). The ZIP holds every file of every artifact the account may see
+under `<artifact id>/<file>` plus a `README.txt` naming the versions and
+the date; it is written in memory by a store-only writer of our own
+(`src/server/zip.ts`, `node:zlib`'s `crc32`, no dependency). More than 120
+downloads in an hour from one account is a `429`.
+
+**Audit.** `compliance.granted` and `compliance.revoked` (authorization),
+`compliance.published` and `compliance.unpublished` (configuration), and
+`compliance.downloaded` (data, with the artifact and file; the package as
+`package` / `package.zip`), which customers see in their own history.
+`/admin/compliance` counts downloads per artifact from these events.
+
+**The portal's own SBOM.** `npm run build` first runs `scripts/sbom.mjs`,
+which writes `npm sbom --sbom-format spdx --omit dev` to
+`compliance/sbom/generated/ens-products-page.spdx.json` (gitignored but for
+its `.gitkeep`), so the SBOM artifact can list it and it is bundled with the
+rest. It needs `node_modules` installed and the `version` in
+`package.json`, which npm requires to name the package. The Dockerfile's
+build stage copies `compliance/` and the script for this.
+
+Tests: `src/server/compliance.test.ts` (access rules, the publish gate, the
+audit events, the CSV, the ZIP read back, the routes) on a fixture manifest.
 
 ## Demo links
 
@@ -557,7 +628,7 @@ src/
     trust.astro             For security reviewers: supply chain, releases, audit, FIPS/STIG, disclosure
     404.astro, licensing-unavailable.astro
     products/               One page per product, each ending in its pricing
-    account/                Customer licensing pages (rendered on demand)
+    account/                Customer licensing pages (rendered on demand), compliance/ the documentation pack
     admin/                  ENS staff licensing pages (rendered on demand)
     api/licensing/          Public keys, license status, health, the contact form's endpoint
     api/audit/              Audit pull API for SIEMs (bearer token)
@@ -567,6 +638,7 @@ src/
     AccountLayout.astro     Licensing page shell: heading, account nav, notices
   components/
     SiteHeader.astro        Header, with the products menu
+    CompliancePack.astro    A product page's "Documentation pack" section, from the manifest
     SiteFooter.astro
     ProductCard.astro       A product as a card: screenshot, summary, price, docs link
     DemoSwitch.astro        Demo / no-demo blocks for the render script
@@ -582,6 +654,7 @@ src/
     pricing.ts              Every price and pricing rule
     licensing.ts            Features per product (and which are still planned), editions, evaluation size
     contact.ts              The contact form's topics, field limits, honeypot and endpoint
+    compliance/             The documentation pack's types, manifest, control matrix and kind labels
     examples.ts             Worked examples quoted on the site
   lib/
     pricing.ts              Pricing arithmetic (pure functions)
@@ -592,7 +665,8 @@ src/
   server/                   The licensing service: config, database and migrations,
                             accounts, sessions, licenses, leads from the contact form,
                             audit trail (audit*.ts: format and chain, store, outputs,
-                            pull API), mail, keys, release bucket (releases.ts)
+                            pull API), mail, keys, release bucket (releases.ts),
+                            the compliance pack (compliance*.ts, zip.ts)
   middleware.ts             Loads the signed-in account on licensing pages
   scripts/                  Browser code: contact form, estimator, savings calculator
   styles/site.css           The whole stylesheet
@@ -601,7 +675,9 @@ public/robots.txt           Crawler rules; names the sitemap
 public/.well-known/security.txt  Security contact (RFC 9116); renew Expires yearly
 licensing/                  The applications' side: Java verifier, Spring example,
                             cross-language fixtures (see licensing/README.md)
+compliance/                 The compliance documentation pack's documents (Markdown)
 scripts/license.mjs         keygen, public-key, inspect, verify
+scripts/sbom.mjs            The portal's own SPDX SBOM, written before each build
 scripts/releases-minio-test.sh  Release downloads end to end, against MinIO in Docker
 nginx/default.conf.template Server config: port 8080, gzip, caching, security headers and CSP, licensing proxy
 docker/docker-entrypoint.d/
@@ -709,7 +785,7 @@ closed) and a detail page. The page itself stays static:
   JSON post from another site fails the browser's preflight, since the
   endpoint answers no CORS headers.
 - Product pages link to `/contact.html?product=readyroom` (or `certalert`,
-  `mfa-portal`, `directory-portal`, `pricing`, `pilot`) to pre-select the
+  `mfa-portal`, `directory-portal`, `pricing`, `pilot`, `compliance`) to pre-select the
   topic; the mapping is `contactTopics` in `src/data/products.ts`, and the
   topic list the form shows and the service accepts is `contactTopicList`
   in `src/data/contact.ts`.

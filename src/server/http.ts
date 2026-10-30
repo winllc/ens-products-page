@@ -65,6 +65,10 @@ export const notices = {
     'license-reinstated': 'The license is reinstated.',
     'account-updated': 'The account is updated.',
     'verification-sent': 'We have sent you another confirmation link.',
+    'compliance-granted': 'The account can now read the compliance documentation pack.',
+    'compliance-revoked': 'The account can no longer read the compliance documentation pack.',
+    'compliance-published': 'The artifact is published: accounts with access can download it.',
+    'compliance-unpublished': 'The artifact is unpublished: only administrators see it now.',
 } as const;
 
 export type NoticeKey = keyof typeof notices;

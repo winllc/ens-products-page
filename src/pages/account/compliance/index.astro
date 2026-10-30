@@ -1,0 +1,129 @@
+---
+export const prerender = false;
+
+/*
+ * The compliance documentation pack. Without access: what the pack holds
+ * (from the manifest) and how to ask for it. With access: the artifacts by
+ * kind, each with its version, date, covered products and files, and the
+ * ZIP of everything. Administrators also see what is not yet published.
+ */
+
+import { artifactKindLabels, artifactKinds } from '../../../data/compliance/kinds';
+import { complianceArtifacts } from '../../../data/compliance/manifest';
+import { products } from '../../../data/products';
+import AccountLayout from '../../../layouts/AccountLayout.astro';
+import { formatBytes } from '../../../lib/releases';
+import { isAdmin } from '../../../server/accounts';
+import { PACKAGE_NAME, canRead, fileSize, visibleArtifacts } from '../../../server/compliance';
+import { requireAccount } from '../../../server/http';
+
+const account = requireAccount(Astro);
+if (account instanceof Response) return account;
+
+const access = canRead(account);
+const admin = isAdmin(account);
+const verified = account.email_verified_at !== null;
+const artifacts = visibleArtifacts(account);
+const groups = artifactKinds.map((kind) => ({ kind, label: artifactKindLabels[kind], items: artifacts.filter((a) => a.kind === kind) })).filter((g) => g.items.length);
+const covers = (p: (typeof complianceArtifacts)[number]['products']) =>
+    p === 'all' ? 'All products' : p.map((id) => products.find((x) => x.id === id)?.name ?? id).join(', ');
+---
+<AccountLayout title="Compliance documentation" section="compliance">
+    <p slot="lede" class="lede">
+        The documentation pack for security reviewers: the NIST SP 800-53 control matrix, software bills of
+        materials, and the vulnerability management, secure development and supply chain documents.
+    </p>
+
+    {!access ? (
+        <>
+            <div class="callout">
+                <p>
+                    <strong>Access is granted per account by ENS.</strong>{' '}
+                    {verified ? (
+                        <>Tell us who you are and which product you are reviewing, and we will enable it for this account.</>
+                    ) : (
+                        <>Confirm your email address first; then tell us which product you are reviewing, and we will enable it for this account.</>
+                    )}
+                </p>
+                <p>
+                    <a class="btn btn--primary" href="/contact.html?product=compliance">Request access</a>
+                </p>
+            </div>
+            <h2 class="section-gap">What the pack contains</h2>
+            {complianceArtifacts.length === 0 ? (
+                <p class="muted">The pack is being assembled; its contents will be listed here.</p>
+            ) : (
+                <ul class="compliance-summary">
+                    {complianceArtifacts.map((a) => (
+                        <li>
+                            <span class="pill">{artifactKindLabels[a.kind]}</span>
+                            <strong>{a.title}</strong>
+                            <span class="muted"> &mdash; {a.summary}</span>
+                            <span class="small muted"> ({covers(a.products)})</span>
+                        </li>
+                    ))}
+                </ul>
+            )}
+        </>
+    ) : (
+        <>
+            {artifacts.length > 0 && (
+                <div class="btn-row btn-row--top">
+                    <a class="btn btn--primary" href={`/account/compliance/${PACKAGE_NAME}`} download>Download everything</a>
+                    <span class="small muted">
+                        One ZIP with every file below, each artifact in its own folder{admin && artifacts.some((a) => !a.published) && <>, the unpublished ones included</>}.
+                    </span>
+                </div>
+            )}
+
+            {artifacts.length === 0 && <p class="muted">Nothing is published yet. Check back soon, or <a href="/contact.html?product=compliance">ask us</a> for a document you need now.</p>}
+
+            {groups.map((g) => (
+                <section class="compliance-group" aria-labelledby={`kind-${g.kind}`}>
+                    <h2 id={`kind-${g.kind}`}>{g.label}</h2>
+                    {g.items.map((a) => (
+                        <article class="compliance-artifact">
+                            <h3>
+                                <a href={`/account/compliance/${a.id}`}>{a.title}</a>
+                                {!a.published && <span class="pill pill--unpublished">Not published</span>}
+                            </h3>
+                            <p class="muted">{a.summary}</p>
+                            <dl class="data-list">
+                                <div><dt>Version</dt><dd>{a.version}</dd></div>
+                                <div><dt>Revised</dt><dd>{a.date}</dd></div>
+                                <div><dt>Covers</dt><dd>{covers(a.products)}</dd></div>
+                            </dl>
+                            <div class="table-scroll">
+                                <table class="release-files">
+                                    <caption class="visually-hidden">Files of {a.title}</caption>
+                                    <thead>
+                                    <tr>
+                                        <th scope="col">File</th>
+                                        <th scope="col">What it is</th>
+                                        <th scope="col" class="num">Size</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {a.files.map((f) => {
+                                        const size = fileSize(f);
+                                        return (
+                                            <tr>
+                                                <th scope="row"><a href={`/account/compliance/${a.id}/${f.name}`}>{f.name}</a></th>
+                                                <td>{f.title}</td>
+                                                <td class="num">{size === null ? <span class="muted">—</span> : formatBytes(size)}</td>
+                                            </tr>
+                                        );
+                                    })}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {a.kind === 'nist-800-53' && (
+                                <p class="small"><a href="/account/compliance/controls">Browse the control matrix</a></p>
+                            )}
+                        </article>
+                    ))}
+                </section>
+            ))}
+        </>
+    )}
+</AccountLayout>
