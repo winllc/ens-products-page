@@ -50,7 +50,7 @@ const docs = (page: string) => docsUrl(`readyroom/${page}`);
         <ul class="mock-legend">
             <li><span class="dot dot--in"></span>Checked in<b>8</b></li>
             <li><span class="dot dot--wfh"></span>Work from home<b>2</b></li>
-            <li><span class="dot dot--tdy"></span>TDY<b>1</b></li>
+            <li><span class="dot dot--tdy"></span>Temporary duty<b>1</b></li>
             <li><span class="dot dot--none"></span>Unaccounted for<b>1</b></li>
         </ul>
         <div class="mock-row">
@@ -135,12 +135,13 @@ const docs = (page: string) => docsUrl(`readyroom/${page}`);
                 <h3>From the calendar</h3>
                 <p class="muted">
                     People drag across days on their calendar to set a status ahead of time, and it is
-                    shown in place of workstation activity &mdash; so someone who is TDY is accounted for,
-                    not missing.
+                    shown in place of workstation activity &mdash; so someone on temporary duty or in training
+                    is accounted for, not missing.
                 </p>
                 <ul class="tag-list">
                     <li>Work from home</li>
-                    <li>TDY</li>
+                    <li>Temporary duty</li>
+                    <li>Training</li>
                     <li>Out of office</li>
                     <li>Scheduled leave</li>
                     <li>Late arrival</li>
@@ -148,7 +149,7 @@ const docs = (page: string) => docsUrl(`readyroom/${page}`);
                 </ul>
                 <p class="muted small">
                     A late arrival or early leave is set by the person; a status that excuses an absence,
-                    such as leave, telework or TDY, is requested and approved by their manager or a
+                    such as leave, telework, temporary duty or training, is requested and approved by their manager or a
                     delegate on the Approvals page. Managers can also record unscheduled leave and
                     excused or unexcused absences when they follow up on an alert.
                 </p>
