@@ -271,7 +271,7 @@ Feature ids per product, as the applications should check them:
 | `certalert` | `directory-sync`, `changelog-sync`, `notifications`, `metrics`, `projects`, `revocation-checks`, `endpoint-checks`, `risky-names`, `directory-cleanup`, `classification-banners`; reserved, not issued: `multi-directory` (Enterprise, on the roadmap) |
 | `mfa-portal` | `self-service`, `trusted-agents`, `help-desk`, `shipments`, `scheduled-jobs`, `branding`, `reports`, `bulk-upload`, `group-email` |
 | `readyroom` | `attendance`, `calendar`, `absence-alerts`, `metrics` (metrics, reports and CSV, Excel, PDF and scheduled exports), `org-chart`, `classification-banners` |
-| `directory-portal` | `directory-editor`, `form-builder`, `self-service-profile`, `white-pages`, `smart-card-sign-in`, `metrics`, `data-analysis`, `schema-transfer` |
+| `directory-portal` | `directory-editor`, `form-builder`, `self-service-profile`, `white-pages`, `smart-card-sign-in`, `metrics`, `data-analysis`, `schema-transfer`; Enterprise: `multi-directory` |
 
 Ship every app with all of a product's features gated from the start, even
 those every license includes today: a feature that's checked can be moved to
