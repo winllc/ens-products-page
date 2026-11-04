@@ -238,7 +238,7 @@ const docs = (page: string) => docsUrl(`directory-services-portal/${page}`);
                 },
                 {
                     label: 'Directory servers',
-                    detail: 'Any LDAP v3 server over LDAP, LDAPS or StartTLS, with a pooled service account. The automated tests run against an embedded directory; the install guide&rsquo;s matrix says plainly which servers have and have not been tested, so check yours on a test instance first.',
+                    detail: 'Any LDAP v3 server over LDAP, LDAPS or StartTLS, with a pooled service account and failover across a directory&rsquo;s replicas. With the Enterprise feature Multiple directories, one portal serves several directories, each with its own servers, service account, sign-in and administrators. The automated tests run against an embedded directory; the install guide&rsquo;s matrix says plainly which servers have and have not been tested, so check yours on a test instance first.',
                     docs: { href: docs('install/'), label: 'What is tested' },
                 },
                 {
@@ -283,7 +283,7 @@ const docs = (page: string) => docsUrl(`directory-services-portal/${page}`);
                 { label: 'REST API and webhooks', status: 'partial', note: 'A scoped API with an OpenAPI document and signed webhooks; no SCIM.' },
                 { label: 'Password change, reset and unlock', status: 'not-yet', note: 'The portal does not change passwords.' },
                 { label: 'Approval workflows', status: 'not-yet', note: 'Every permitted write applies at once; no second approver.' },
-                { label: 'Several directories with failover', status: 'not-yet', note: 'One directory server URL per installation.' },
+                { label: 'Several directories with failover', status: 'included', note: 'Each directory fails over across its own servers; several directories (forests or enclaves) in one portal is the Enterprise feature Multiple directories.' },
             ]}
         />
     </div>
@@ -314,7 +314,7 @@ const docs = (page: string) => docsUrl(`directory-services-portal/${page}`);
                 </tr>
                 <tr>
                     <th scope="row">Directory</th>
-                    <td>Any LDAP v3 server over LDAP, LDAPS or StartTLS. The service account needs read access to the schema and the exposed parts of the tree, and write access wherever users edit. The install guide lists which servers the automated tests cover</td>
+                    <td>Any LDAP v3 server over LDAP, LDAPS or StartTLS, with failover across several servers of the directory, and several directories in one portal with the Enterprise feature Multiple directories. The service account needs read access to the schema and the exposed parts of the tree, and write access wherever users edit. The install guide lists which servers the automated tests cover</td>
                 </tr>
                 <tr>
                     <th scope="row">Storage</th>

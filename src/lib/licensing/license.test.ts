@@ -162,6 +162,18 @@ describe('issuing', () => {
         expect(productFeatures.certalert.find((f) => f.id === 'multi-directory')).toMatchObject({ enterprise: true, roadmap: true });
     });
 
+    it('issues the Directory Services Portal\'s multiple directories only as an enterprise feature', () => {
+        const small = buildPayload({ product: 'directory-portal', edition: 'subscription', licensee, quantity: 1_000 }, { id: 'x', revision: 1, now });
+        const flagged = buildPayload({ product: 'directory-portal', edition: 'subscription', licensee, quantity: 1_000, enterprise: true }, { id: 'x', revision: 1, now });
+        const pilot = buildPayload({ product: 'directory-portal', edition: 'pilot', licensee, quantity: 100 }, { id: 'x', revision: 1, now });
+        expect(small.features).not.toContain('directory-portal.multi-directory');
+        expect(small.features).toContain('directory-portal.directory-editor');
+        expect(flagged.features).toContain('directory-portal.multi-directory');
+        expect(pilot.features).toContain('directory-portal.multi-directory');
+        expect(productFeatures['directory-portal'].find((f) => f.id === 'multi-directory')).toMatchObject({ enterprise: true });
+        expect(productFeatures['directory-portal'].find((f) => f.id === 'multi-directory')?.roadmap).toBeFalsy();
+    });
+
     it('gives a perpetual license no expiry and a year of maintenance', () => {
         const p = buildPayload({ product: 'readyroom', edition: 'perpetual', licensee, quantity: 400 }, { id: 'x', revision: 1, now });
         expect(p.expiresAt).toBeNull();

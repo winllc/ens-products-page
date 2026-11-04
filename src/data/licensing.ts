@@ -100,6 +100,7 @@ export const productFeatures: Record<ProductId, readonly Feature[]> = {
         { id: 'metrics', name: 'Metrics and dashboards', description: 'Counts and trends across the directory, on dashboards you build.' },
         { id: 'data-analysis', name: 'Data-quality analysis', description: 'Finds missing, malformed and duplicate data, with CSV export of the findings.' },
         { id: 'schema-transfer', name: 'Schema import and export', description: 'Moves schema between directories.' },
+        { id: 'multi-directory', name: 'Multiple directories', description: 'Several LDAP directories, each with failover, in one portal.', enterprise: true },
     ],
 };
 
