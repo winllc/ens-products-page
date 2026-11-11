@@ -2,7 +2,7 @@
 export const prerender = false;
 
 import { editions } from '../../data/licensing';
-import { product } from '../../data/products';
+import { licensedProduct } from '../../data/products';
 import AccountLayout from '../../layouts/AccountLayout.astro';
 import { formatCount } from '../../lib/pricing';
 import { LicenseError, type LicensePayload } from '../../lib/licensing/license';
@@ -47,7 +47,7 @@ const stale = result?.known && result.known.revision > result.payload.revision;
         <div class="callout callout--ok">
             <p><strong>Genuine.</strong> Signed by ENS Solutions and unchanged.</p>
             <dl class="data-list">
-                <div><dt>Product</dt><dd>{product(result.payload.product).name}</dd></div>
+                <div><dt>Product</dt><dd>{licensedProduct(result.payload.product).name}</dd></div>
                 <div><dt>Edition</dt><dd>{editions[result.payload.edition].name}</dd></div>
                 <div><dt>Licensee</dt><dd>{result.payload.licensee.organization || result.payload.licensee.name}</dd></div>
                 <div><dt>Covers</dt><dd>{formatCount(result.payload.limit.quantity)} {result.payload.limit.unit}</dd></div>

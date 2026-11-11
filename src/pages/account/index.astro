@@ -4,7 +4,7 @@ export const prerender = false;
 import LicenseTable from '../../components/licensing/LicenseTable.astro';
 import { editions, EVALUATION_EXTENSION_DAYS, evaluationLimit } from '../../data/licensing';
 import { productPricing } from '../../data/pricing';
-import { products } from '../../data/products';
+import { licensedProducts } from '../../data/products';
 import AccountLayout from '../../layouts/AccountLayout.astro';
 import { formatCount } from '../../lib/pricing';
 import { auditFor } from '../../server/audit';
@@ -53,7 +53,7 @@ const activity = auditFor({ account: account.id, customer: true }, 15);
         evaluation banner and are not for production use.
     </p>
     <div class="card-grid card-grid--pairs">
-        {products.map((p) => {
+        {licensedProducts.map((p) => {
             const available = verified && canTakeEvaluation(account, p.id);
             const taken = !canTakeEvaluation(account, p.id);
             const existing = taken ? evaluationOf(p.id) : undefined;

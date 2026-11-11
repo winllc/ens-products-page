@@ -5,7 +5,7 @@
  */
 import { editions, productFeatures } from '../../data/licensing';
 import { supportTiers } from '../../data/pricing';
-import { product } from '../../data/products';
+import { licensedProduct } from '../../data/products';
 import { formatCount } from '../../lib/pricing';
 import { dateOnly } from '../../server/http';
 import type { License } from '../../server/licenses';
@@ -17,7 +17,7 @@ interface Props {
 
 const { license } = Astro.props;
 const p = license.payload;
-const info = product(license.product);
+const info = licensedProduct(license.product);
 const all = productFeatures[license.product];
 const unlocked = new Set(p.features);
 const support = supportTiers.find((t) => t.id === p.support);

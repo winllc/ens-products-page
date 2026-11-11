@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { products, type ProductId } from '../../data/products';
+import { licensedProducts, type ProductId } from '../../data/products';
 import { form, requireAccount, withNotice } from '../../server/http';
 import { issueEvaluation, LicenseActionError } from '../../server/licenses';
 
@@ -10,7 +10,7 @@ export const POST: APIRoute = async (ctx) => {
     if (account instanceof Response) return account;
     const get = await form(ctx);
     const id = get('product');
-    if (!products.some((p) => p.id === id)) {
+    if (!licensedProducts.some((p) => p.id === id)) {
         return new Response('Unknown product', { status: 400 });
     }
     try {

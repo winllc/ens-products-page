@@ -13,7 +13,7 @@ export const prerender = false;
  */
 
 import ReleaseFiles from '../../../components/licensing/ReleaseFiles.astro';
-import { products, type Product } from '../../../data/products';
+import { licensedProducts, type LicensedProduct } from '../../../data/products';
 import AccountLayout from '../../../layouts/AccountLayout.astro';
 import type { Account } from '../../../server/accounts';
 import { requireAccount } from '../../../server/http';
@@ -35,12 +35,12 @@ const cfg = releasesConfig();
 const verified = account.email_verified_at !== null;
 
 type Shown =
-    | { product: Product; entitled: false; canEvaluate: boolean }
-    | { product: Product; entitled: true; releases: ProductReleases | null; files: Map<string, ReleaseFile[]> };
+    | { product: LicensedProduct; entitled: false; canEvaluate: boolean }
+    | { product: LicensedProduct; entitled: true; releases: ProductReleases | null; files: Map<string, ReleaseFile[]> };
 
 const me: Account = account;
 
-async function load(product: Product): Promise<Shown> {
+async function load(product: LicensedProduct): Promise<Shown> {
     if (!canDownload(me, product.id)) {
         return { product, entitled: false, canEvaluate: verified && canTakeEvaluation(me, product.id) };
     }
@@ -54,7 +54,7 @@ async function load(product: Product): Promise<Shown> {
     }
 }
 
-const shown = cfg ? await Promise.all(products.map(load)) : [];
+const shown = cfg ? await Promise.all(licensedProducts.map(load)) : [];
 const entitledAny = shown.some((s) => s.entitled);
 const ordered = (r: ProductReleases): ReleaseVersion[] => [...r.versions.filter((v) => v.latest), ...r.versions.filter((v) => !v.latest)];
 ---

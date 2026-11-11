@@ -181,6 +181,16 @@ describe('administration', () => {
         expect(licenses.reinstateLicense(admin, revoked).status).toBe('valid');
     });
 
+    it('issues syncd evaluations, though syncd is not listed on the site yet', async () => {
+        const a = await verifiedAccount();
+        const l = licenses.issueEvaluation(a, 'syncd');
+        expect(l.payload.product).toBe('syncd');
+        expect(l.payload.limit).toEqual({ quantity: 50_000, unit: 'managed identities' });
+        expect(l.payload.features).toContain('syncd.password-sync');
+        expect(l.payload.features).not.toContain('syncd.extensibility');
+        expect(licenses.downloadLicense(a, l).content).toContain('# Product:      syncd');
+    });
+
     it('signs a file the applications can tell has been edited', async () => {
         const a = await verifiedAccount();
         const l = licenses.issueEvaluation(a, 'directory-portal');

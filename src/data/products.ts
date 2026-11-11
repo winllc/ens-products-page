@@ -6,10 +6,18 @@
  * every product page, the pricing page, the estimator, and the contact form's
  * topic list. Adding a product starts with an entry here, then its page under
  * src/pages/products/ (built on ProductLayout) and its tiers in
- * src/data/pricing.ts.
+ * src/data/pricing.ts. A product licensed before it is listed goes in
+ * licensedProducts instead, with its tiers and features but no page.
  */
 
-export type ProductId = 'certalert' | 'mfa-portal' | 'readyroom' | 'directory-portal';
+import { docsUrl } from './site';
+
+/**
+ * Every product the licensing portal issues licenses for. syncd is licensed
+ * through the portal but not yet listed on the site: it has no product page,
+ * card or price list, so it is in licensedProducts below and not in products.
+ */
+export type ProductId = 'certalert' | 'mfa-portal' | 'readyroom' | 'directory-portal' | 'syncd';
 
 /** A screenshot at two sizes: full width, and a narrower crop for phones. */
 export interface Screenshot {
@@ -143,12 +151,53 @@ export function product(id: ProductId): Product {
     return found;
 }
 
+/** What the licensing pages need to know about a product. */
+export interface LicensedProduct {
+    id: ProductId;
+    name: string;
+    /** One-line positioning, as on the account page's evaluation cards. */
+    tagline: string;
+    /** The product page, or its documentation when it has no page on the site yet. */
+    href: string;
+    /** The product's section of the documentation site. */
+    docsPath: string;
+}
+
+/**
+ * The products the licensing portal issues licenses, evaluations and
+ * downloads for: everything on the site, then the products licensed before
+ * they are listed. The account, admin and licensing pages read this list;
+ * the marketing pages read products.
+ */
+export const licensedProducts: readonly LicensedProduct[] = [
+    ...products,
+    {
+        id: 'syncd',
+        name: 'syncd',
+        tagline: 'Identity synchronization',
+        href: docsUrl('syncd/'),
+        docsPath: 'syncd',
+    },
+];
+
+export function licensedProduct(id: ProductId): LicensedProduct {
+    const found = licensedProducts.find((p) => p.id === id);
+    if (!found) {
+        throw new Error(`Unknown product: ${id}`);
+    }
+    return found;
+}
+
+export function isProductId(id: unknown): id is ProductId {
+    return licensedProducts.some((p) => p.id === id);
+}
+
 /**
  * Contact form topics, keyed by the ?product= value that pre-selects them.
  * Product pages, the pricing page and the estimator link here.
  */
 export const contactTopics: Readonly<Record<string, string>> = {
-    ...Object.fromEntries(products.map((p) => [p.id, p.name])),
+    ...Object.fromEntries(licensedProducts.map((p) => [p.id, p.name])),
     pricing: 'Pricing and quotes',
     pilot: 'Paid pilot',
     compliance: 'Compliance documentation',

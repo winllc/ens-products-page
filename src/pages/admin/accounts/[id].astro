@@ -5,7 +5,7 @@ import AuditList from '../../../components/licensing/AuditList.astro';
 import LicenseTable from '../../../components/licensing/LicenseTable.astro';
 import { editions, sellableEnterpriseFeatures, type Edition } from '../../../data/licensing';
 import { productPricing, supportTiers, type SupportTierId } from '../../../data/pricing';
-import { products, type ProductId } from '../../../data/products';
+import { licensedProducts, type ProductId } from '../../../data/products';
 import AccountLayout from '../../../layouts/AccountLayout.astro';
 import { AccountError, accountById, isAdmin, setDisabled, setRole } from '../../../server/accounts';
 import { auditFor } from '../../../server/audit';
@@ -31,7 +31,7 @@ if (Astro.request.method === 'POST') {
                 const product = get('product') as ProductId;
                 const edition = get('edition') as Edition;
                 const support = get('support') as SupportTierId;
-                if (!products.some((p) => p.id === product)) throw new LicenseActionError('Choose a product');
+                if (!licensedProducts.some((p) => p.id === product)) throw new LicenseActionError('Choose a product');
                 if (!editionChoices.includes(edition)) throw new LicenseActionError('Choose an edition');
                 if (!supportTiers.some((t) => t.id === support)) throw new LicenseActionError('Choose a support tier');
                 const years = Number(get('years')) || 1;
@@ -123,7 +123,7 @@ const enterpriseFeatures = sellableEnterpriseFeatures();
                 <div class="field">
                     <label for="product">Product</label>
                     <select id="product" name="product" required>
-                        {products.map((p) => <option value={p.id}>{p.name} ({productPricing[p.id].unit})</option>)}
+                        {licensedProducts.map((p) => <option value={p.id}>{p.name} ({productPricing[p.id].unit})</option>)}
                     </select>
                 </div>
                 <div class="field">
@@ -133,7 +133,7 @@ const enterpriseFeatures = sellableEnterpriseFeatures();
                     </select>
                 </div>
                 <div class="field">
-                    <label for="quantity">Covers (users or tracked people)</label>
+                    <label for="quantity">Covers (users, tracked people or managed identities)</label>
                     <input id="quantity" name="quantity" type="number" min="1" step="1" required value="2500">
                 </div>
                 <div class="field">

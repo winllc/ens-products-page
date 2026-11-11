@@ -1,6 +1,6 @@
 ---
 import { editions } from '../../data/licensing';
-import { product } from '../../data/products';
+import { licensedProduct } from '../../data/products';
 import { formatCount } from '../../lib/pricing';
 import { dateOnly } from '../../server/http';
 import type { License } from '../../server/licenses';
@@ -32,8 +32,8 @@ const { licenses, detailBase, showOwner = false } = Astro.props;
         {licenses.map((l) => (
             <tr>
                 <th scope="row">
-                    <a href={`${detailBase}${l.id}`}>{l.label || product(l.product).name}</a>
-                    <span class="th-note">{product(l.product).name} &middot; <span class="mono">{l.id}</span></span>
+                    <a href={`${detailBase}${l.id}`}>{l.label || licensedProduct(l.product).name}</a>
+                    <span class="th-note">{licensedProduct(l.product).name} &middot; <span class="mono">{l.id}</span></span>
                 </th>
                 {showOwner && <td>{l.owner_email}</td>}
                 <td>{editions[l.edition].name}</td>
