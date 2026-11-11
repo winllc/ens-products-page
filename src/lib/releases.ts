@@ -16,14 +16,16 @@ import type { ProductId } from '../data/products';
 
 /**
  * Each product's folder in the bucket. Not the ProductId: the folders are
- * named after the application repositories, as their CI writes them. The
- * main package is `<prefix>-<version>.tar.gz`.
+ * named after the application repositories, as their CI writes them, except
+ * syncd's, which is named after its packages (ldap-sync-merge-view builds
+ * syncd-<version>.tar.gz). The main package is `<prefix>-<version>.tar.gz`.
  */
 export const RELEASE_PREFIX: Record<ProductId, string> = {
     certalert: 'cert-alert',
     'directory-portal': 'directory-services-portal',
     readyroom: 'readyroom',
     'mfa-portal': 'rsa-operations-portal',
+    syncd: 'syncd',
 };
 
 /** X.Y.Z, or X.Y.Z-suffix (dot-separated identifiers) for a pre-release. */

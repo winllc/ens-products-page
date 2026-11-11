@@ -4,7 +4,7 @@ export const prerender = false;
 import AuditList from '../../../components/licensing/AuditList.astro';
 import LicenseDetails from '../../../components/licensing/LicenseDetails.astro';
 import { editions, EVALUATION_EXTENSION_DAYS } from '../../../data/licensing';
-import { product } from '../../../data/products';
+import { licensedProduct } from '../../../data/products';
 import AccountLayout from '../../../layouts/AccountLayout.astro';
 import { auditFor } from '../../../server/audit';
 import { form, requireAccount, withNotice } from '../../../server/http';
@@ -40,7 +40,7 @@ if (Astro.request.method === 'POST') {
     }
 }
 
-const info = product(license.product);
+const info = licensedProduct(license.product);
 const activity = auditFor({ license: license.id, customer: true }, 25);
 const usable = license.status !== 'revoked';
 const evaluation = license.edition === 'evaluation';

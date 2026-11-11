@@ -6,7 +6,7 @@
  */
 import { editions, EVALUATION_EXTENSION_DAYS, evaluationLimit, OVERAGE_TOLERANCE, productFeatures, type Edition } from '../data/licensing';
 import { productPricing } from '../data/pricing';
-import { products } from '../data/products';
+import { licensedProducts } from '../data/products';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { formatCount, formatPercent } from '../lib/pricing';
 
@@ -43,7 +43,7 @@ const how: Record<Edition, string> = {
         <h2 id="steps-heading">How it works</h2>
         <ol class="flow-steps">
             <li><strong>Create an account and confirm your email.</strong> Use your work address; your name and organization go on your license files.</li>
-            <li><strong>Download an evaluation license.</strong> One click per product, valid for {editions.evaluation.days} days with every feature, sized for a real directory: {products.map((p, i) => <>{i > 0 && (i === products.length - 1 ? ' and ' : ', ')}{formatCount(evaluationLimit(p.id))} {productPricing[p.id].unit} for {p.name}</>)}.</li>
+            <li><strong>Download an evaluation license.</strong> One click per product, valid for {editions.evaluation.days} days with every feature, sized for a real directory: {licensedProducts.map((p, i) => <>{i > 0 && (i === licensedProducts.length - 1 ? ' and ' : ', ')}{formatCount(evaluationLimit(p.id))} {productPricing[p.id].unit} for {p.name}</>)}.</li>
             <li><strong>Install the file.</strong> Copy it to the server and point the application at it. It checks the file offline, so it works on networks with no internet route.</li>
             <li><strong>Buy when you&rsquo;re ready.</strong> Once your order is in, we issue the subscription, pilot or perpetual license into your account. Renewals and upgrades arrive the same way.</li>
         </ol>
@@ -152,7 +152,7 @@ const how: Record<Edition, string> = {
         <h2 id="features-heading">What a license unlocks</h2>
         <p class="lede">Every license includes all of a product&rsquo;s features. Features marked planned are on the roadmap and not yet in the product; they are not part of any license today.</p>
         <div class="card-grid card-grid--pairs">
-            {products.map((p) => (
+            {licensedProducts.map((p) => (
                 <article class="card">
                     <h3><a href={p.href}>{p.name}</a></h3>
                     <ul class="ticks">

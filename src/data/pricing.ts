@@ -77,6 +77,19 @@ export const productPricing: Readonly<Record<ProductId, ProductPricing>> = {
             { upTo: null, annual: null },
         ],
     },
+    // Licensed through the portal but not on the site's price list yet, so
+    // every band is priced on request. The bands size licenses and evaluations.
+    syncd: {
+        unit: 'managed identities',
+        unitNote:
+            'Sized by the people syncd manages across all its views. Groups, computed groups and staged records that never join a view are not counted.',
+        tiers: [
+            { upTo: 10_000, annual: null },
+            { upTo: 50_000, annual: null },
+            { upTo: 250_000, annual: null },
+            { upTo: null, annual: null },
+        ],
+    },
 };
 
 /**

@@ -3,7 +3,7 @@ export const prerender = false;
 
 import AuditList from '../../../components/licensing/AuditList.astro';
 import LicenseDetails from '../../../components/licensing/LicenseDetails.astro';
-import { product } from '../../../data/products';
+import { licensedProduct } from '../../../data/products';
 import AccountLayout from '../../../layouts/AccountLayout.astro';
 import { accountById } from '../../../server/accounts';
 import { auditFor } from '../../../server/audit';
@@ -61,7 +61,7 @@ const keys = signingKeys();
 const signedWith = new Set(license.key_id.split(','));
 const missing = keys.filter((k) => !signedWith.has(k.id));
 ---
-<AccountLayout title={license.label || product(license.product).name} eyebrow="Administration" section="admin-licenses" error={error}>
+<AccountLayout title={license.label || licensedProduct(license.product).name} eyebrow="Administration" section="admin-licenses" error={error}>
     <p slot="lede" class="lede">
         Held by <a href={`/admin/accounts/${owner.id}`}>{owner.name}</a> ({owner.email}{owner.organization && <>, {owner.organization}</>})
     </p>

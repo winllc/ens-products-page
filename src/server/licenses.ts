@@ -13,7 +13,7 @@
  */
 
 import { editions, EVALUATION_EXTENSION_DAYS, EVALUATIONS_PER_PRODUCT, type Edition } from '../data/licensing';
-import { product as productInfo, type ProductId } from '../data/products';
+import { licensedProduct as productInfo, type ProductId } from '../data/products';
 import { buildPayload, newLicenseId, normalizeInstallationId, type IssueRequest } from '../lib/licensing/issue';
 import {
     keyAlgorithm,

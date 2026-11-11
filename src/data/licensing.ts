@@ -102,6 +102,19 @@ export const productFeatures: Record<ProductId, readonly Feature[]> = {
         { id: 'schema-transfer', name: 'Schema import and export', description: 'Moves schema between directories.' },
         { id: 'multi-directory', name: 'Multiple directories', description: 'Several LDAP directories, each with failover, in one portal.', enterprise: true },
     ],
+    // The core features are every license's; the enterprise features are the
+    // packs syncd is sold with (its docs/PLAN.md, section 9.1).
+    syncd: [
+        { id: 'directory-connectors', name: 'Directory connectors', description: 'Active Directory, OpenLDAP and other LDAP directories as sources and targets, read in full or streamed live.' },
+        { id: 'database-connectors', name: 'Database and file sources', description: 'PostgreSQL, MySQL and MariaDB, and CSV and flat files as sources.' },
+        { id: 'cloud-connectors', name: 'Entra ID and SCIM', description: 'Microsoft Entra ID as a source and target, and SCIM applications as targets.' },
+        { id: 'merged-views', name: 'Merged views and rules', description: 'Correlation, precedence merge and computed attributes written as rules.' },
+        { id: 'console', name: 'Web console', description: 'Design, publish, run, monitor and audit sync configurations from the browser, with reports and webhooks.' },
+        { id: 'enterprise-database', name: 'Enterprise Database pack', description: 'SQL Server and MongoDB sources, and Oracle, Db2 and other databases through the Debezium sidecar or the JDBC bridge.', enterprise: true },
+        { id: 'password-sync', name: 'Password Sync pack', description: 'Initial passwords, self-service password changes and password publishing to targets.', enterprise: true },
+        { id: 'high-availability', name: 'High Availability pack', description: 'Active/passive engines with automatic failover.', enterprise: true },
+        { id: 'extensibility', name: 'Extensibility pack', description: 'Custom functions in WebAssembly and out-of-process connectors.', enterprise: true, roadmap: true },
+    ],
 };
 
 /**

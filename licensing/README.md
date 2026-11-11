@@ -64,7 +64,7 @@ field):
 |---|---|
 | `product` | Must be this application's product id, or the file is refused. |
 | `features` | `"<product>.<feature>"` ids. A feature is usable only if listed. The catalog is `src/data/licensing.ts`. |
-| `limit.quantity`, `limit.unit` | Size covered: directory users, SecurID users or tracked people. |
+| `limit.quantity`, `limit.unit` | Size covered: directory users, SecurID users, tracked people or managed identities. |
 | `notBefore`, `expiresAt`, `graceDays` | Dates. `expiresAt` is null for perpetual. |
 | `maintenanceUntil` | Perpetual only: releases built after it are not covered. |
 | `installationId` | If set, only the installation showing that id accepts the file. |

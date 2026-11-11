@@ -9,7 +9,7 @@
  */
 
 import type { APIRoute } from 'astro';
-import { products, type ProductId } from '../../../../../data/products';
+import { licensedProducts, type ProductId } from '../../../../../data/products';
 import { recordDenied } from '../../../../../server/audit';
 import { requireAccount } from '../../../../../server/http';
 import { canDownload } from '../../../../../server/licenses';
@@ -24,7 +24,7 @@ export const GET: APIRoute = async (ctx) => {
     const account = requireAccount(ctx);
     if (account instanceof Response) return account;
 
-    const product = products.find((p) => p.id === ctx.params.product)?.id as ProductId | undefined;
+    const product = licensedProducts.find((p) => p.id === ctx.params.product)?.id as ProductId | undefined;
     if (!product) return notFound();
 
     if (downloadLimited(account)) {
