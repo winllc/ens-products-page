@@ -92,9 +92,9 @@ export const productFeatures: Record<ProductId, readonly Feature[]> = {
         { id: 'group-email', name: 'Group email', description: 'Messages to every user, trusted agent or site at once.' },
     ],
     'directory-portal': [
-        { id: 'directory-editor', name: 'Directory editor', description: 'Browse, search and edit any LDAP directory through admin-defined forms.' },
+        { id: 'directory-editor', name: 'Directory editor', description: 'Browse, search and edit any LDAP directory through admin-defined forms. Includes group access: join requests that group owners approve.' },
         { id: 'form-builder', name: 'Form builder', description: 'Definitions and forms for custom schemas, without code.' },
-        { id: 'self-service-profile', name: 'Self-service profiles', description: 'People keep their own directory entries up to date.' },
+        { id: 'self-service-profile', name: 'Self-service profiles', description: 'People keep their own directory entries up to date and ask to join groups, which the groups\' owners approve.' },
         { id: 'white-pages', name: 'White pages', description: 'Directory search for everyone, with per-user and per-group permissions.' },
         { id: 'smart-card-sign-in', name: 'Smart-card sign-in', description: 'X.509 client-certificate sign-in, CAC and PIV included.' },
         { id: 'metrics', name: 'Metrics and dashboards', description: 'Counts and trends across the directory, on dashboards you build.' },

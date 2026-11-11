@@ -127,6 +127,17 @@ const docs = (page: string) => docsUrl(`directory-services-portal/${page}`);
                 </p>
             </article>
             <article class="card">
+                <p class="card-kicker">Group access</p>
+                <h3>Ask to join a group, and its owners decide</h3>
+                <p>
+                    People find a group, see whether they are in it and ask to join with a reason.
+                    The people named as the group&rsquo;s owners approve or reject, and manage its
+                    members, without edit access to the whole directory. Every request, decision and
+                    membership change is audited. It comes with the Directory editor or Self-service
+                    profiles feature.
+                </p>
+            </article>
+            <article class="card">
                 <p class="card-kicker">Validation</p>
                 <h3>Checked twice before it reaches the directory</h3>
                 <p>
@@ -276,13 +287,13 @@ const docs = (page: string) => docsUrl(`directory-services-portal/${page}`);
                 { label: 'Single sign-on', status: 'included', note: 'OpenID Connect and SAML 2.0, beside smart cards and passwords.' },
                 { label: 'Signed releases', status: 'included', note: 'Images and chart signed with cosign, base images pinned by digest, an SPDX SBOM in every download.' },
                 { label: 'Delegated administration', status: 'partial', note: 'View or edit per directory, and API tokens by scope and directory; the administrator role itself is all or nothing.' },
-                { label: 'Group membership', status: 'partial', note: 'Add and remove members, bulk changes and export; no group owners or join requests.' },
+                { label: 'Group membership', status: 'included', note: 'People ask to join a group and its owners approve; owners add and remove members without edit access to the directory. Bulk changes and export for editors.' },
                 { label: 'White pages and org chart', status: 'partial', note: 'Read-only white-pages directories; no org chart view.' },
                 { label: 'Reports for audits', status: 'partial', note: 'Metrics dashboards and data-quality analyses; no inactive, locked or expiring-account reports.' },
                 { label: 'Bulk edit, import and export', status: 'partial', note: 'CSV and LDIF import and export, with a dry run; no multi-select edit, and list views stop at 1,000 entries.' },
                 { label: 'REST API and webhooks', status: 'partial', note: 'A scoped API with an OpenAPI document and signed webhooks; no SCIM.' },
                 { label: 'Password change, reset and unlock', status: 'not-yet', note: 'The portal does not change passwords.' },
-                { label: 'Approval workflows', status: 'not-yet', note: 'Every permitted write applies at once; no second approver.' },
+                { label: 'Approval workflows', status: 'partial', note: 'Requests to join a group go to its owners, and nobody decides their own; every other permitted write applies at once, with no second approver.' },
                 { label: 'Several directories with failover', status: 'included', note: 'Each directory fails over across its own servers; several directories (forests or enclaves) in one portal is the Enterprise feature Multiple directories.' },
             ]}
         />
