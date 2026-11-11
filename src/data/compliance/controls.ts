@@ -128,9 +128,9 @@ export const controls: readonly Control[] = [
             'directory-portal': {
                 status: 'partial',
                 implementation:
-                    'Permissions are granted per definition to users or groups, and self-service edits are limited to the fields and entries that match the signed-in user. There is no approval workflow: every write applies at once, so a second pair of eyes on privileged group changes has to be organised outside the portal.',
-                evidence: [DSP_SRC + 'service/PermissionService.java', DSP_SRC + 'service/Memberships.java', dsp('security')],
-                customerResponsibility: 'Grant write access to privileged definitions narrowly; add an approval step in your own procedures.',
+                    'Permissions are granted per definition to users or groups, and self-service edits are limited to the fields and entries that match the signed-in user. Joining a group through group access is a request that the group\'s owners (named on the group entry) or an editor of its definition approve, and nobody decides their own request; requests and decisions are audited. Every other write, including an editor\'s direct membership change, applies at once, so a second pair of eyes on those has to be organised outside the portal.',
+                evidence: [DSP_SRC + 'service/PermissionService.java', DSP_SRC + 'service/Memberships.java', DSP_SRC + 'groups/GroupService.java', dsp('security'), dsp('admin-guide')],
+                customerResponsibility: 'Grant write access to privileged definitions narrowly, and name owners on privileged groups so joining them goes through a request; add an approval step in your own procedures for other changes.',
             },
             readyroom: {
                 status: 'implemented',
