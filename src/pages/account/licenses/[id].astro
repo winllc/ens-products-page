@@ -64,14 +64,24 @@ const blocker = evaluation ? extensionBlocker(license) : null;
             <strong>Copy the file to the {info.name} server.</strong> The file is plain text and safe to move by
             removable media; it carries no secrets, only a signature.
         </li>
-        <li>
-            <strong>Point {info.name} at it.</strong> Set <code>ENS_LICENSE_FILE</code> to the file&rsquo;s path
-            (default <code>/etc/ens/{license.product}.lic</code>), or upload it on the application&rsquo;s
-            <em>Administration &rarr; License</em> page.
-        </li>
+        {license.product === 'syncd' ? (
+            <li>
+                <strong>Install it in the syncd console.</strong> Upload it on the console&rsquo;s
+                <em>License</em> page, or set <code>CONSOLE_LICENSE_FILE</code> to the file&rsquo;s path
+                (on a host, <code>sudo syncdctl license install FILE</code> sets that up). An engine without a
+                console reads it from <code>engine.license_file</code>.
+            </li>
+        ) : (
+            <li>
+                <strong>Point {info.name} at it.</strong> Set <code>ENS_LICENSE_FILE</code> to the file&rsquo;s path
+                (default <code>/etc/ens/{license.product}.lic</code>), or upload it on the application&rsquo;s
+                <em>Administration &rarr; License</em> page.
+            </li>
+        )}
         <li>
             <strong>Check the license screen.</strong> The application verifies the signature offline and shows
             what is unlocked, how many {license.payload.limit.unit} it covers, and when it expires.
+            {license.product === 'syncd' && <> syncd 0.5.0 or later reads this file.</>}
         </li>
     </ol>
 

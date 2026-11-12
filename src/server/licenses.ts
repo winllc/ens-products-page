@@ -6,7 +6,9 @@
  *
  * A license row keeps the payload and signed tokens of its current revision:
  * one per signing key (Ed25519, and ECDSA P-256 when configured), one per
- * line in `token`, Ed25519 first. Any change re-signs the license with the
+ * line in `token`, Ed25519 first. A syncd license instead keeps one line: its
+ * own JSON envelope, signed with the P-256 key (src/lib/licensing/syncd.ts),
+ * since syncd reads its own format. Any change re-signs the license with the
  * same id and revision + 1; the
  * applications keep the highest revision they have seen, so an older file
  * can't be put back once a newer one is installed.
@@ -26,10 +28,11 @@ import {
     type LicenseState,
     type SignatureAlgorithm,
 } from '../lib/licensing/license';
+import { isSyncdFile, signSyncd, syncdLicenseFile, verifySyncdLicense } from '../lib/licensing/syncd';
 import { isAdmin, type Account } from './accounts';
 import { audit } from './audit';
 import { db, nowIso, transaction } from './db';
-import { signingKeys, trustedKeys } from './keys';
+import { signingKeyP256, signingKeys, trustedKeys } from './keys';
 
 interface LicenseRow {
     id: string;
@@ -39,7 +42,7 @@ interface LicenseRow {
     label: string;
     revision: number;
     payload: string;
-    /** The signed tokens, one per line, Ed25519 first. */
+    /** The signed tokens, one per line, Ed25519 first; for syncd, its one envelope. */
     token: string;
     /** The ids of the keys that signed them, comma-separated, in the same order. */
     key_id: string;
@@ -113,6 +116,15 @@ export function allLicenses(filter: { search?: string; status?: string } = {}): 
 
 /** The payload signed with every current signing key, as the row stores it. */
 function signed(payload: LicensePayload): { token: string; keyIds: string } {
+    if (payload.product === 'syncd') {
+        const key = signingKeyP256();
+        if (!key) {
+            throw new LicenseActionError(
+                'syncd licenses can\'t be issued yet: syncd only accepts ECDSA P-256 signatures, and this service has no P-256 signing key (LICENSE_SIGNING_KEY_P256)',
+            );
+        }
+        return { token: signSyncd(payload, key), keyIds: key.id };
+    }
     const tokens = signTokens(payload, signingKeys());
     return { token: tokens.join('\n'), keyIds: tokens.map((t) => t.slice(0, t.indexOf('.'))).join(',') };
 }
@@ -285,16 +297,30 @@ export function canDownload(account: Account | null | undefined, product: Produc
 
 export function downloadLicense(actor: Account, license: License): { filename: string; content: string } {
     const name = productInfo(license.product).name;
+    const filename = `${license.product}-${license.id}-r${license.revision}.lic`;
+    const names = { product: name, edition: editions[license.edition].name };
+    if (license.product === 'syncd') {
+        // The JSON has no comments: the summary is a field syncd ignores, and isn't signed.
+        const summary = [
+            'ENS Solutions license file for syncd. This summary is not signed and syncd ignores it;',
+            'any change to payload or signature makes the file invalid.',
+            ...summaryLines(license.payload, names).slice(2),
+        ];
+        auditDownload(actor, license);
+        return { filename, content: syncdLicenseFile(license.tokens[0]!, summary) };
+    }
     const trusted = trustedKeys();
     const algorithms = license.tokens.flatMap((t): SignatureAlgorithm[] => {
         const key = trusted.get(t.slice(0, t.indexOf('.')));
         const algorithm = key ? keyAlgorithm(key) : null;
         return algorithm ? [algorithm] : [];
     });
-    const content = licenseFile(
-        license.tokens,
-        summaryLines(license.payload, { product: name, edition: editions[license.edition].name }, algorithms),
-    );
+    const content = licenseFile(license.tokens, summaryLines(license.payload, names, algorithms));
+    auditDownload(actor, license);
+    return { filename, content };
+}
+
+function auditDownload(actor: Account, license: License): void {
     audit({
         actor: actor.id,
         account: license.account_id,
@@ -303,7 +329,6 @@ export function downloadLicense(actor: Account, license: License): { filename: s
         detail: `revision ${license.revision}`,
         details: { product: license.product, revision: license.revision },
     });
-    return { filename: `${license.product}-${license.id}-r${license.revision}.lic`, content };
 }
 
 export function bindInstallation(actor: Account, license: License, raw: string | null): License {
@@ -312,7 +337,7 @@ export function bindInstallation(actor: Account, license: License, raw: string |
     }
     let installationId: string | null;
     try {
-        installationId = normalizeInstallationId(raw);
+        installationId = normalizeInstallationId(raw, license.product);
     } catch (err) {
         throw new LicenseActionError((err as Error).message);
     }
@@ -498,10 +523,20 @@ export function publicStatus(id: string): {
 /**
  * Checks a license file a customer pastes or uploads: signature, then what we
  * know about it. `fipsReady` says whether it also verifies without Ed25519,
- * as a Java runtime in FIPS mode needs.
+ * as a Java runtime in FIPS mode needs; a syncd file is P-256 only, so always.
  */
-export function inspectFile(text: string): { payload: LicensePayload; state: LicenseState; known: License | null; fipsReady: boolean } {
+export function inspectFile(text: string): {
+    payload: LicensePayload;
+    state: LicenseState;
+    known: License | null;
+    fipsReady: boolean;
+    format: 'ens' | 'syncd';
+} {
     const trusted = trustedKeys();
+    if (isSyncdFile(text)) {
+        const payload = verifySyncdLicense(text, trusted).claims.ens;
+        return { payload, state: licenseState(payload).state, known: licenseById(payload.id), fipsReady: true, format: 'syncd' };
+    }
     const { payload } = verifyLicenseDetailed(text, trusted);
     let fipsReady = true;
     try {
@@ -509,5 +544,5 @@ export function inspectFile(text: string): { payload: LicensePayload; state: Lic
     } catch {
         fipsReady = false;
     }
-    return { payload, state: licenseState(payload).state, known: licenseById(payload.id), fipsReady };
+    return { payload, state: licenseState(payload).state, known: licenseById(payload.id), fipsReady, format: 'ens' };
 }
