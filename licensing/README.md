@@ -71,6 +71,34 @@ field):
 | `revision` | Goes up on every re-issue; an installation never goes back to a lower one. |
 | `watermark` | Show the evaluation banner. |
 
+## syncd's file
+
+syncd (the `ldap-sync-merge-view` repository) does not read the file above. It
+reads its own format, which its `docs/LICENSE-FORMAT.md` specifies for the
+issuer, and the portal writes that for every syncd license
+(`src/lib/licensing/syncd.ts`):
+
+- a JSON envelope, `{"syncd_license": 1, "key_id", "payload", "signature"}`, with
+  `payload` the claims JSON in standard base64 and `signature` ECDSA P-256 /
+  SHA-256 (DER) over exactly those bytes. syncd verifies P-256 only, so syncd
+  licenses can't be issued until `LICENSE_SIGNING_KEY_P256` is set, and syncd's
+  release builds must embed that key's public half (`SYNCD_LICENSE_PUBLIC_KEY`
+  in that repository);
+- the claims syncd reads: `license_id` (the portal's id and revision, as
+  `<id>-r<revision>`, because syncd treats every change as a new license),
+  `customer`, `managed_identities`, `packs`, `not_before`, `expires_at` (a
+  perpetual license gets `9999-12-31T00:00:00Z`), `installation_id` (kept in
+  lower case: syncd compares it exactly) and `evaluation`;
+- `packs` is the license's enterprise syncd features: their ids are syncd's pack
+  ids, and the standard features are syncd's Core, which no license names;
+- `ens`, the payload above, and `summary`, the readable lines, which syncd
+  ignores. `ens` lets the account pages match a file to its license.
+
+syncd applies its own rules to a license: a fixed 30-day grace period whatever
+the edition, and no maintenance date (it only blocks publishing configuration
+changes, never sync). Check a file with syncd's own tools:
+`cargo run -p license-sign -- verify --public-key portal-p256.pem FILE`.
+
 ## What the application does
 
 | State | Mode | Behaviour |

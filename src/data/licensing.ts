@@ -102,18 +102,21 @@ export const productFeatures: Record<ProductId, readonly Feature[]> = {
         { id: 'schema-transfer', name: 'Schema import and export', description: 'Moves schema between directories.' },
         { id: 'multi-directory', name: 'Multiple directories', description: 'Several LDAP directories, each with failover, in one portal.', enterprise: true },
     ],
-    // The core features are every license's; the enterprise features are the
-    // packs syncd is sold with (its docs/PLAN.md, section 9.1).
+    // The standard features are syncd's Core pack, in every license. Each
+    // enterprise feature is one of syncd's other packs, and its id is the
+    // pack id the license file names (src/lib/licensing/syncd.ts). Which
+    // connector or setting is in which pack is decided by syncd's release
+    // (engine/crates/licensing/src/packs.rs), so keep these in step with it.
     syncd: [
-        { id: 'directory-connectors', name: 'Directory connectors', description: 'Active Directory, OpenLDAP and other LDAP directories as sources and targets, read in full or streamed live.' },
+        { id: 'directory-connectors', name: 'Directory connectors', description: 'Active Directory, OpenLDAP, 389 Directory Server and Ping as sources and targets, read in full or streamed live.' },
         { id: 'database-connectors', name: 'Database and file sources', description: 'PostgreSQL, MySQL and MariaDB, and CSV and flat files as sources.' },
-        { id: 'cloud-connectors', name: 'Entra ID and SCIM', description: 'Microsoft Entra ID as a source and target, and SCIM applications as targets.' },
-        { id: 'merged-views', name: 'Merged views and rules', description: 'Correlation, precedence merge and computed attributes written as rules.' },
-        { id: 'console', name: 'Web console', description: 'Design, publish, run, monitor and audit sync configurations from the browser, with reports and webhooks.' },
+        { id: 'merged-views', name: 'Merged views and rules', description: 'Correlation, precedence merge and computed attributes written as rules, with rule packages and data-quality checks.' },
+        { id: 'console', name: 'Web console', description: 'Design, publish, run, monitor and audit sync configurations from the browser, with SAML and X.509 sign-in and scoped roles.' },
         { id: 'enterprise-database', name: 'Enterprise Database pack', description: 'SQL Server and MongoDB sources, and Oracle, Db2 and other databases through the Debezium sidecar or the JDBC bridge.', enterprise: true },
-        { id: 'password-sync', name: 'Password Sync pack', description: 'Initial passwords, self-service password changes and password publishing to targets.', enterprise: true },
-        { id: 'high-availability', name: 'High Availability pack', description: 'Active/passive engines with automatic failover.', enterprise: true },
-        { id: 'extensibility', name: 'Extensibility pack', description: 'Custom functions in WebAssembly and out-of-process connectors.', enterprise: true, roadmap: true },
+        { id: 'cloud-saas', name: 'Cloud and SaaS pack', description: 'Microsoft Entra ID, SCIM 2.0, REST and OData, Workday, SAP SuccessFactors and UKG Pro.', enterprise: true },
+        { id: 'password-sync', name: 'Password Sync pack', description: 'Password capture agents, self-service changes, initial passwords and password delivery to targets.', enterprise: true },
+        { id: 'high-availability', name: 'High Availability pack', description: 'Active/passive engine pairs with automatic failover.', enterprise: true },
+        { id: 'extensibility', name: 'Extensibility pack', description: 'Custom functions in WebAssembly, in rule packages.', enterprise: true },
     ],
 };
 

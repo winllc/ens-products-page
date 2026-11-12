@@ -14,7 +14,7 @@ const account = requireAccount(Astro);
 if (account instanceof Response) return account;
 
 let error: string | null = null;
-let result: { payload: LicensePayload; state: string; known: License | null; fipsReady: boolean } | null = null;
+let result: { payload: LicensePayload; state: string; known: License | null; fipsReady: boolean; format: 'ens' | 'syncd' } | null = null;
 
 if (Astro.request.method === 'POST') {
     const data = await Astro.request.formData();
@@ -57,7 +57,9 @@ const stale = result?.known && result.known.revision > result.payload.revision;
                 <div>
                     <dt>FIPS mode</dt>
                     <dd>
-                        {result.fipsReady
+                        {result.format === 'syncd'
+                            ? 'syncd format, signed with ECDSA P-256, which syncd checks in FIPS mode too'
+                            : result.fipsReady
                             ? 'Has an ECDSA P-256 signature, so it also verifies on Java in FIPS mode'
                             : 'Ed25519 signature only: Java runtimes in FIPS mode (such as Red Hat OpenJDK on a FIPS-enabled host) can’t check it. Ask ENS Solutions to re-issue it with an ECDSA P-256 signature.'}
                     </dd>

@@ -36,13 +36,18 @@ export function newLicenseId(): string {
     return `lic_${randomBytes(10).toString('hex')}`;
 }
 
-/** Installation ids are what the application shows on its license screen. */
-export function normalizeInstallationId(raw: string | null | undefined): string | null {
-    const id = (raw ?? '').trim().toUpperCase();
+/**
+ * Installation ids are what the application shows on its license screen. The
+ * ENS applications compare them ignoring case and show them in capitals;
+ * syncd shows lower-case hex and compares exactly, so its ids are kept lower.
+ */
+export function normalizeInstallationId(raw: string | null | undefined, product?: ProductId): string | null {
+    const trimmed = (raw ?? '').trim();
+    const id = product === 'syncd' ? trimmed.toLowerCase() : trimmed.toUpperCase();
     if (!id) {
         return null;
     }
-    if (!/^[A-Z0-9][A-Z0-9-]{5,63}$/.test(id)) {
+    if (!/^[A-Z0-9][A-Z0-9-]{5,63}$/i.test(id)) {
         throw new Error('An installation id is 6 to 64 letters, digits and dashes, as the application shows it');
     }
     return id;
@@ -120,7 +125,7 @@ export function buildPayload(
         expiresAt: expiresAt?.toISOString() ?? null,
         graceDays: policy.graceDays,
         maintenanceUntil: maintenanceUntil?.toISOString() ?? null,
-        installationId: normalizeInstallationId(req.installationId),
+        installationId: normalizeInstallationId(req.installationId, req.product),
         watermark: policy.watermark,
     };
 }

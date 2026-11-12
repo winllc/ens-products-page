@@ -10,6 +10,7 @@ import { closeDatabaseForTests, db } from './db';
 import { resetConfigForTests } from './config';
 import { asPem, generateSigningKeyPem, resetKeysForTests, signingKey, signingKeys, trustedKeys } from './keys';
 import { signingKeyFromPem } from '../lib/licensing/license';
+import { SYNCD_PERPETUAL_EXPIRY, type SyncdClaims, type SyncdEnvelope } from '../lib/licensing/syncd';
 import * as licenses from './licenses';
 import { outbox } from './mail';
 import { createSession, destroySessions, sessionAccountId } from './sessions';
@@ -181,16 +182,6 @@ describe('administration', () => {
         expect(licenses.reinstateLicense(admin, revoked).status).toBe('valid');
     });
 
-    it('issues syncd evaluations, though syncd is not listed on the site yet', async () => {
-        const a = await verifiedAccount();
-        const l = licenses.issueEvaluation(a, 'syncd');
-        expect(l.payload.product).toBe('syncd');
-        expect(l.payload.limit).toEqual({ quantity: 50_000, unit: 'managed identities' });
-        expect(l.payload.features).toContain('syncd.password-sync');
-        expect(l.payload.features).not.toContain('syncd.extensibility');
-        expect(licenses.downloadLicense(a, l).content).toContain('# Product:      syncd');
-    });
-
     it('signs a file the applications can tell has been edited', async () => {
         const a = await verifiedAccount();
         const l = licenses.issueEvaluation(a, 'directory-portal');
@@ -299,5 +290,86 @@ describe('sessions', () => {
         destroySessions(a.id, one.token);
         expect(sessionAccountId(one.token)).toBe(a.id);
         expect(sessionAccountId(two.token)).toBeNull();
+    });
+});
+
+describe('syncd license files', () => {
+    const p256Pem = () => generateKeyPairSync('ec', { namedCurve: 'P-256' }).privateKey.export({ type: 'pkcs8', format: 'pem' }).toString();
+    const configure = (env: Record<string, string | undefined>) => {
+        for (const [k, v] of Object.entries(env)) {
+            if (v === undefined) delete process.env[k];
+            else process.env[k] = v;
+        }
+        resetConfigForTests();
+        resetKeysForTests();
+    };
+    afterEach(() => configure({ LICENSE_SIGNING_KEY_P256: undefined }));
+
+    /** The file, read the way syncd reads it: the envelope, then the claims it signs. */
+    const open = (file: string) => {
+        const envelope = JSON.parse(file) as SyncdEnvelope;
+        const claims = JSON.parse(Buffer.from(envelope.payload, 'base64').toString('utf8')) as SyncdClaims;
+        return { envelope, claims };
+    };
+
+    it('needs the P-256 key, since syncd verifies nothing else', async () => {
+        const a = await verifiedAccount();
+        expect(() => licenses.issueEvaluation(a, 'syncd')).toThrow(/LICENSE_SIGNING_KEY_P256/);
+        expect(licenses.licensesOf(a.id)).toHaveLength(0);
+    });
+
+    it('writes syncd’s own format: a JSON envelope signed with P-256 over the claims', async () => {
+        configure({ LICENSE_SIGNING_KEY_P256: p256Pem() });
+        const a = await verifiedAccount();
+        const l = licenses.issueEvaluation(a, 'syncd');
+        expect(l.tokens).toHaveLength(1);
+        const file = licenses.downloadLicense(a, l).content;
+        const { envelope, claims } = open(file);
+        expect(envelope).toMatchObject({ syncd_license: 1, key_id: signingKeys()[1]!.id });
+        expect(envelope.summary).toContain('Product:      syncd');
+        expect(claims).toMatchObject({
+            format: 1,
+            product: 'syncd',
+            license_id: `${l.id}-r1`,
+            customer: l.payload.licensee.organization,
+            managed_identities: 50_000,
+            evaluation: true,
+            expires_at: l.payload.expiresAt,
+        });
+        expect(claims.installation_id).toBeUndefined();
+        // An evaluation has every pack; Core is never named.
+        expect(claims.packs.sort()).toEqual(['cloud-saas', 'enterprise-database', 'extensibility', 'high-availability', 'password-sync']);
+
+        const inspected = licenses.inspectFile(file);
+        expect(inspected).toMatchObject({ format: 'syncd', fipsReady: true, state: 'valid' });
+        expect(inspected.known?.id).toBe(l.id);
+
+        // Any change to the signed payload is caught.
+        const tampered = JSON.stringify({ ...envelope, payload: Buffer.from(JSON.stringify({ ...claims, managed_identities: 10_000_000 })).toString('base64') });
+        expect(() => licenses.inspectFile(tampered)).toThrow(/signature does not match/);
+    });
+
+    it('keeps syncd installation ids in lower case, as syncd compares them exactly', async () => {
+        configure({ LICENSE_SIGNING_KEY_P256: p256Pem() });
+        const a = await verifiedAccount();
+        const l = licenses.issueEvaluation(a, 'syncd');
+        const bound = licenses.bindInstallation(a, l, ' 3F9C2A41-7BE05D12-A8C4E6F0-19D2B377 ');
+        const { claims } = open(licenses.downloadLicense(a, bound).content);
+        expect(claims.installation_id).toBe('3f9c2a41-7be05d12-a8c4e6f0-19d2b377');
+        // A change is a new license to syncd.
+        expect(claims.license_id).toBe(`${l.id}-r2`);
+    });
+
+    it('names only the packs sold, and gives a perpetual license a far expiry', async () => {
+        configure({ LICENSE_SIGNING_KEY_P256: p256Pem() });
+        const customer = await verifiedAccount();
+        const admin = await verifiedAccount('boss@ens-solutions.com');
+        const standard = licenses.issueLicense(admin, customer, { product: 'syncd', edition: 'subscription', quantity: 20_000 });
+        expect(open(licenses.downloadLicense(customer, standard).content).claims).toMatchObject({ packs: [], managed_identities: 20_000, evaluation: false });
+
+        const perpetual = licenses.issueLicense(admin, customer, { product: 'syncd', edition: 'perpetual', quantity: 20_000, enterprise: true });
+        const { claims } = open(licenses.downloadLicense(customer, perpetual).content);
+        expect(claims.expires_at).toBe(SYNCD_PERPETUAL_EXPIRY);
+        expect(claims.packs).toContain('cloud-saas');
     });
 });
