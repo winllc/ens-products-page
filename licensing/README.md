@@ -109,6 +109,12 @@ changes, never sync). Check a file with syncd's own tools:
 | `RELEASE_NOT_COVERED` (perpetual) | read-only | This build is newer than maintenance; renew or run an older release. |
 | `MISSING`, `INVALID`, `WRONG_PRODUCT`, `WRONG_INSTALLATION`, `SUPERSEDED`, `NOT_YET_VALID` | unlicensed | Only sign-in and the license screen. |
 
+`install(...)` refuses, and keeps the installed license, when the uploaded one
+is `WRONG_PRODUCT`, `WRONG_INSTALLATION` or `SUPERSEDED`, and also when it is
+not yet valid or already expired while the installed license is in full effect
+(`NOT_IN_EFFECT`, with a message giving the start or expiry date), so an early
+upload of next term's license doesn't lock the application until it starts.
+
 Over the size limit: warn up to 10% over (`LicenseCheck.OVERAGE_TOLERANCE`),
 then stop taking on more people, servers or tokens. Never remove anything.
 
