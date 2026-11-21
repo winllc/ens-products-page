@@ -115,6 +115,13 @@ not yet valid or already expired while the installed license is in full effect
 (`NOT_IN_EFFECT`, with a message giving the start or expiry date), so an early
 upload of next term's license doesn't lock the application until it starts.
 
+Licenses are checked against the clock, but never as of more than a day
+before the latest time the installation has recorded (once an hour, in the
+state directory's `latest-time-seen` or the database), so setting the clock
+back doesn't bring an expired license back. A correction of minutes or hours
+changes nothing. State from an earlier release has no recorded time, and is
+checked against the clock alone until one is recorded.
+
 Over the size limit: warn up to 10% over (`LicenseCheck.OVERAGE_TOLERANCE`),
 then stop taking on more people, servers or tokens. Never remove anything.
 
@@ -220,7 +227,8 @@ create their tables from those files. PostgreSQL:
 CREATE TABLE ens_license_installation (
     product          VARCHAR(64)  NOT NULL PRIMARY KEY,
     installation_id  VARCHAR(32)  NOT NULL,
-    created_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP NOT NULL
+    created_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    latest_seen_ms   BIGINT
 );
 
 CREATE TABLE ens_license_file (
@@ -245,7 +253,7 @@ H2 2.x: the same, with `license_text CLOB`.
 
 | Table | Rows |
 |---|---|
-| `ens_license_installation` | One per product: the installation id. |
+| `ens_license_installation` | One per product: the installation id, and the latest time seen (epoch milliseconds). |
 | `ens_license_file` | One per product: the installed license file's text, and a version raised on every write. |
 | `ens_license_revision` | One per product and license id: the highest revision accepted. |
 
@@ -267,6 +275,11 @@ removed after the first start (keep a copy until then). An application that
 builds its own store can call `JdbcLicenseStore.importFileState(licenseFile,
 stateDir)` directly; it returns whether an installation id was imported and
 logs what it copied.
+
+Tables made for 1.2.0 lack `latest_seen_ms`; add it with a migration
+(`ALTER TABLE ens_license_installation ADD COLUMN latest_seen_ms BIGINT`, the
+same on all three databases). Until then the library logs a warning and
+checks licenses against the clock alone.
 
 So for an upgrade: release the application with the migration above and the
 four-argument `fromEnvironment`, keep the license volume mounted for that

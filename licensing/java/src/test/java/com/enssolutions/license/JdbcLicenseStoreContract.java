@@ -127,6 +127,29 @@ abstract class JdbcLicenseStoreContract {
     }
 
     @Test
+    void theLatestTimeSeenIsKeptOnTheInstallationRow() throws Exception {
+        JdbcLicenseStore store = store(Duration.ZERO);
+        Instant t = Instant.parse("2027-01-01T00:00:00.123Z");
+        assertEquals(Optional.empty(), store.raiseLatestTimeSeen(t)); // no installation id yet
+        store.installationId("CA-AAAA-AAAA");
+        assertEquals(Optional.of(t), store.raiseLatestTimeSeen(t));
+        assertEquals(Optional.of(t), store.raiseLatestTimeSeen(t.minusSeconds(3600)));
+        assertEquals(Optional.of(t.plusSeconds(1)), store.raiseLatestTimeSeen(t.plusSeconds(1)));
+        assertEquals(Optional.empty(), new JdbcLicenseStore(dataSource(), "readyroom", Duration.ZERO).raiseLatestTimeSeen(t));
+    }
+
+    @Test
+    void aClockSetBackOnAnotherReplicaDoesNotBringAnExpiredLicenseBack() throws Exception {
+        LicenseManager a = new LicenseManager("certalert", TestLicenses.verifier(), store(Duration.ZERO), Optional.empty(),
+                Clock.fixed(Instant.parse("2027-12-01T00:00:00Z"), ZoneOffset.UTC), Optional.empty());
+        a.install(TestLicenses.license("lic_clock", 1, "2026-10-01T00:00:00Z", "2027-10-01T00:00:00Z"));
+        assertEquals(LicenseState.EXPIRED, a.current().state());
+        LicenseManager b = new LicenseManager("certalert", TestLicenses.verifier(), store(Duration.ZERO), Optional.empty(),
+                Clock.fixed(Instant.parse("2027-06-01T00:00:00Z"), ZoneOffset.UTC), Optional.empty());
+        assertEquals(LicenseState.EXPIRED, b.current().state());
+    }
+
+    @Test
     void concurrentRaisesEndAtTheHighestAndNeverGoBack() throws Exception {
         List<Integer> revisions = new ArrayList<>();
         for (int r = 1; r <= 40; r++) revisions.add(r);
