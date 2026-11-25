@@ -7,11 +7,12 @@ import { editions, sellableEnterpriseFeatures, type Edition } from '../../../dat
 import { productPricing, supportTiers, type SupportTierId } from '../../../data/pricing';
 import { licensedProducts, type ProductId } from '../../../data/products';
 import AccountLayout from '../../../layouts/AccountLayout.astro';
-import { AccountError, accountById, isAdmin, setDisabled, setRole } from '../../../server/accounts';
+import { AccountError, accountById, adminResendVerification, isAdmin, setDisabled, setRole } from '../../../server/accounts';
 import { auditFor } from '../../../server/audit';
 import { ComplianceError, grant as grantCompliance, revoke as revokeCompliance } from '../../../server/compliance';
 import { dateOnly, form, requireAdmin, withNotice } from '../../../server/http';
 import { issueLicense, LicenseActionError, licensesOf } from '../../../server/licenses';
+import { MailError } from '../../../server/mail';
 
 const admin = requireAdmin(Astro);
 if (admin instanceof Response) return admin;
@@ -59,6 +60,9 @@ if (Astro.request.method === 'POST') {
             case 'role':
                 setRole(admin, owner, get('role') === 'admin' ? 'admin' : 'customer');
                 return Astro.redirect(withNotice(here, 'account-updated'), 303);
+            case 'resend-verification':
+                await adminResendVerification(admin, owner);
+                return Astro.redirect(withNotice(here, 'verification-resent'), 303);
             case 'disable':
                 setDisabled(admin, owner, get('disabled') === 'true');
                 return Astro.redirect(withNotice(here, 'account-updated'), 303);
@@ -70,8 +74,13 @@ if (Astro.request.method === 'POST') {
                 return Astro.redirect(withNotice(here, 'compliance-revoked'), 303);
         }
     } catch (err) {
-        if (!(err instanceof LicenseActionError || err instanceof AccountError || err instanceof ComplianceError)) throw err;
-        error = err.message;
+        if (err instanceof MailError) {
+            error = `The confirmation email could not be sent. ${err.message}`;
+        } else if (!(err instanceof LicenseActionError || err instanceof AccountError || err instanceof ComplianceError)) {
+            throw err;
+        } else {
+            error = err.message;
+        }
     }
 }
 
@@ -85,7 +94,25 @@ const enterpriseFeatures = sellableEnterpriseFeatures();
     <p slot="lede" class="lede">{owner.email}{owner.organization && <> &middot; {owner.organization}</>}</p>
 
     <dl class="data-list">
-        <div><dt>Email</dt><dd>{owner.email} {owner.email_verified_at ? <span class="muted small">(confirmed {dateOnly(owner.email_verified_at)})</span> : <span class="pill pill--not-yet-valid">Unconfirmed</span>}</dd></div>
+        <div>
+            <dt>Email</dt>
+            <dd>
+                {owner.email}{' '}
+                {owner.email_verified_at ? (
+                    <span class="muted small">(confirmed {dateOnly(owner.email_verified_at)})</span>
+                ) : (
+                    <>
+                        <span class="pill pill--not-yet-valid">Unconfirmed</span>
+                        {!owner.disabled_at && (
+                            <form method="post" class="inline-form">
+                                <input type="hidden" name="action" value="resend-verification">
+                                <button class="btn btn--ghost btn--small" type="submit">Resend confirmation</button>
+                            </form>
+                        )}
+                    </>
+                )}
+            </dd>
+        </div>
         <div><dt>Phone</dt><dd>{owner.phone || '—'}</dd></div>
         <div><dt>Joined</dt><dd>{dateOnly(owner.created_at)}</dd></div>
         <div><dt>Last sign-in</dt><dd>{dateOnly(owner.last_login_at)}</dd></div>
@@ -115,7 +142,7 @@ const enterpriseFeatures = sellableEnterpriseFeatures();
 
     <h2 class="section-gap" id="issue">Issue a license</h2>
     {!owner.email_verified_at ? (
-        <p class="notice">This account hasn&rsquo;t confirmed its email address yet, so it can&rsquo;t hold a license.</p>
+        <p class="notice">This account hasn&rsquo;t confirmed its email address yet, so it can&rsquo;t hold a license. Use <strong>Resend confirmation</strong> above if the first email didn&rsquo;t arrive.</p>
     ) : (
         <form method="post" class="panel issue-form">
             <input type="hidden" name="action" value="issue">

@@ -65,6 +65,10 @@ export const notices = {
     'license-reinstated': 'The license is reinstated.',
     'account-updated': 'The account is updated.',
     'verification-sent': 'We have sent you another confirmation link.',
+    'verification-not-sent': 'We could not send the confirmation link just now. Try again in a few minutes, or contact us if it keeps happening.',
+    'check-email-not-sent':
+        'Your account request is received, but we could not send the confirmation email just now. Sign in and choose “Send the link again” on your account page, or reset your password, which confirms the address too.',
+    'verification-resent': 'A new confirmation link is on its way to the account’s email address.',
     'compliance-granted': 'The account can now read the compliance documentation pack.',
     'compliance-revoked': 'The account can no longer read the compliance documentation pack.',
     'compliance-published': 'The artifact is published: accounts with access can download it.',
