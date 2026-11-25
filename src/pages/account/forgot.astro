@@ -4,11 +4,19 @@ export const prerender = false;
 import AccountLayout from '../../layouts/AccountLayout.astro';
 import { requestPasswordReset } from '../../server/accounts';
 import { form, limited, withNotice } from '../../server/http';
+import { MailError } from '../../server/mail';
 
 if (Astro.request.method === 'POST') {
     const email = (await form(Astro))('email');
     if (!limited(Astro, 'forgot', email.toLowerCase(), 3, 60)) {
-        await requestPasswordReset(email);
+        try {
+            await requestPasswordReset(email);
+        } catch (err) {
+            // Only an address with an account is sent mail, so a different answer
+            // would say which addresses have one: log it, answer as usual.
+            if (!(err instanceof MailError)) throw err;
+            console.error(`licensing: password reset email not sent: ${err.message}`);
+        }
     }
     return Astro.redirect(withNotice('/account/login', 'reset-sent'), 303);
 }

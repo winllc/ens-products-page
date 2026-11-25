@@ -86,6 +86,7 @@ export const ACTIONS = {
     'account.password-reset-requested': { category: 'authentication', severity: 'info', label: 'Password reset requested' },
     'account.created': { category: 'account', severity: 'info', label: 'Account created' },
     'account.verified': { category: 'account', severity: 'info', label: 'Email confirmed' },
+    'account.verification-resent': { category: 'account', severity: 'info', label: 'Confirmation link sent again' },
     'account.updated': { category: 'account', severity: 'info', label: 'Details updated' },
     'account.role-changed': { category: 'account', severity: 'notice', label: 'Role changed' },
     'account.disabled': { category: 'account', severity: 'notice', label: 'Account disabled' },

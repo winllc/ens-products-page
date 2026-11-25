@@ -4,13 +4,20 @@ export const prerender = false;
 import AccountLayout from '../../layouts/AccountLayout.astro';
 import { resendVerification, verifyEmail } from '../../server/accounts';
 import { limited, withNotice } from '../../server/http';
+import { MailError } from '../../server/mail';
 
 // POST: a signed-in, unconfirmed account asks for another link.
 if (Astro.request.method === 'POST') {
     const account = Astro.locals.account;
     if (!account) return Astro.redirect('/account/login', 303);
     if (!limited(Astro, 'resend', account.id, 3, 60)) {
-        await resendVerification(account);
+        try {
+            await resendVerification(account);
+        } catch (err) {
+            if (!(err instanceof MailError)) throw err;
+            console.error(`licensing: confirmation email not sent: ${err.message}`);
+            return Astro.redirect(withNotice('/account', 'verification-not-sent'), 303);
+        }
     }
     return Astro.redirect(withNotice('/account', 'verification-sent'), 303);
 }

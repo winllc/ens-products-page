@@ -302,7 +302,7 @@ and how to bring it into a SIEM, is on the docs site:
 |---|---|
 | authentication | `auth.login` (success and failure; on failure the address tried is the actor and `reason` says why), `auth.logout`, `auth.lockout` (rate limit hit on sign-in, sign-up, reset, resend or release downloads), `account.password-changed`, `account.password-reset`, `account.password-reset-requested` |
 | authorization | `access.denied`: every 403 from the service (a non-administrator on `/admin`, a release download without a license for the product, a compliance document without access), with method, path and reason; repeats within 60 seconds are collapsed into one event with `details.count`; `compliance.granted`, `compliance.revoked` |
-| account | `account.created`, `account.verified` (and failed confirmation links), `account.updated` (old and new values), `account.role-changed`, `account.disabled`, `account.enabled` |
+| account | `account.created`, `account.verified` (and failed confirmation links), `account.verification-resent` (an administrator sent a new confirmation link; a failure records why), `account.updated` (old and new values), `account.role-changed`, `account.disabled`, `account.enabled` |
 | data | `license.issued`, `license.downloaded`, `license.bound`, `license.renamed`, `license.renewed`, `license.revoked`, `license.reinstated`, `license.resigned`, `release.downloaded` (product, version and file), `compliance.downloaded` (artifact and file) |
 | configuration | `compliance.published`, `compliance.unpublished` |
 | audit | `audit.exported`, `audit.verified`, `audit.token-created`, `audit.token-revoked`, `audit.pruned`, `audit.delivery-failed`, `audit.delivery-recovered` |

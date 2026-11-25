@@ -50,6 +50,7 @@ import { hashToken, newId } from './secrets';
 export type AuditAction =
     | 'account.created'
     | 'account.verified'
+    | 'account.verification-resent'
     | 'account.updated'
     | 'account.password-changed'
     | 'account.password-reset'

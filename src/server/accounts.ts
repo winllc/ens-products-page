@@ -191,6 +191,27 @@ export async function resendVerification(account: Account): Promise<void> {
     }
 }
 
+/**
+ * An administrator sends an unconfirmed account a new confirmation link, for a
+ * customer whose first email never arrived. Recorded in the audit trail, sent or
+ * not; a MailError says why it was not.
+ */
+export async function adminResendVerification(actor: Account, target: Account): Promise<void> {
+    if (target.email_verified_at) {
+        throw new AccountError('This account has already confirmed its email address');
+    }
+    if (target.disabled_at) {
+        throw new AccountError('This account is disabled: enable it first');
+    }
+    try {
+        await sendVerification(target);
+    } catch (e) {
+        audit({ actor: actor.id, account: target.id, action: 'account.verification-resent', outcome: 'failure', reason: (e as Error).message });
+        throw e;
+    }
+    audit({ actor: actor.id, account: target.id, action: 'account.verification-resent' });
+}
+
 function consumeToken(token: string, purpose: 'verify-email' | 'reset-password'): string | null {
     const row = db()
         .prepare('SELECT account_id, expires_at, used_at FROM tokens WHERE token_hash = ? AND purpose = ?')

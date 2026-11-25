@@ -3,6 +3,7 @@ export const prerender = false;
 
 import AccountLayout from '../../layouts/AccountLayout.astro';
 import { AccountError, signUp } from '../../server/accounts';
+import { MailError } from '../../server/mail';
 import { form, limited, withNotice } from '../../server/http';
 import { PASSWORD_MIN } from '../../server/secrets';
 
@@ -25,6 +26,12 @@ if (Astro.request.method === 'POST') {
             // Same answer whether the address was new or already had an account.
             return Astro.redirect(withNotice('/account/login', 'check-email'), 303);
         } catch (err) {
+            if (err instanceof MailError) {
+                // The account is created (or already existed): both send an email, so
+                // this answer still doesn't say which.
+                console.error(`licensing: sign-up email not sent: ${err.message}`);
+                return Astro.redirect(withNotice('/account/login', 'check-email-not-sent'), 303);
+            }
             if (!(err instanceof AccountError)) throw err;
             error = err.message;
             field = err.field;

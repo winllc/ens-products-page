@@ -22,6 +22,9 @@ export interface Mail {
     replyTo?: string;
 }
 
+/** An email that could not be sent (SMTP or Mailjet refused it, or could not be reached). */
+export class MailError extends Error {}
+
 /** The last messages sent, for tests and for `npm run dev` without a mail service. */
 export const outbox: Mail[] = [];
 
@@ -33,7 +36,11 @@ export async function sendMail(mail: Mail): Promise<void> {
     const c = config();
     if (c.smtpUrl) {
         transport ??= nodemailer.createTransport(c.smtpUrl);
-        await transport.sendMail({ from: c.mailFrom, ...mail });
+        try {
+            await transport.sendMail({ from: c.mailFrom, ...mail });
+        } catch (e) {
+            throw new MailError(`SMTP did not send the email to ${mail.to}: ${(e as Error).message}`);
+        }
         return;
     }
     if (c.mailjet) {
@@ -83,7 +90,7 @@ async function sendWithMailjet(mj: MailjetConfig, from: string, mail: Mail): Pro
             signal: AbortSignal.timeout(MAILJET_TIMEOUT_MS),
         });
     } catch (e) {
-        throw new Error(`Mailjet could not be reached: ${(e as Error).message}`);
+        throw new MailError(`Mailjet could not be reached: ${(e as Error).message}`);
     }
     const body = (await res.json().catch(() => null)) as MailjetResponse | null;
     const result = body?.Messages?.[0];
@@ -94,7 +101,7 @@ async function sendWithMailjet(mj: MailjetConfig, from: string, mail: Mail): Pro
         ...(result?.Errors ?? []).map((e) => [e.ErrorCode, e.ErrorMessage, e.ErrorRelatedTo?.join(', ')].filter(Boolean).join(' ')),
         body?.ErrorMessage,
     ].filter(Boolean);
-    throw new Error(`Mailjet did not send the email to ${mail.to} (HTTP ${res.status}${reasons.length ? `: ${reasons.join('; ')}` : ''})`);
+    throw new MailError(`Mailjet did not send the email to ${mail.to} (HTTP ${res.status}${reasons.length ? `: ${reasons.join('; ')}` : ''})`);
 }
 
 interface MailjetResponse {
