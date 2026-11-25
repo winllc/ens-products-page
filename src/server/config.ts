@@ -19,7 +19,14 @@
  *   ADMIN_EMAILS                Comma-separated; these accounts are
  *                               administrators once their email is verified
  *   SMTP_URL                    e.g. smtps://user:pass@mail.example.com:465.
- *                               Unset: emails are written to the log instead
+ *                               Used first when set
+ *   MAILJET_API_KEY             Mailjet's API key and secret key: with SMTP_URL
+ *   MAILJET_SECRET_KEY          unset, mail goes through Mailjet's Send API.
+ *   MAILJET_SECRET_KEY_FILE     ...or a path to the secret key
+ *   MAILJET_API_URL             default https://api.mailjet.com
+ *                               (https://api.us.mailjet.com for a US account)
+ *                               With neither SMTP nor Mailjet, emails are
+ *                               written to the log instead
  *   MAIL_FROM                   default "ENS Solutions <licensing@ens-solutions.com>"
  *   CONTACT_TO                  Where the contact form's messages go
  *                               (default info@ens-solutions.com)
@@ -93,6 +100,12 @@ export interface ReleasesConfig {
     gpgPublicKeyUrl: string | null;
 }
 
+export interface MailjetConfig {
+    apiKey: string;
+    secretKey: string;
+    apiUrl: string;
+}
+
 export interface Config {
     publicUrl: string;
     dataDir: string;
@@ -104,6 +117,8 @@ export interface Config {
     trustedKeys: string[];
     adminEmails: Set<string>;
     smtpUrl: string | null;
+    /** Null when the Mailjet keys are unset. */
+    mailjet: MailjetConfig | null;
     mailFrom: string;
     contactTo: string;
     cookieSecure: boolean;
@@ -138,6 +153,7 @@ export function config(): Config {
         trustedKeys: list(env.LICENSE_TRUSTED_KEYS),
         adminEmails: new Set(list(env.ADMIN_EMAILS).map((e) => e.toLowerCase())),
         smtpUrl: env.SMTP_URL?.trim() || null,
+        mailjet: mailjetConfig(env),
         mailFrom: env.MAIL_FROM ?? 'ENS Solutions <licensing@ens-solutions.com>',
         contactTo: env.CONTACT_TO?.trim() || 'info@ens-solutions.com',
         cookieSecure: env.COOKIE_SECURE ? env.COOKIE_SECURE !== 'false' : publicUrl.startsWith('https:'),
@@ -187,6 +203,24 @@ function auditConfig(env: NodeJS.ProcessEnv): AuditConfig {
               }
             : null,
         retentionDays: int(env.ENS_AUDIT_RETENTION_DAYS, 0),
+    };
+}
+
+function mailjetConfig(env: NodeJS.ProcessEnv): MailjetConfig | null {
+    const apiKey = env.MAILJET_API_KEY?.trim() || '';
+    let secretKey = env.MAILJET_SECRET_KEY?.trim() || '';
+    const secretFile = env.MAILJET_SECRET_KEY_FILE?.trim();
+    if (!secretKey && secretFile) {
+        secretKey = readFileSync(secretFile, 'utf8').trim();
+    }
+    if (!apiKey && !secretKey) return null;
+    if (!apiKey || !secretKey) {
+        throw new Error('Mailjet needs both MAILJET_API_KEY and MAILJET_SECRET_KEY (or MAILJET_SECRET_KEY_FILE)');
+    }
+    return {
+        apiKey,
+        secretKey,
+        apiUrl: env.MAILJET_API_URL?.trim().replace(/\/+$/, '') || 'https://api.mailjet.com',
     };
 }
 
