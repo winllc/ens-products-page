@@ -117,6 +117,7 @@ export const productFeatures: Record<ProductId, readonly Feature[]> = {
         { id: 'password-sync', name: 'Password Sync pack', description: 'Password capture agents, self-service changes, initial passwords and password delivery to targets.', enterprise: true },
         { id: 'high-availability', name: 'High Availability pack', description: 'Active/passive engine pairs with automatic failover.', enterprise: true },
         { id: 'extensibility', name: 'Extensibility pack', description: 'Custom functions in WebAssembly, in rule packages.', enterprise: true },
+        { id: 'governance', name: 'Governance pack', description: 'Access granted by the console\u2019s governance layer: memberships, values and scopes the engine enforces, with the catalog, reviews and requests as they are built.', enterprise: true, roadmap: true },
     ],
 };
 
