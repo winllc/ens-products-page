@@ -35,6 +35,7 @@ services:
       SMTP_URL: "${SMTP_URL:-}"
       MAILJET_API_KEY: "${MAILJET_API_KEY:-}"
       MAILJET_SECRET_KEY: "${MAILJET_SECRET_KEY:-}"
+      MAILJET_SECRET_KEY_FILE: "${MAILJET_SECRET_KEY_FILE:-}"
       MAILJET_API_URL: "${MAILJET_API_URL:-}"
       MAIL_FROM: "${MAIL_FROM:-ENS Solutions <licensing@ens-solutions.com>}"
       DOCS_URL: "${DOCS_URL:-}"
