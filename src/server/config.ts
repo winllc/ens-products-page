@@ -23,6 +23,10 @@
  *   MAILJET_API_KEY             Mailjet's API key and secret key: with SMTP_URL
  *   MAILJET_SECRET_KEY          unset, mail goes through Mailjet's Send API.
  *   MAILJET_SECRET_KEY_FILE     ...or a path to the secret key
+ *                               (MJ_APIKEY_PUBLIC and MJ_APIKEY_PRIVATE, Mailjet's
+ *                               own names, are read too). A key missing or a file
+ *                               that can't be read turns Mailjet off with an
+ *                               error in the log; it never stops the service
  *   MAILJET_API_URL             default https://api.mailjet.com
  *                               (https://api.us.mailjet.com for a US account)
  *                               With neither SMTP nor Mailjet, emails are
@@ -206,16 +210,31 @@ function auditConfig(env: NodeJS.ProcessEnv): AuditConfig {
     };
 }
 
+/**
+ * Never throws: mail must not take the licensing service down. A setting that is
+ * half there, or a secret file that can't be read, is reported in the log and
+ * leaves Mailjet off (mail is then logged instead of sent).
+ */
 function mailjetConfig(env: NodeJS.ProcessEnv): MailjetConfig | null {
-    const apiKey = env.MAILJET_API_KEY?.trim() || '';
-    let secretKey = env.MAILJET_SECRET_KEY?.trim() || '';
+    // MJ_APIKEY_PUBLIC and MJ_APIKEY_PRIVATE are the names Mailjet's own documentation uses.
+    const apiKey = env.MAILJET_API_KEY?.trim() || env.MJ_APIKEY_PUBLIC?.trim() || '';
+    let secretKey = env.MAILJET_SECRET_KEY?.trim() || env.MJ_APIKEY_PRIVATE?.trim() || '';
     const secretFile = env.MAILJET_SECRET_KEY_FILE?.trim();
     if (!secretKey && secretFile) {
-        secretKey = readFileSync(secretFile, 'utf8').trim();
+        try {
+            secretKey = readFileSync(secretFile, 'utf8').trim();
+        } catch (e) {
+            console.error(`licensing: Mailjet is off: MAILJET_SECRET_KEY_FILE cannot be read (${(e as Error).message})`);
+            return null;
+        }
     }
     if (!apiKey && !secretKey) return null;
     if (!apiKey || !secretKey) {
-        throw new Error('Mailjet needs both MAILJET_API_KEY and MAILJET_SECRET_KEY (or MAILJET_SECRET_KEY_FILE)');
+        console.error(
+            `licensing: Mailjet is off: ${apiKey ? 'MAILJET_SECRET_KEY (or MAILJET_SECRET_KEY_FILE)' : 'MAILJET_API_KEY'} is not set; ` +
+                'both keys are needed. Emails are written to the log until it is.',
+        );
+        return null;
     }
     return {
         apiKey,
