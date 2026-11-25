@@ -51,7 +51,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
-    for (const name of ['MAILJET_API_KEY', 'MAILJET_SECRET_KEY', 'MAILJET_SECRET_KEY_FILE', 'MAILJET_API_URL', 'MAIL_FROM', 'SMTP_URL']) {
+    for (const name of ['MJ_APIKEY_PUBLIC', 'MJ_APIKEY_PRIVATE', 'MAILJET_API_KEY', 'MAILJET_SECRET_KEY', 'MAILJET_SECRET_KEY_FILE', 'MAILJET_API_URL', 'MAIL_FROM', 'SMTP_URL']) {
         delete process.env[name];
     }
     resetConfigForTests();
@@ -115,10 +115,30 @@ describe('Mailjet', () => {
         expect(seen[0].authorization).toBe(`Basic ${Buffer.from('public-key:from-a-file').toString('base64')}`);
     });
 
-    it('refuses one key without the other', () => {
+    it('turns Mailjet off, without stopping the service, when one key is missing', () => {
         delete process.env.MAILJET_SECRET_KEY;
         resetConfigForTests();
-        expect(() => config()).toThrow('Mailjet needs both MAILJET_API_KEY and MAILJET_SECRET_KEY');
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        expect(config().mailjet).toBeNull();
+        expect(error.mock.calls[0][0]).toContain('Mailjet is off: MAILJET_SECRET_KEY (or MAILJET_SECRET_KEY_FILE) is not set');
+    });
+
+    it('turns Mailjet off, without stopping the service, when the secret key file cannot be read', () => {
+        delete process.env.MAILJET_SECRET_KEY;
+        process.env.MAILJET_SECRET_KEY_FILE = '/nonexistent/mailjet-secret';
+        resetConfigForTests();
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        expect(config().mailjet).toBeNull();
+        expect(error.mock.calls[0][0]).toContain('MAILJET_SECRET_KEY_FILE cannot be read');
+    });
+
+    it("reads Mailjet's own names, MJ_APIKEY_PUBLIC and MJ_APIKEY_PRIVATE", () => {
+        delete process.env.MAILJET_API_KEY;
+        delete process.env.MAILJET_SECRET_KEY;
+        process.env.MJ_APIKEY_PUBLIC = 'pub';
+        process.env.MJ_APIKEY_PRIVATE = 'priv';
+        resetConfigForTests();
+        expect(config().mailjet).toMatchObject({ apiKey: 'pub', secretKey: 'priv' });
     });
 
     it('defaults to api.mailjet.com', () => {

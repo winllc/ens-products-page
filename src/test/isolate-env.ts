@@ -16,7 +16,7 @@
  * shell's credentials.
  */
 
-const PREFIXES = ['LICENSE_', 'ENS_', 'SMTP_', 'MAIL_', 'MAILJET_', 'RELEASES_', 'AWS_'];
+const PREFIXES = ['LICENSE_', 'ENS_', 'SMTP_', 'MAIL_', 'MAILJET_', 'MJ_', 'RELEASES_', 'AWS_'];
 const NAMES = ['PUBLIC_URL', 'ADMIN_EMAILS', 'COOKIE_SECURE', 'DATA_DIR', 'LICENSING_DB', 'DOCS_URL'];
 
 for (const name of Object.keys(process.env)) {
