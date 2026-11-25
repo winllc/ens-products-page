@@ -174,7 +174,10 @@ All in the `licensing` service's environment (see `.env.example`):
 | `LICENSE_SIGNING_KEY_P256` | Optional ECDSA P-256 private key, from `npm run license -- keygen --alg p256`. **A secret.** Set, every license is also signed with it, so it verifies on Java in FIPS mode, which has no Ed25519 (`licensing/README.md`, "FIPS 140-3"). Never generated. |
 | `LICENSE_SIGNING_KEY_P256_FILE` | Or a path to it. |
 | `LICENSE_TRUSTED_KEYS` | Retired public keys (Ed25519 or ECDSA P-256) still accepted by *Check a file*, after a key rotation. |
-| `SMTP_URL`, `MAIL_FROM` | Outgoing mail for confirmations, password resets and the contact form. Unset, messages are written to the service's log. |
+| `SMTP_URL`, `MAIL_FROM` | Outgoing mail for confirmations, password resets and the contact form, through an SMTP relay (e.g. `smtps://user:pass@mail.example.com:465`). Used first when set. `MAIL_FROM` is the sender for SMTP and Mailjet alike, default `ENS Solutions <licensing@ens-solutions.com>`. |
+| `MAILJET_API_KEY`, `MAILJET_SECRET_KEY` | With `SMTP_URL` unset, mail goes through Mailjet's Send API (v3.1) with these keys (Mailjet: **Account settings → API keys**). The secret key is **a secret**. `MAIL_FROM`'s address must be a sender or domain validated in Mailjet, or Mailjet refuses the message. One key without the other stops the service at start. With neither SMTP nor Mailjet, messages are written to the service's log. |
+| `MAILJET_SECRET_KEY_FILE` | Or a path to the secret key, e.g. a Docker secret. |
+| `MAILJET_API_URL` | Default `https://api.mailjet.com`; `https://api.us.mailjet.com` for an account on Mailjet's US infrastructure. |
 | `CONTACT_TO` | Where the contact form's messages are sent, with the visitor as Reply-To. Default `info@ens-solutions.com`. |
 | `DATA_DIR` | `/data` in the image: `licensing.sqlite` and, if generated, the signing key. |
 | `RELEASES_S3_BUCKET` | The private bucket the applications' CI publishes releases to. Unset, downloads are off and the downloads page says they aren't available yet. See [Release downloads](#release-downloads). |

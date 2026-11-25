@@ -52,6 +52,9 @@ services:
       LICENSE_SIGNING_KEY_P256: "${LICENSE_SIGNING_KEY_P256:-}"
       LICENSE_TRUSTED_KEYS: "${LICENSE_TRUSTED_KEYS:-}"
       SMTP_URL: "${SMTP_URL:-}"
+      MAILJET_API_KEY: "${MAILJET_API_KEY:-}"
+      MAILJET_SECRET_KEY: "${MAILJET_SECRET_KEY:-}"
+      MAILJET_API_URL: "${MAILJET_API_URL:-}"
       MAIL_FROM: "${MAIL_FROM:-ENS Solutions <licensing@ens-solutions.com>}"
       DOCS_URL: "${DOCS_URL:-}"
       # Release downloads (README, "Release downloads"). Read-only credentials;
